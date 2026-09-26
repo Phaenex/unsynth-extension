@@ -1,0 +1,285 @@
+/* ============================================================
+   Unsynth "Tune" — UI/UX customization.
+   Every rule is gated by an <html> class set by ui-tune.js, so toggling a
+   setting just adds/removes a class (no per-element JS for CSS features).
+   ============================================================ */
+
+/* ---- Shorts (feed shelves, grid items, sidebar nav, channel tab, search) ---- */
+html.un-hide-shorts ytd-reel-shelf-renderer,
+html.un-hide-shorts ytd-rich-shelf-renderer[is-shorts],
+html.un-hide-shorts ytd-reel-item-renderer,
+html.un-hide-shorts ytd-rich-section-renderer:has(ytd-reel-shelf-renderer),
+html.un-hide-shorts ytd-rich-item-renderer:has(ytd-reel-item-renderer),
+html.un-hide-shorts ytd-guide-entry-renderer:has(a[href='/shorts']),
+html.un-hide-shorts ytd-guide-entry-renderer:has(a[href^='/shorts/']),
+html.un-hide-shorts ytd-mini-guide-entry-renderer:has(a[href='/shorts']),
+html.un-hide-shorts ytd-mini-guide-entry-renderer:has(a[href^='/shorts/']),
+html.un-hide-shorts tp-yt-paper-tab:has(a[href*='/shorts']),
+html.un-hide-shorts yt-tab-shape:has(a[href*='/shorts']),
+html.un-hide-shorts ytd-guide-entry-renderer:has(a[title='Shorts']),
+html.un-hide-shorts ytd-mini-guide-entry-renderer:has([title='Shorts']),
+html.un-hide-shorts tp-yt-paper-tab:has(div[role='tab'] [title='Shorts']) {
+  display: none !important;
+}
+html.un-hide-shorts .un-shorts-nav {
+  display: none !important;
+}
+
+/* ---- Recommendations / related sidebar ---- */
+html.un-hide-recs #secondary,
+html.un-hide-recs ytd-watch-next-secondary-results-renderer {
+  display: none !important;
+}
+
+/* ---- Comments ---- */
+html.un-hide-comments #comments,
+html.un-hide-comments ytd-comments {
+  display: none !important;
+}
+
+/* ---- Live chat ---- */
+html.un-hide-chat #chat,
+html.un-hide-chat ytd-live-chat-frame {
+  display: none !important;
+}
+
+/* ---- End-screen cards + video wall + info cards ---- */
+html.un-hide-endcards .ytp-ce-element,
+html.un-hide-endcards .ytp-cards-teaser,
+html.un-hide-endcards .ytp-endscreen-content,
+html.un-hide-endcards .ytp-ce-covering-overlay {
+  display: none !important;
+}
+
+/* ---- Merch / event / shopping shelves ---- */
+html.un-hide-merch ytd-merch-shelf-renderer,
+html.un-hide-merch ytd-event-details-renderer,
+html.un-hide-merch ytd-shopping-bag-button-renderer {
+  display: none !important;
+}
+
+/* ---- Premium upsell banners ---- */
+html.un-hide-premium ytd-mealbar-promo-renderer,
+html.un-hide-premium ytd-statement-banner-renderer {
+  display: none !important;
+}
+
+/* ---- Notification bell ---- */
+html.un-hide-bell #notification-button,
+html.un-hide-bell ytd-notification-topbar-button-renderer {
+  display: none !important;
+}
+
+/* ---- Trending / Explore nav ---- */
+html.un-hide-trending ytd-guide-entry-renderer:has(a[href='/feed/trending']),
+html.un-hide-trending ytd-guide-entry-renderer:has(a[href='/feed/explore']) {
+  display: none !important;
+}
+
+/* ---- Home feed (blank the grid; leaves header/search usable) ---- */
+html.un-hide-home ytd-browse[page-subtype='home'] ytd-rich-grid-renderer,
+html.un-hide-home ytd-browse[page-subtype='home'] #contents.ytd-rich-grid-renderer {
+  display: none !important;
+}
+
+/* ---- Disable hover-play video previews in the feed ---- */
+html.un-no-hover-preview ytd-moving-thumbnail-renderer,
+html.un-no-hover-preview ytd-video-preview,
+html.un-no-hover-preview #mouseover-overlay {
+  display: none !important;
+}
+
+/* ---- Square thumbnails ---- */
+/* The rounded corner moved. YouTube's newer lockup renderer puts it on
+   yt-thumbnail-view-model, which sets overflow:hidden and therefore clips the
+   image no matter what radius the <img> carries — so targeting the image alone
+   did nothing, while LOOKING correct if you measured the image (it already
+   reports 0px in both states). Measured on a real signed-in watch page: 22
+   view-model thumbnails at 12px against a single legacy ytd-thumbnail, and
+   none of the 22 matched the old selector.
+
+   The legacy renderer is still in use on the same pages, so these are added
+   rather than swapped. */
+html.un-square-thumbs ytd-thumbnail img,
+html.un-square-thumbs yt-img-shadow img,
+html.un-square-thumbs .ytd-thumbnail,
+html.un-square-thumbs yt-thumbnail-view-model,
+html.un-square-thumbs yt-thumbnail-view-model img,
+html.un-square-thumbs .ytThumbnailViewModelHost {
+  border-radius: 0 !important;
+}
+/* Our flush chips weld into the thumbnail corner, so they follow this setting
+   too. Declared AFTER the rule above on purpose: test/ui-tune-selectors.test.js
+   matches the FIRST html.un-square-thumbs block, and putting this one first
+   made that guard read the token block instead of the selector list. */
+html.un-square-thumbs {
+  --un-thumb-radius: 0px;
+}
+
+/* ---- Dim watched videos ---- */
+html.un-dim-watched ytd-rich-item-renderer:has(#progress),
+html.un-dim-watched ytd-video-renderer:has(#progress),
+html.un-dim-watched ytd-grid-video-renderer:has(#progress) {
+  opacity: 0.45;
+  transition: opacity 0.15s;
+}
+html.un-dim-watched ytd-rich-item-renderer:has(#progress):hover,
+html.un-dim-watched ytd-video-renderer:has(#progress):hover {
+  opacity: 1;
+}
+
+/* ---- OLED / pure-black theme (on top of YouTube's dark mode) ---- */
+html.un-oled[dark],
+html.un-oled {
+  --yt-spec-base-background: #000000 !important;
+  --yt-spec-raised-background: #0a0a0a !important;
+  --yt-spec-menu-background: #0a0a0a !important;
+  --yt-spec-general-background-a: #000000 !important;
+  --yt-spec-general-background-b: #000000 !important;
+}
+html.un-oled ytd-app,
+html.un-oled #content {
+  background: #000 !important;
+}
+
+/* ---- Full-width watch layout (reclaim sidebar space) ----
+   Scoped to :not([theater]) on BOTH rules — they're a pair (widen #primary,
+   hide #secondary) and must stay in lockstep. An earlier version only
+   scoped the #secondary rule, so in theater mode (e.g. the "Cinema" preset,
+   which turns fullWidth AND theaterMode on together — see ui-presets.js)
+   #primary still got forced to max-width:none while #secondary stayed
+   visible: the unconstrained video column collided with the still-present
+   sidebar, squeezing it into a broken-looking sliver at the viewport edge
+   (confirmed live). Theater mode already has its own native wide layout —
+   this feature has nothing to add there, so it's a clean no-op instead. */
+html.un-full-width ytd-watch-flexy:not([theater]) #primary.ytd-watch-flexy {
+  max-width: none !important;
+}
+html.un-full-width ytd-watch-flexy:not([theater]) #secondary.ytd-watch-flexy {
+  display: none !important;
+}
+
+/* ---- Untruncated video titles ---- */
+html.un-full-titles #video-title,
+html.un-full-titles yt-formatted-string#video-title {
+  -webkit-line-clamp: unset !important;
+  max-height: none !important;
+  white-space: normal !important;
+}
+
+/* ---- Videos per row (set via the --un-vpr custom property) ---- */
+html[style*='--un-vpr'] ytd-rich-grid-renderer {
+  --ytd-rich-grid-items-per-row: var(--un-vpr) !important;
+}
+
+/* ============================================================
+   Feed Shelf Hiders — granular per-shelf-type suppression.
+   Each class is toggled independently by ui-tune.js.
+   ============================================================ */
+
+/* "For You" / algorithmic recommendation shelves */
+html.un-hide-shelf-foryou ytd-rich-section-renderer[page-subtype='home']:has(ytd-statement-banner-renderer),
+html.un-hide-shelf-foryou ytd-rich-section-renderer:has(ytd-social-post-renderer),
+html.un-hide-shelf-foryou ytd-rich-shelf-renderer[type='channels'],
+html.un-hide-shelf-foryou ytd-horizontal-card-list-renderer {
+  display: none !important;
+}
+
+/* Mixes (auto-generated mix playlists in home feed) */
+html.un-hide-shelf-mixes ytd-rich-item-renderer:has(ytd-radio-renderer),
+html.un-hide-shelf-mixes ytd-compact-radio-renderer,
+html.un-hide-shelf-mixes ytd-radio-renderer {
+  display: none !important;
+}
+
+/* News shelves */
+html.un-hide-shelf-news ytd-rich-section-renderer:has([page-subtype='news']),
+html.un-hide-shelf-news ytd-rich-shelf-renderer[type='news'],
+html.un-hide-shelf-news ytd-backstage-post-thread-renderer:has(.ytd-channel-video-player-renderer) {
+  display: none !important;
+}
+
+/* Shopping / products / merch (distinct from the merch section on watch pages) */
+html.un-hide-shelf-shopping ytd-rich-section-renderer:has(ytd-product-item-renderer),
+html.un-hide-shelf-shopping ytd-shelf-renderer:has(ytd-product-item-renderer) {
+  display: none !important;
+}
+
+/* Community posts in home feed */
+html.un-hide-shelf-community ytd-rich-item-renderer:has(ytd-post-renderer),
+html.un-hide-shelf-community ytd-rich-section-renderer:has(ytd-social-post-renderer),
+html.un-hide-shelf-community ytd-social-post-renderer {
+  display: none !important;
+}
+
+/* "Continue watching" / "Previously watched" shelf */
+html.un-hide-shelf-continue ytd-rich-shelf-renderer:has([page-subtype='history']),
+html.un-hide-shelf-continue ytd-rich-section-renderer:has(ytd-continuation-item-renderer[type='HISTORY']) {
+  display: none !important;
+}
+
+/* ============================================================
+   Scroll-to-Volume OSD
+   ============================================================ */
+@keyframes un-vol-osd-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.un-vol-osd {
+  position: fixed;
+  top: 0; /* positioned next to the cursor by JS on each scroll */
+  left: 0;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 190px;
+  box-sizing: border-box;
+  background: rgba(15, 15, 18, 0.94);
+  color: #fff;
+  font: 700 13px/1 Roboto, Arial, sans-serif;
+  padding: 9px 13px;
+  border-radius: 12px;
+  backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  transform-origin: top left;
+  animation: un-vol-osd-in 0.14s cubic-bezier(0.2, 0, 0, 1);
+  transition: opacity 0.35s ease;
+}
+.un-vol-osd-ico {
+  flex: 0 0 auto;
+  font-size: 17px;
+  line-height: 1;
+}
+.un-vol-osd-bar {
+  flex: 1 1 auto;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+}
+.un-vol-osd-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff5a5f, #ff8a8e);
+  transition: width 0.08s linear;
+}
+.un-vol-osd-pct {
+  flex: 0 0 auto;
+  min-width: 44px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.un-vol-osd.over .un-vol-osd-fill {
+  background: linear-gradient(90deg, #6ee787, #9ae0a0);
+}
+.un-vol-osd.muted .un-vol-osd-fill {
+  background: #7a7a82;
+}
+@media (prefers-reduced-motion: reduce) {
+  .un-vol-osd { animation: none; }
+  .un-vol-osd-fill { transition: none; }
+}

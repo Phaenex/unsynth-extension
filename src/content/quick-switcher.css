@@ -1,0 +1,285 @@
+/* Ctrl+K playlist quick switcher.
+ *
+ * Sits at --un-z-feedpage: it is a modal that must cover every other injected
+ * surface, including the bulk bar and the menus those surfaces spawn. Anything
+ * lower is reachable from a page that already has a panel open, which is
+ * exactly when you want the switcher.
+ *
+ * Mounted on document.body, per the rule in design-tokens.css: YouTube sets
+ * `body { position: fixed }` via .lock-scrollbar whenever its guide or a dialog
+ * is open, and anything mounted on documentElement then paints over body's
+ * children regardless of z-index. */
+
+.un-qs-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--un-z-feedpage, 2147483500);
+  background: rgba(0, 0, 0, 0.62);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  /* Not vertically centred. The list grows downward as you type, and centring
+     makes the input hop upward on every keystroke. Anchored high, the input
+     stays put and only the list below it changes. */
+  padding: 12vh 16px 16px;
+  font-family: var(--un-font, "Segoe UI", Inter, Roboto, Arial, sans-serif);
+  animation: un-qs-fade var(--un-motion, 0.12s) ease-out;
+}
+
+.un-qs-panel {
+  width: min(560px, 100%);
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--un-panel, #141418);
+  border: 1px solid var(--un-line, #2a2a32);
+  border-radius: var(--un-radius-lg, 14px);
+  box-shadow: var(--un-shadow, 0 12px 40px rgba(0, 0, 0, 0.45));
+  overflow: hidden;
+  animation: un-qs-rise var(--un-motion, 0.12s) ease-out;
+}
+
+.un-qs-inputrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--un-line-soft, #1e1e24);
+}
+
+.un-qs-glyph {
+  color: var(--un-dim, #8b8b96);
+  font-size: 14px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.un-qs-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--un-txt, #ececf1);
+  font: inherit;
+  font-size: 15px;
+  padding: 0;
+}
+
+.un-qs-input::placeholder {
+  color: var(--un-dim, #8b8b96);
+}
+
+.un-qs-input:focus-visible {
+  outline: none;
+}
+
+.un-qs-inputrow:focus-within {
+  box-shadow: inset 0 -2px 0 0 var(--un-accent, #ff5a5f);
+}
+
+.un-qs-count {
+  flex: 0 0 auto;
+  color: var(--un-dim, #8b8b96);
+  font-size: var(--un-text-label, 11px);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.un-qs-list {
+  list-style: none;
+  margin: 0;
+  padding: 5px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.un-qs-row {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--un-radius-sm, 8px);
+  background: transparent;
+  color: var(--un-txt, #ececf1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.un-qs-row:hover {
+  background: var(--un-hover, rgba(255, 255, 255, 0.06));
+}
+
+/* Selection is a real visual state, not a hover echo: the keyboard drives this
+   list and the pointer usually is not on the active row. */
+.un-qs-row[aria-selected="true"] {
+  background: var(--un-accent-soft, rgba(255, 90, 95, 0.14));
+  box-shadow: inset 2px 0 0 0 var(--un-accent, #ff5a5f);
+}
+
+.un-qs-row:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: -2px;
+}
+
+.un-qs-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--un-text-body, 13px);
+}
+
+.un-qs-pin {
+  flex: 0 0 auto;
+  color: var(--un-accent-text, #ffb4b7);
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* Channel rows.
+ *
+ * A channel and a playlist must not read as the same thing at a glance. The
+ * distinction is carried by the leading glyph — a round avatar (the real
+ * channel image, via the same cache the sidebar hub uses) against a small
+ * pinned dot or nothing — plus a squarer folder chip, because the "folder" on
+ * a channel row is a subscription GROUP and means something different from a
+ * playlist folder.
+ *
+ * Deliberately not a coloured left border or a type badge on every row: with
+ * nine rows on screen that reads as stripes, and the avatar is already the
+ * strongest and most familiar signal YouTube has for "this is a channel". */
+.un-qs-avatar {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--un-radius-pill, 999px);
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--un-panel-hover, #1a1a20);
+  color: var(--un-dim, #8b8b96);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  /* The row is baseline-aligned for text; the avatar is a box and needs
+     nudging onto the same optical line. */
+  align-self: center;
+}
+
+.un-qs-avatar img,
+.un-qs-avatar .un-chan-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Pin column placeholder, so titles line up whether or not a row is pinned. */
+.un-qs-pin-blank {
+  visibility: hidden;
+}
+
+/* A subscription group is not a playlist folder. Same slot, squarer chip, so
+   the two are not silently equated. */
+.un-qs-row[data-kind="channel"] .un-qs-folder {
+  border: 1px solid var(--un-line, #2a2a32);
+  border-radius: var(--un-radius-xs, 6px);
+  padding: 1px 5px;
+}
+
+.un-qs-folder {
+  flex: 0 0 auto;
+  max-width: 34%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--un-dim, #8b8b96);
+  font-size: var(--un-text-label, 11px);
+}
+
+/* The row is in the results because of its folder, not its title. Saying so
+   costs one border and stops the row reading as a mystery. */
+.un-qs-row[data-via="folder"] .un-qs-folder {
+  color: var(--un-accent-text, #ffb4b7);
+  border-bottom: 1px dotted currentColor;
+}
+
+.un-qs-num {
+  flex: 0 0 auto;
+  color: var(--un-dim, #8b8b96);
+  font-size: var(--un-text-label, 11px);
+  font-variant-numeric: tabular-nums;
+}
+
+.un-qs-empty {
+  padding: 26px 16px 30px;
+  text-align: center;
+  color: var(--un-dim, #8b8b96);
+  font-size: var(--un-text-body, 13px);
+}
+
+.un-qs-empty b {
+  color: var(--un-txt, #ececf1);
+  font-weight: 600;
+}
+
+.un-qs-empty-sub {
+  margin-top: 6px;
+  font-size: var(--un-text-label, 11px);
+}
+
+.un-qs-foot {
+  display: flex;
+  gap: 14px;
+  padding: 8px 15px;
+  border-top: 1px solid var(--un-line-soft, #1e1e24);
+  color: var(--un-dim, #8b8b96);
+  font-size: var(--un-text-label, 11px);
+}
+
+.un-qs-foot kbd {
+  font-family: var(--un-mono, ui-monospace, Consolas, monospace);
+  font-size: 10px;
+  color: var(--un-txt, #ececf1);
+}
+
+/* Screen-reader-only live region: selection changes have to be announced,
+   because the focus never leaves the input. */
+.un-qs-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes un-qs-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes un-qs-rise {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .un-qs-backdrop,
+  .un-qs-panel {
+    animation: none;
+  }
+}

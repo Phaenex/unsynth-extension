@@ -1,0 +1,1441 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Unsynth — Suite settings</title>
+    <link rel="stylesheet" href="../shared/design-tokens.css" />
+    <link rel="stylesheet" href="../shared/controls.css" />
+    <link rel="stylesheet" href="dashboard.css" />
+    <link rel="stylesheet" href="../shared/drill-modal.css" />
+  </head>
+  <body class="dash-app">
+    <a class="skip-link" href="#panel-modules">Skip to main content</a>
+    <div class="dash-shell">
+      <aside class="dash-sidebar">
+        <div class="dash-brand">
+          <span class="dot"></span>
+          <div>
+            <b>Unsynth</b>
+            <span class="tag">YouTube Power Suite</span>
+          </div>
+        </div>
+        <nav class="dash-nav tabs" role="tablist" aria-label="Dashboard sections">
+          <button class="tab active" data-tab="modules" type="button" role="tab" aria-selected="true" id="tab-modules" aria-controls="panel-modules"><span class="tab-ico">◆</span>Modules</button>
+          <button class="tab" data-tab="filter" type="button" role="tab" aria-selected="false" id="tab-filter" aria-controls="panel-filter"><span class="tab-ico">▣</span>Filter</button>
+          <button class="tab" data-tab="tune" type="button" role="tab" aria-selected="false" id="tab-tune" aria-controls="panel-tune"><span class="tab-ico">◇</span>Tune</button>
+          <button class="tab" data-tab="watched" type="button" role="tab" aria-selected="false" id="tab-watched" aria-controls="panel-watched"><span class="tab-ico">◉</span>Watched</button>
+          <button class="tab" data-tab="stats" type="button" role="tab" aria-selected="false" id="tab-stats" aria-controls="panel-stats"><span class="tab-ico">▤</span>Stats</button>
+          <button class="tab" data-tab="creator" type="button" role="tab" aria-selected="false" id="tab-creator" aria-controls="panel-creator"><span class="tab-ico">◈</span>Creator</button>
+          <button class="tab" data-tab="playlists" type="button" role="tab" aria-selected="false" id="tab-playlists" aria-controls="panel-playlists"><span class="tab-ico">▤</span>Playlists</button>
+          <button class="tab" data-tab="subs" type="button" role="tab" aria-selected="false" id="tab-subs" aria-controls="panel-subs"><span class="tab-ico">◎</span>Subscriptions</button>
+          <button class="tab" data-tab="account" type="button" role="tab" aria-selected="false" id="tab-account" aria-controls="panel-account"><span class="tab-ico">○</span>Account</button>
+          <button class="tab" data-tab="ai" type="button" role="tab" aria-selected="false" id="tab-ai" aria-controls="panel-ai"><span class="tab-ico">✦</span>AI</button>
+        </nav>
+        <div class="dash-sidefoot">
+          <p class="hint">Reload YouTube tabs after updates so filters and tracking stay active.</p>
+        </div>
+      </aside>
+
+      <div class="dash-main">
+        <header class="dash-topbar">
+          <h1 class="dash-title" id="dash-panel-title">Feature modules</h1>
+          <div id="dash-drift-banner" class="dash-drift-banner" role="status" hidden></div>
+          <button id="dash-playlist-organizer" type="button" class="ghost-btn">Organize playlists</button>
+          <button id="dash-oneclick" type="button" class="primary-btn sm">One-click setup</button>
+          <button id="dash-reload-yt" type="button" class="ghost-btn">Reload YouTube tabs</button>
+        </header>
+
+        <main class="dash-content">
+      <!-- MODULES -->
+      <section class="panel active" data-panel="modules" role="tabpanel" id="panel-modules" aria-labelledby="tab-modules">
+        <div class="dash-card">
+          <h2>What do you use Unsynth for?</h2>
+          <p class="hint">Pick a preset to turn on only what you need — <b>Essentials</b> is a fast start; <b>Full stack</b> replaces multiple extensions at once.</p>
+          <div class="use-case-grid" id="use-case-grid"></div>
+          <p class="status" id="use-case-status"></p>
+        </div>
+        <div class="dash-card">
+          <h2>Feature modules</h2>
+          <p class="hint">Turn whole feature areas on or off. Changes save automatically.</p>
+          <div class="dash-mod-toolbar">
+            <div class="dash-mod-searchwrap">
+              <span class="dash-mod-searchicon" aria-hidden="true">⌕</span>
+              <input type="search" id="dash-mod-search" class="dash-mod-search" placeholder="Search modules…" autocomplete="off" aria-label="Search modules" />
+            </div>
+          </div>
+          <div id="dash-modules-list" class="dash-modgroups">
+          <!-- @unsynth-codegen-modules-begin -->
+          <details class="dash-modgroup modgroup" data-tier="essential" open>
+            <summary><span class="modgroup-caret" aria-hidden="true">▶</span><span class="modgroup-name">Essential</span><span class="modgroup-count dash-modgroup-count">0 / 7</span></summary>
+            <div class="dash-modgroup-items modgroup-items">
+              <label class="row dash-modrow" data-search="ai content filter hide ai videos/music/summaries"><input type="checkbox" data-module="aiFilter" /> AI content filter <span class="muted">— hide AI videos/music/summaries</span></label>
+              <label class="row dash-modrow" data-search="video stats on youtube ryd likes/dislikes on feeds, search &amp; watch pages; compare vs channel"><input type="checkbox" data-module="dislikeRestore" /> Video stats on YouTube <span class="muted">— RYD likes/dislikes on feeds, search &amp; watch pages; compare vs channel</span></label>
+              <label class="row dash-modrow" data-search="sponsorblock skip sponsor segments + markers"><input type="checkbox" data-module="sponsorBlock" /> SponsorBlock <span class="muted">— skip sponsor segments + markers</span></label>
+              <label class="row dash-modrow" data-search="tune (layout) hide shorts/recs, presets, player"><input type="checkbox" data-module="uiTune" /> Tune (layout) <span class="muted">— hide Shorts/recs, presets, player</span></label>
+              <label class="row dash-modrow" data-search="watch history track, mark, dim watched videos"><input type="checkbox" data-module="watchHistory" /> Watch history <span class="muted">— track, mark, dim watched videos</span></label>
+              <label class="row dash-modrow" data-search="quality lock force a minimum resolution (e.g. 1080p)"><input type="checkbox" data-module="qualityLock" /> Quality lock <span class="muted">— force a minimum resolution (e.g. 1080p)</span></label>
+              <label class="row dash-modrow" data-search="ad skip auto-click skip ad, mute non-skippable ads, hide banner/overlay ads"><input type="checkbox" data-module="adSkip" /> Ad skip <span class="muted">— auto-click Skip Ad, mute non-skippable ads, hide banner/overlay ads</span></label>
+            </div>
+          </details>
+          <details class="dash-modgroup modgroup" data-tier="player" open>
+            <summary><span class="modgroup-caret" aria-hidden="true">▶</span><span class="modgroup-name">Player</span><span class="modgroup-count dash-modgroup-count">0 / 13</span></summary>
+            <div class="dash-modgroup-items modgroup-items">
+              <label class="row dash-modrow" data-search="popout player floating resizable window for the current video"><input type="checkbox" data-module="popoutPlayer" /> Popout player <span class="muted">— floating resizable window for the current video</span></label>
+              <label class="row dash-modrow" data-search="scroll miniplayer dock the player into a corner when you scroll past it — draggable, resizable, and never leaves the page"><input type="checkbox" data-module="scrollMiniplayer" /> Scroll miniplayer <span class="muted">— dock the player into a corner when you scroll past it — draggable, resizable, and never leaves the page</span></label>
+              <label class="row dash-modrow" data-search="queue auto-advance queue dock on the page; play-next is a separate dashboard setting"><input type="checkbox" data-module="queueAdvance" /> Queue auto-advance <span class="muted">— queue dock on the page; play-next is a separate dashboard setting</span></label>
+              <label class="row dash-modrow" data-search="volume master per-tab boost up to 600% on player controls"><input type="checkbox" data-module="volumeMaster" /> Volume master <span class="muted">— per-tab boost up to 600% on player controls</span></label>
+              <label class="row dash-modrow" data-search="cross-tab playback pause older youtube playback when a new tab starts"><input type="checkbox" data-module="crossTabPlayback" /> Cross-tab playback <span class="muted">— pause older YouTube playback when a new tab starts</span></label>
+              <label class="row dash-modrow" data-search="speed chip shows the current playback speed on the player and opens a picker to change it"><input type="checkbox" data-module="speedChip" /> Speed chip <span class="muted">— shows the current playback speed on the player and opens a picker to change it</span></label>
+              <label class="row dash-modrow" data-search="screenshot frame camera button to save the current frame as png"><input type="checkbox" data-module="screenshot" /> Screenshot frame <span class="muted">— camera button to save the current frame as PNG</span></label>
+              <label class="row dash-modrow" data-search="ambient mode soft glow around the player from on-screen colors"><input type="checkbox" data-module="ambientMode" /> Ambient mode <span class="muted">— soft glow around the player from on-screen colors</span></label>
+              <label class="row dash-modrow" data-search="a-b loop mark two points and repeat playback between them"><input type="checkbox" data-module="abLoop" /> A-B loop <span class="muted">— mark two points and repeat playback between them</span></label>
+              <label class="row dash-modrow" data-search="playback tab title show play/pause state in the browser tab title"><input type="checkbox" data-module="tabTitle" /> Playback tab title <span class="muted">— show play/pause state in the browser tab title</span></label>
+              <label class="row dash-modrow" data-search="chapter navigation jump to the next/previous creator-defined chapter"><input type="checkbox" data-module="chapters" /> Chapter navigation <span class="muted">— jump to the next/previous creator-defined chapter</span></label>
+              <label class="row dash-modrow" data-search="clip capture record a short webm clip (video + audio) of the current playback"><input type="checkbox" data-module="clipCapture" /> Clip capture <span class="muted">— record a short WebM clip (video + audio) of the current playback</span></label>
+              <label class="row dash-modrow" data-search="skip seconds back/forward player buttons that seek by a configurable number of seconds"><input type="checkbox" data-module="skipSeconds" /> Skip seconds <span class="muted">— back/forward player buttons that seek by a configurable number of seconds</span></label>
+            </div>
+          </details>
+          <details class="dash-modgroup modgroup" data-tier="power">
+            <summary><span class="modgroup-caret" aria-hidden="true">▶</span><span class="modgroup-name">Power</span><span class="modgroup-count dash-modgroup-count">0 / 20</span></summary>
+            <div class="dash-modgroup-items modgroup-items">
+              <label class="row dash-modrow" data-search="subscription manager groups, feed filter, pockettube import"><input type="checkbox" data-module="subManager" /> Subscription manager <span class="muted">— groups, feed filter, PocketTube import</span></label>
+              <label class="row dash-modrow" data-search="playlist groups pin playlists in the sidebar; folders, ＋ folder, library filter"><input type="checkbox" data-module="playlistFolders" /> Playlist groups <span class="muted">— pin playlists in the sidebar; folders, ＋ Folder, Library filter</span></label>
+              <label class="row dash-modrow" data-search="playlist bulk tools multi-select, dedupe, forge links"><input type="checkbox" data-module="playlistBulk" /> Playlist bulk tools <span class="muted">— multi-select, dedupe, Forge links</span></label>
+              <label class="row dash-modrow" data-search="playlist forge suggest &amp; build playlists on youtube"><input type="checkbox" data-module="forgeLink" /> Playlist Forge <span class="muted">— suggest &amp; build playlists on YouTube</span></label>
+              <label class="row dash-modrow" data-search="suggestions for your taste score the suggestion rail against what you actually watch, and float the best matches to the top"><input type="checkbox" data-module="tasteRank" /> Suggestions for your taste <span class="muted">— score the suggestion rail against what you actually watch, and float the best matches to the top</span></label>
+              <label class="row dash-modrow" data-search="ai fact-check check video claims &amp; comments (byok)"><input type="checkbox" data-module="factCheck" /> AI fact-check <span class="muted">— check video claims &amp; comments (BYOK)</span></label>
+              <label class="row dash-modrow" data-search="watch description compact blurb, links, and timestamps for the video you are watching"><input type="checkbox" data-module="descDigest" /> Watch description <span class="muted">— compact blurb, links, and timestamps for the video you are watching</span></label>
+              <label class="row dash-modrow" data-search="ai assistant transcript summary &amp; q&amp;a (byok)"><input type="checkbox" data-module="aiAssistant" /> AI assistant <span class="muted">— transcript summary &amp; Q&amp;A (BYOK)</span></label>
+              <label class="row dash-modrow" data-search="analytics overlay watch-page stats card, seo, engagement, compare"><input type="checkbox" data-module="analytics" /> Analytics overlay <span class="muted">— watch-page stats card, SEO, engagement, compare</span></label>
+              <label class="row dash-modrow" data-search="hidden gems shelf overlooked videos above the home feed"><input type="checkbox" data-module="discoverShelf" /> Hidden gems shelf <span class="muted">— overlooked videos above the home feed</span></label>
+              <label class="row dash-modrow" data-search="title cleaner calm all-caps clickbait &amp; emoji spam in titles"><input type="checkbox" data-module="titleCleaner" /> Title cleaner <span class="muted">— calm ALL-CAPS clickbait &amp; emoji spam in titles</span></label>
+              <label class="row dash-modrow" data-search="dearrow titles crowd-sourced titles and thumbnails; pick which on the dashboard"><input type="checkbox" data-module="deArrow" /> DeArrow titles <span class="muted">— crowd-sourced titles and thumbnails; pick which on the dashboard</span></label>
+              <label class="row dash-modrow" data-search="keyboard shortcuts in-page hotkeys for ambient mode, screenshot, quality lock, speed, volume boost, and the dashboard"><input type="checkbox" data-module="shortcuts" /> Keyboard shortcuts <span class="muted">— in-page hotkeys for ambient mode, screenshot, quality lock, speed, volume boost, and the dashboard</span></label>
+              <label class="row dash-modrow" data-search="transcript export copy or download the video transcript as plain text"><input type="checkbox" data-module="transcriptExport" /> Transcript export <span class="muted">— copy or download the video transcript as plain text</span></label>
+              <label class="row dash-modrow" data-search="search filters exact date range, view and duration bounds, and keyword/channel exclusions on the search page"><input type="checkbox" data-module="searchFilters" /> Search filters <span class="muted">— exact date range, view and duration bounds, and keyword/channel exclusions on the search page</span></label>
+              <label class="row dash-modrow" data-search="comment filter hide comments matching keywords"><input type="checkbox" data-module="commentFilter" /> Comment filter <span class="muted">— hide comments matching keywords</span></label>
+              <label class="row dash-modrow" data-search="channel completion on a channel page, what share of the videos you start there you actually finish"><input type="checkbox" data-module="channelCompletion" /> Channel completion <span class="muted">— on a channel page, what share of the videos you start there you actually finish</span></label>
+              <label class="row dash-modrow" data-search="playlist debt line under a playlist title: how many hours it holds, how many are unfinished, and how much of it you actually finish"><input type="checkbox" data-module="playlistDebt" /> Playlist debt line <span class="muted">— under a playlist title: how many hours it holds, how many are unfinished, and how much of it you actually finish</span></label>
+              <label class="row dash-modrow" data-search="live now shelf pins any live stream already loaded in your home feed to the top"><input type="checkbox" data-module="liveNow" /> Live now shelf <span class="muted">— pins any live stream already loaded in your home feed to the top</span></label>
+              <label class="row dash-modrow" data-search="quick switcher shift+p anywhere on youtube to jump to any playlist or subscribed channel by name, folder or group"><input type="checkbox" data-module="quickSwitcher" /> Quick switcher <span class="muted">— Shift+P anywhere on YouTube to jump to any playlist or subscribed channel by name, folder or group</span></label>
+            </div>
+          </details>
+          <!-- @unsynth-codegen-modules-end -->
+          </div>
+          <p id="dash-mod-no-results" class="hint dash-mod-no-results" hidden>No modules match your search.</p>
+          <span class="status" id="modules-status" aria-live="polite"></span>
+        </div>
+
+        <div class="dash-card">
+          <h2>AI filter summary</h2>
+          <p class="hint">Full keyword, channel, AiSList, and Focus controls on the <b>Filter</b> tab.</p>
+          <div id="filter-summary" class="filter-summary hint">Loading filter summary…</div>
+          <div class="bar">
+            <button id="open-filter-2" type="button">Open filter settings…</button>
+          </div>
+        </div>
+
+        <div class="dash-card">
+          <h2>Media tools</h2>
+          <p class="hint">Popout player and volume boost on the YouTube player bar. Right-click a watch page or use <kbd data-env="alt-shift-p">Alt+Shift+P</kbd> to pop out.</p>
+          <label class="row"><input type="checkbox" id="popout-show-btn" /> Show popout button on player</label>
+          <div class="grid2">
+            <div class="field"><label>Popout width (px)</label><input type="number" id="popout-width" min="320" max="1920" /></div>
+            <div class="field"><label>Popout height (px)</label><input type="number" id="popout-height" min="240" max="1080" /></div>
+          </div>
+          <label class="row"><input type="checkbox" id="vol-inline-bar" /> Show volume + EQ bar under the video <span class="muted">— always visible, baked into the page</span></label>
+          <label class="row"><input type="checkbox" id="vol-show-ctrl" /> Show volume control on the player bar <span class="muted">— off by default: YouTube has its own slider. Boost and EQ keep working through the bar under the video</span></label>
+          <label class="row"><input type="checkbox" id="vol-remember" /> Remember volume per site <span class="muted">— kept on this device, survives restarts</span></label>
+          <div class="field"><label>Starting volume (%)</label><input type="number" id="vol-default-level" min="0" max="600" step="5" /><span class="muted">— used when there's no remembered level for the site</span></div>
+          <div class="field"><label>Max boost (%)</label><input type="number" id="vol-boost-max" min="100" max="600" step="10" /></div>
+        </div>
+
+        <div class="dash-card">
+          <h2>Suggestions for your taste</h2>
+          <p class="hint">
+            Unsynth builds a private, on-device picture of what you actually watch — the words in the
+            titles and the channels you return to — and scores the watch-page suggestion rail against
+            it. Recent viewing counts for more than old viewing, so the profile follows your interests
+            as they change instead of averaging everything you have ever clicked. Nothing leaves your
+            machine and nothing is sent to any server.
+          </p>
+          <label class="row"><input type="checkbox" id="taste-badges" /> Badge strong matches with a score</label>
+          <label class="row"><input type="checkbox" id="taste-reorder" /> Float strong matches to the top of the rail</label>
+          <label class="row">
+            Minimum match score
+            <input type="range" id="taste-minscore" min="10" max="90" step="5" class="num-input" />
+            <output id="taste-minscore-out" class="muted"></output>
+          </label>
+          <p class="hint">Lower surfaces more loosely-related suggestions; higher only promotes strong matches.</p>
+          <h3>What you're into right now</h3>
+          <p class="hint" id="taste-summary">Building a profile as you watch…</p>
+          <div class="bar">
+            <button id="taste-refresh" type="button">Refresh</button>
+            <button id="taste-clear" type="button">Clear taste profile</button>
+            <span class="status" id="taste-status"></span>
+          </div>
+        </div>
+
+        <div class="dash-card">
+          <h2>Player tools</h2>
+          <p class="hint">Enable Quality lock, Screenshot, and Skip seconds in <b>Feature modules</b> above; tune their behavior here.</p>
+          <div class="field">
+            <label for="ql-quality">Quality lock — target</label>
+            <select id="ql-quality">
+                <option value="auto">Auto (don't force)</option>
+                <option value="4320p">4320p (8K)</option>
+                <option value="2160p">2160p (4K)</option>
+                <option value="1440p">1440p (2K)</option>
+                <option value="1080p">1080p (HD)</option>
+                <option value="720p">720p</option>
+                <option value="480p">480p</option>
+                <option value="360p">360p</option>
+              </select>
+          </div>
+          <label class="row"><input type="checkbox" id="ql-show-chip" /> Show quality chip on player <span class="muted">— off by default: YouTube's settings gear already has quality. The picker stays in the Unsynth tools menu</span></label>
+          <label class="row"><input type="checkbox" id="ql-adaptive" /> Adaptive downgrade when buffering <span class="muted">— step down instead of stalling forever</span></label>
+          <div class="grid2">
+            <div class="field">
+              <label for="ql-adaptive-strikes">Unhealthy checks before dropping a tier</label>
+              <input type="number" id="ql-adaptive-strikes" min="1" max="8" step="1" />
+            </div>
+            <div class="field">
+              <label for="ql-adaptive-floor">Never drop below</label>
+              <select id="ql-adaptive-floor">
+                <option value="1080p">1080p</option>
+                <option value="720p">720p</option>
+                <option value="480p">480p</option>
+                <option value="360p">360p</option>
+              </select>
+            </div>
+          </div>
+          <p class="hint mt-8">Forcing a high resolution can buffer on slow connections; set <i>Auto</i> to disable forcing without turning the module off.</p>
+          <label class="row"><input type="checkbox" id="ss-show-btn" /> Show screenshot (camera) button on player</label>
+          <label class="row"><input type="checkbox" id="ss-timestamp" /> Add the video timestamp to the saved filename</label>
+          <label class="row"><input type="checkbox" id="sk-show-btn" /> Show back/forward skip buttons on player <span class="muted">— enable Skip seconds in Feature modules above</span></label>
+          <div class="field">
+            <label for="sk-seconds">Skip seconds — back/forward amount</label>
+            <select id="sk-seconds">
+                <option value="5">5 seconds</option>
+                <option value="10">10 seconds</option>
+                <option value="15">15 seconds</option>
+                <option value="30">30 seconds</option>
+              </select>
+          </div>
+          <label class="row"><input type="checkbox" id="mini-show-btn" /> Show miniplayer button on player <span class="muted">— off by default: YouTube has its own, and Unsynth's docks automatically when you scroll</span></label>
+          <label class="row"><input type="checkbox" id="sp-show-chip" /> Show speed chip on player <span class="muted">— off by default: YouTube's settings gear already has playback speed. The picker stays in the Unsynth tools menu</span></label>
+          <label class="row"><input type="checkbox" id="wq-auto-advance" /> Play next queued video when this one ends <span class="muted">— turning this off keeps the queue dock</span></label>
+          <span class="status" id="player-tools-status" aria-live="polite"></span>
+        </div>
+
+        <div class="dash-card">
+          <h2>Title cleaner &amp; ambient glow</h2>
+          <p class="hint">Cosmetic tweaks to the watch page and feeds. Enable each in <b>Feature modules</b> above.</p>
+          <p class="hint" style="margin-top:4px"><b>Title cleaner</b> — which clickbait habits to calm:</p>
+          <label class="row"><input type="checkbox" id="tc-deallcaps" /> Soften ALL-CAPS words to Title Case <span class="muted">— keeps short acronyms (NASA, HTML)</span></label>
+          <label class="row"><input type="checkbox" id="tc-exclaim" /> Collapse repeated <kbd>!!!</kbd> / <kbd>???</kbd> to one mark</label>
+          <label class="row"><input type="checkbox" id="tc-emoji" /> Trim emoji spam (3+ in a row) down to two</label>
+          <p class="hint mt-8"><b>DeArrow</b> — crowd-sourced titles and thumbnails. Enable the module above, then pick which replacements to use:</p>
+          <label class="row"><input type="checkbox" id="da-titles" /> Replace titles</label>
+          <label class="row"><input type="checkbox" id="da-thumbs" /> Replace thumbnails</label>
+          <p class="hint mt-8"><b>Ambient glow</b> — soft light around the player sampled from the video:</p>
+          <div class="grid2">
+            <div class="field"><label for="am-intensity">Glow intensity <span class="threshold-val" id="am-intensity-val"></span></label><input type="range" id="am-intensity" min="0" max="1" step="0.05" /></div>
+            <div class="field"><label for="am-radius">Glow radius (px)</label><input type="number" id="am-radius" min="20" max="220" step="10" /></div>
+            <div class="field"><label for="am-sample-rate">Sample every (ms) <span class="threshold-val" id="am-sample-rate-val"></span></label><input type="range" id="am-sample-rate" min="250" max="5000" step="250" /></div>
+          </div>
+          <span class="status" id="title-ambient-status" aria-live="polite"></span>
+        </div>
+
+        <div class="dash-card">
+          <h2>AI fact-check</h2>
+          <p class="hint">Uses your AI key from the AI tab. Video checks use transcript + description; comment checks run on request. The panel sits under the Watch description card when that module is on.</p>
+          <label class="row"><input type="checkbox" id="fc-show-panel" /> Show fact-check panel on watch pages</label>
+          <label class="row"><input type="checkbox" id="fc-auto-video" /> Auto-check video when opened <span class="muted">— uses API credits each watch</span></label>
+          <label class="row"><input type="checkbox" id="fc-comment-btns" /> Claim review button on comments</label>
+        </div>
+
+        <div class="dash-card">
+          <h2>Watch guide</h2>
+          <p class="hint">The Unsynth card on watch pages: what is playing now, stats, fact check, AI, Forge, chapters, and tools you can turn on. Changes apply to open tabs straight away.</p>
+          <label class="row">Position
+            <select id="guide-placement">
+              <option value="side">Beside the video, above related videos</option>
+              <option value="below">Under the video, above the description</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="dash-card">
+          <h2>Video stats (Return YouTube Dislike)</h2>
+          <p class="hint">Likes, dislikes, and ratio on search/home feeds and watch pages; compare benchmarks on watch.</p>
+          <label class="row"><input type="checkbox" id="ryd-watch-buttons" /> Show counts on like/dislike buttons</label>
+          <label class="row"><input type="checkbox" id="ryd-watch-meta" /> Stats strip under action buttons (with compare)</label>
+          <label class="row"><input type="checkbox" id="ryd-feed-tiles" /> Show likes, dislikes &amp; ratio on search, home &amp; feed tiles</label>
+          <label class="row"><input type="checkbox" id="ryd-show-ratio" /> Show like ratio</label>
+          <label class="row"><input type="checkbox" id="ryd-show-views" /> Show view count in stats strip</label>
+          <label class="row"><input type="checkbox" id="ryd-show-date" /> Show upload date in stats strip</label>
+          <label class="row"><input type="checkbox" id="ryd-stats-factcheck" /> Put Check video and Summarize on the stats strip</label>
+          <label class="row">Stats strip position
+            <select id="ryd-stats-position">
+              <option value="wide">Full width, above the title block</option>
+              <option value="aboveChannel">Above the channel row</option>
+              <option value="belowChannel">Below the like/share row</option>
+            </select>
+          </label>
+          <label class="row">Stats strip style
+            <select id="ryd-stats-style">
+              <option value="card">Card — bordered panel</option>
+              <option value="plain">Plain — no border or background</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="dash-card">
+          <h2>SponsorBlock</h2>
+          <p class="hint">Skip sponsor segments on watch pages. <b>Community</b> uses the SponsorBlock database; <b>Personal</b> uses skips you save on this device.</p>
+          <label class="row"><input type="checkbox" id="sb-autoskip" /> Auto-skip segments</label>
+          <label class="row"><input type="checkbox" id="sb-use-community" /> Community segments <span class="muted">— SponsorBlock database (actual crowdsourced data)</span></label>
+          <label class="row"><input type="checkbox" id="sb-use-personal" /> Personal skips <span class="muted">— saved on this device; right-click video → save last 30s</span></label>
+          <label class="row"><input type="checkbox" id="sb-community-direct" /> Direct community fallback <span class="muted">— if privacy lookup finds nothing, query this video directly</span></label>
+          <label class="row"><input type="checkbox" id="sb-hide-chapters" /> Hide creator chapters <span class="muted">— remove YouTube chapter titles &amp; markers on the player</span></label>
+          <p class="hint mt-8">Per-category behavior — <b>Auto skip</b>, <b>Show button</b> (manual), <b>Show only</b> (timeline marker), or <b>Disabled</b>:</p>
+          <div id="sb-category-modes" class="sb-cat-grid"></div>
+        </div>
+
+        <div class="dash-card">
+          <h2>Ad skip</h2>
+          <p class="hint">Auto-skip video ads, mute unskippables, and hide banner overlays.</p>
+          <label class="row"><input type="checkbox" id="adskip-autoskip" /> Auto-click "Skip Ad" when available</label>
+          <label class="row"><input type="checkbox" id="adskip-mute" /> Mute non-skippable video ads while playing</label>
+          <label class="row"><input type="checkbox" id="adskip-overlay" /> Hide banner &amp; overlay ads</label>
+          <span class="status" id="adskip-status" aria-live="polite"></span>
+        </div>
+
+        <div class="dash-card">
+          <h2>Comment filter</h2>
+          <p class="hint">Hide comments matching keywords on watch pages. Enable in <b>Feature modules</b> above.</p>
+          <label class="row"><input type="checkbox" id="cf-useRegex" /> Treat each line as a regular expression</label>
+          <div class="field">
+            <label for="cf-keywords">Keywords (one per line)</label>
+            <textarea id="cf-keywords" rows="5" spellcheck="false" class="filter-textarea" placeholder="spam&#10;crypto&#10;subscribe to my channel"></textarea>
+          </div>
+          <span class="status" id="cf-status" aria-live="polite"></span>
+        </div>
+
+        <div class="dash-card">
+          <h2>Keyboard shortcuts</h2>
+          <p class="hint">In-page hotkeys active on YouTube. Click a shortcut button to rebind (e.g. <kbd>Shift+S</kbd> or <kbd>[</kbd>), or press <kbd>Backspace</kbd> / <kbd>Delete</kbd> to clear.</p>
+          <div class="shortcuts-table" id="shortcuts-table"></div>
+          <div class="bar mt-8">
+            <button id="shortcuts-reset" type="button">Reset shortcuts</button>
+            <span class="status" id="shortcuts-status" aria-live="polite"></span>
+          </div>
+        </div>
+
+        <div class="dash-card">
+          <h2>Backup &amp; profile</h2>
+          <p class="hint">Export all settings (no API keys or OAuth secrets). Watch data has its own backup on the Watched tab.</p>
+          <div class="bar">
+            <button id="export-profile" type="button">Export settings profile</button>
+            <button id="import-profile" type="button">Import settings profile</button>
+            <input type="file" id="import-profile-file" accept=".json,application/json" class="hidden-file" />
+            <span class="status" id="profile-status" aria-live="polite"></span>
+          </div>
+        </div>
+
+        <details class="shortcuts-ref dash-card">
+          <summary class="hint shortcuts-summary">Keyboard shortcuts &amp; context menu</summary>
+          <ul class="hint shortcuts-list">
+            <li><kbd data-env="alt-shift-w">Alt+Shift+W</kbd> — Mark current video watched (on YouTube watch page)</li>
+            <li><kbd data-env="alt-shift-u">Alt+Shift+U</kbd> — Mark current video unwatched</li>
+            <li><kbd data-env="alt-shift-f">Alt+Shift+F</kbd> — Toggle AI content filter on/off</li>
+            <li><kbd data-env="alt-shift-p">Alt+Shift+P</kbd> — Pop out current YouTube video</li>
+            <li>Right-click on YouTube — Mark watched / unwatched / block channel / pop out player / save personal sponsor skip</li>
+          </ul>
+        </details>
+      </section>
+
+      <!-- FILTER -->
+      <section class="panel" data-panel="filter" role="tabpanel" id="panel-filter" aria-labelledby="tab-filter">
+        <div id="filter-panel-root" class="filter-panel">
+          <h2>AI content filter</h2>
+          <p class="hint">Not anti-AI — just filters the channels with awful synthetic narration and robot voices. Your subs and whitelist stay visible. Everything runs on-device.</p>
+
+          <div class="filter-section">
+            <h3>Master controls</h3>
+            <label class="row"><input type="checkbox" id="filter-enabled" /> Filtering on</label>
+            <label class="row"><input type="checkbox" id="filter-respectDisclosure" /> Catch videos YouTube tags as altered or synthetic</label>
+            <label class="row"><input type="checkbox" id="filter-blockPlayback" /> Block the player when I open a matching video</label>
+            <label class="row"><input type="checkbox" id="filter-hideSummaries" /> Hide AI-generated summaries &amp; AI shelves</label>
+          </div>
+
+          <div class="filter-section">
+            <h3>Where to block</h3>
+            <div class="filter-grid">
+              <label><input type="checkbox" data-filter-surface="home" /> Home</label>
+              <label><input type="checkbox" data-filter-surface="subscriptions" /> Subscriptions</label>
+              <label><input type="checkbox" data-filter-surface="search" /> Search</label>
+              <label><input type="checkbox" data-filter-surface="related" /> Recommended (sidebar)</label>
+              <label><input type="checkbox" data-filter-surface="shorts" /> Shorts</label>
+              <label><input type="checkbox" data-filter-surface="channel" /> Channel pages</label>
+              <label><input type="checkbox" data-filter-surface="music" /> YouTube Music</label>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <h3>When something matches</h3>
+            <label class="radio"><input type="radio" name="filter-mode" value="hide" /> Remove from feed</label>
+            <label class="radio"><input type="radio" name="filter-mode" value="blur" /> Blur (hover to peek)</label>
+            <label class="radio"><input type="radio" name="filter-mode" value="label" /> Label as AI <span class="muted">— keep visible, badge the thumbnail so you can decide before clicking</span></label>
+          </div>
+
+          <div class="filter-section">
+            <h3>Detection sensitivity</h3>
+            <p class="hint">
+              Signals are weighted, not all-or-nothing: a creator's own “altered or synthetic content”
+              disclosure scores 100, phrasing like “AI voiceover” scores 70, a named tool (Midjourney,
+              ElevenLabs) 40, and a passing mention (“ChatGPT”, “Sora”) 20. Wording that indicates a
+              human talking <em>about</em> AI — “review”, “how I use”, “tutorial” — subtracts. A video is
+              only treated as AI once the total reaches this threshold.
+            </p>
+            <label class="row">
+              Minimum confidence
+              <input type="range" id="filter-minscore" min="10" max="90" step="5" class="num-input" />
+              <output id="filter-minscore-out" class="muted"></output>
+            </label>
+            <p class="hint">
+              Lower catches more but flags more ordinary videos; higher only acts on strong evidence.
+              45 is the default. In “Label as AI” mode the badge shows the score, so you can see how
+              certain each call is.
+            </p>
+          </div>
+
+          <div class="filter-section">
+            <h3>Title keywords</h3>
+            <p class="hint">One per line. A video is hidden if its title contains any of these.</p>
+            <label class="row"><input type="checkbox" id="filter-useRegex" /> Treat each line as a regular expression</label>
+            <textarea id="filter-keywords" rows="8" spellcheck="false" class="filter-textarea"></textarea>
+          </div>
+
+          <div class="filter-section">
+            <h3>Comment keywords</h3>
+            <p class="hint">One per line. Comments matching any of these keywords are hidden.</p>
+            <label class="row"><input type="checkbox" id="filter-comment-useRegex" /> Treat each line as a regular expression</label>
+            <textarea id="filter-comment-keywords" rows="5" spellcheck="false" class="filter-textarea"></textarea>
+          </div>
+
+          <div class="filter-section">
+            <h3>Subscribed channels</h3>
+            <label class="row"><input type="checkbox" id="filter-allowSubscribedChannels" checked /> Always allow channels you subscribe to <span class="muted">— recommended; only non-subs get filtered</span></label>
+            <p class="hint">Uses your YouTube sidebar + OAuth subscription list when connected. Reload YouTube after connecting.</p>
+            <div class="bar mt-8">
+              <span id="filter-subs-cache-status" class="hint"></span>
+              <button id="filter-subs-cache-refresh" type="button">Refresh subscriptions</button>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <h3>Channels you do not mind (whitelist)</h3>
+            <p class="hint">A few non-sub channels that are fine — everyone else can still be filtered. Add @handles or names you want to keep.</p>
+            <div id="filter-allow-chips" class="chips"></div>
+            <input id="filter-allow-add" class="chip-add" type="text" placeholder="Add channel name or @handle, then press Enter" />
+            <textarea id="filter-allowedChannels" rows="3" spellcheck="false" class="hidden-textarea"></textarea>
+          </div>
+
+          <div class="filter-section">
+            <h3>Blocked channels &amp; artists</h3>
+            <div id="filter-channel-chips" class="chips"></div>
+            <input id="filter-channel-add" class="chip-add" type="text" placeholder="Add a channel name, then press Enter" />
+            <textarea id="filter-channels" rows="4" spellcheck="false" class="hidden-textarea"></textarea>
+          </div>
+
+          <div class="filter-section">
+            <h3>Community AI blocklist (AiSList)</h3>
+            <label class="row"><input type="checkbox" id="filter-communityList" /> Block channels on the community AiSList</label>
+            <div class="bar">
+              <button id="filter-aislist-sync" type="button">Sync list now</button>
+              <span id="filter-aislist-status" class="hint filter-ais-status"></span>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <h3>Focus Mode</h3>
+            <label class="row"><input type="checkbox" id="filter-focusEnabled" /> Only block during a schedule</label>
+            <div class="focus-row">
+              <label>From <input type="time" id="filter-focusStart" /></label>
+              <label>to <input type="time" id="filter-focusEnd" /></label>
+            </div>
+            <div class="days" id="filter-focusDays">
+              <label><input type="checkbox" value="0" /> Sun</label>
+              <label><input type="checkbox" value="1" /> Mon</label>
+              <label><input type="checkbox" value="2" /> Tue</label>
+              <label><input type="checkbox" value="3" /> Wed</label>
+              <label><input type="checkbox" value="4" /> Thu</label>
+              <label><input type="checkbox" value="5" /> Fri</label>
+              <label><input type="checkbox" value="6" /> Sat</label>
+            </div>
+          </div>
+
+          <div class="filter-sticky-bar bar">
+            <button id="filter-save" class="primary" type="button">Save filter</button>
+            <button id="filter-reset" type="button">Reset to defaults</button>
+            <span id="filter-status" class="status" aria-live="polite"></span>
+          </div>
+          <p class="hint"><b id="filter-stat-hidden">0</b> videos hidden since install.</p>
+        </div>
+      </section>
+
+      <!-- TUNE (UI/UX) -->
+      <section class="panel" data-panel="tune" role="tabpanel" id="panel-tune" aria-labelledby="tab-tune">
+        <h2>Presets</h2>
+        <p class="hint">One click sets a whole vibe. Fine-tune with the toggles after. <b>Classic</b> is the out-of-box default: hide Shorts &amp; trending, logo → Subscriptions, no autoplay, scroll-to-volume — pairs with the AI filter on the Filter tab.</p>
+        <div class="preset-cards">
+          <button class="preset pc" data-preset="off"><span class="pc-ico">↺</span><b>Reset</b><i>Back to default YouTube</i></button>
+          <button class="preset pc" data-preset="focus"><span class="pc-ico">◑</span><b>Minimal</b><i>No Shorts, recs, comments</i></button>
+          <button class="preset pc" data-preset="cinema"><span class="pc-ico">▦</span><b>Cinema</b><i>Theater, clean player</i></button>
+          <button class="preset pc" data-preset="classic"><span class="pc-ico">▷</span><b>Classic</b><i>Clean feeds, focused watch</i></button>
+          <button class="preset pc" data-preset="compact"><span class="pc-ico">▤</span><b>Compact</b><i>Dense grid, full titles</i></button>
+          <button class="preset pc" data-preset="study"><span class="pc-ico">✎</span><b>Study</b><i>No autoplay, loop, focused</i></button>
+        </div>
+
+        <div class="tune-layout">
+          <div class="tune-list">
+            <input type="text" id="tune-search" class="tune-search" placeholder="Search settings…" />
+
+            <div class="tune-group">Cleanup</div>
+            <label data-ui-label data-pv="hideShorts" data-cap="Removes Shorts from the home feed, sidebar, search, and channel pages."><input type="checkbox" data-ui="hideShorts" /> Hide Shorts</label>
+            <label data-ui-label data-pv="watch" data-cap="Hides the 'Up next' related-videos column on watch pages."><input type="checkbox" data-ui="hideRecommendations" /> Hide recommendations</label>
+            <label data-ui-label data-pv="watch" data-cap="Hides the entire comments section under videos."><input type="checkbox" data-ui="hideComments" /> Hide comments</label>
+            <label data-ui-label data-pv="watch" data-cap="Hides live chat on streams and premieres."><input type="checkbox" data-ui="hideLiveChat" /> Hide live chat</label>
+            <label data-ui-label data-pv="watch" data-cap="Hides the clickable cards and video wall at the end of a video."><input type="checkbox" data-ui="hideEndCards" /> Hide end-screen cards</label>
+            <label data-ui-label data-pv="banner" data-cap="Hides merch shelves and product / ticket panels."><input type="checkbox" data-ui="hideMerch" /> Hide merch / shopping</label>
+            <label data-ui-label data-pv="banner" data-cap="Hides 'Try YouTube Premium' banners and prompts."><input type="checkbox" data-ui="hidePremiumUpsell" /> Hide Premium upsells</label>
+            <label data-ui-label data-pv="bell" data-cap="Hides the notification bell icon in the top bar."><input type="checkbox" data-ui="hideNotificationBell" /> Hide notification bell</label>
+            <label data-ui-label data-pv="trending" data-cap="Hides Trending and Explore in the left sidebar."><input type="checkbox" data-ui="hideTrending" /> Hide Trending / Explore</label>
+            <label data-ui-label data-pv="home" data-cap="Blanks the home feed grid. Search and navigation still work."><input type="checkbox" data-ui="hideHomeFeed" /> Hide home feed</label>
+            <label data-ui-label data-pv="watch" data-cap="Stops thumbnails auto-playing a preview when you hover them. On by default — turn this off if you want YouTube's hover previews back."><input type="checkbox" data-ui="disableHoverPreview" /> Disable hover previews <span class="muted">— on by default</span></label>
+
+            <div class="tune-group">Appearance</div>
+            <label data-ui-label data-pv="oled" data-cap="Pure-black backgrounds on top of dark mode. Great for OLED screens."><input type="checkbox" data-ui="oledTheme" /> OLED pure-black theme</label>
+            <label data-ui-label data-pv="square" data-cap="Removes the rounded corners on thumbnails."><input type="checkbox" data-ui="squareThumbnails" /> Square thumbnails</label>
+            <label data-ui-label data-pv="dim" data-cap="Dims YouTube's native red progress bars on thumbnails (not Unsynth tracking)."><input type="checkbox" data-ui="dimWatched" /> Dim YouTube progress bars</label>
+            <p class="hint tune-dim-hint">This is separate from Watched tab <b>Dim finished</b>, which dims tiles Unsynth has tracked as fully watched.</p>
+            <label data-ui-label data-pv="fullw" data-cap="Widens the watch page to reclaim the empty sidebar space."><input type="checkbox" data-ui="fullWidth" /> Full-width watch layout</label>
+            <label data-ui-label data-pv="titles" data-cap="Shows full video titles instead of cutting them off with '…'."><input type="checkbox" data-ui="untruncatedTitles" /> Show full titles</label>
+
+            <div class="tune-group">Behavior &amp; player</div>
+            <label data-ui-label data-pv="watch" data-cap="Stops the next video auto-playing when the current one ends."><input type="checkbox" data-ui="disableAutoplay" /> Disable autoplay</label>
+            <label data-ui-label data-pv="watch" data-cap="Auto-dismisses the 'Video paused. Continue watching?' prompt."><input type="checkbox" data-ui="blockStillWatching" /> Block "still watching?"</label>
+            <label data-ui-label data-pv="logo" data-cap="Makes the YouTube logo go to your Subscriptions instead of Home."><input type="checkbox" data-ui="logoToSubscriptions" /> Logo → Subscriptions</label>
+            <label data-ui-label data-pv="watch" data-cap="Opens videos in wide theater mode by default."><input type="checkbox" data-ui="theaterMode" /> Default theater mode</label>
+            <label data-ui-label data-pv="watch" data-cap="Loops the current video automatically."><input type="checkbox" data-ui="loopVideo" /> Loop videos</label>
+            <label data-ui-label data-pv="watch" data-cap="Pauses playback when switching away to another browser tab."><input type="checkbox" data-ui="autoPauseOnTabSwitch" /> Auto-pause on tab switch</label>
+            <label data-ui-label data-pv="watch" data-cap="Scroll mouse wheel over the player to adjust volume."><input type="checkbox" data-ui="scrollToVolume" /> Scroll over player for volume</label>
+
+            <div class="field mt-8">
+              <label for="ui-channelDefaultTab">Channel default tab</label>
+              <select id="ui-channelDefaultTab">
+                <option value="home">Home (featured)</option>
+                <option value="videos">Videos</option>
+                <option value="shorts">Shorts</option>
+                <option value="live">Live streams</option>
+                <option value="playlists">Playlists</option>
+                <option value="community">Community / Posts</option>
+                <option value="about">About</option>
+              </select>
+            </div>
+
+            <div class="tune-group">Feed shelves</div>
+            <label data-ui-label data-pv="home" data-cap="Hides the 'For you' / 'Recommended' shelf in feeds."><input type="checkbox" data-ui-shelf="forYou" /> Hide "For you" shelf</label>
+            <label data-ui-label data-pv="home" data-cap="Hides YouTube Mixes and playlist shelves."><input type="checkbox" data-ui-shelf="mixes" /> Hide Mixes &amp; radio shelves</label>
+            <label data-ui-label data-pv="home" data-cap="Hides breaking news and top news shelves."><input type="checkbox" data-ui-shelf="news" /> Hide News shelves</label>
+            <label data-ui-label data-pv="home" data-cap="Hides shopping and product shelves."><input type="checkbox" data-ui-shelf="shopping" /> Hide Shopping shelves</label>
+            <label data-ui-label data-pv="home" data-cap="Hides community posts from the home and sub feeds."><input type="checkbox" data-ui-shelf="communityPosts" /> Hide Community posts</label>
+            <label data-ui-label data-pv="home" data-cap="Hides 'Continue watching' rows in feeds."><input type="checkbox" data-ui-shelf="continueWatching" /> Hide "Continue watching" shelf</label>
+
+            <div class="grid3">
+              <div class="field"><label>Videos per row (0 = default)</label><input type="number" id="ui-vpr" min="0" max="8" /></div>
+              <div class="field"><label>Default speed (0 = off)</label><input type="number" id="ui-speed" min="0" max="4" step="0.25" /></div>
+              <div class="field"><label>Default volume (-1 = off)</label><input type="number" id="ui-vol" min="-1" max="100" /></div>
+            </div>
+
+            <div class="bar">
+              <button id="save-tune" type="button" class="primary">Save</button>
+              <span class="status" id="tune-status" aria-live="polite"></span>
+            </div>
+          </div>
+
+          <!-- live preview: a mini YouTube that reacts to the setting you hover -->
+          <div class="tune-preview">
+            <div class="ytm" id="ytmock" aria-hidden="true">
+              <div class="ytm-top">
+                <span class="ytm-logo">▶ YouTube</span>
+                <span class="ytm-search"></span>
+                <span class="ytm-bell">🔔</span>
+                <span class="ytm-ava"></span>
+              </div>
+              <div class="ytm-banner">Try YouTube Premium</div>
+              <div class="ytm-main">
+                <div class="ytm-side">
+                  <span class="ytm-nav home">Home</span>
+                  <span class="ytm-nav shorts">Shorts</span>
+                  <span class="ytm-nav subs">Subs</span>
+                  <span class="ytm-nav trend">Trending</span>
+                </div>
+                <div class="ytm-content">
+                  <div class="ytm-shelf">
+                    <span class="ytm-shelf-l">Shorts</span>
+                    <div class="ytm-shorts"><i></i><i></i><i></i><i></i></div>
+                  </div>
+                  <div class="ytm-grid">
+                    <div class="ytm-card"><div class="ytm-th"></div><div class="ytm-m1"></div><div class="ytm-m2"></div></div>
+                    <div class="ytm-card watched"><div class="ytm-th"></div><div class="ytm-m1"></div><div class="ytm-m2"></div></div>
+                    <div class="ytm-card"><div class="ytm-th"></div><div class="ytm-m1"></div><div class="ytm-m2"></div></div>
+                    <div class="ytm-card watched"><div class="ytm-th"></div><div class="ytm-m1"></div><div class="ytm-m2"></div></div>
+                    <div class="ytm-card"><div class="ytm-th"></div><div class="ytm-m1"></div><div class="ytm-m2"></div></div>
+                    <div class="ytm-card"><div class="ytm-th"></div><div class="ytm-m1"></div><div class="ytm-m2"></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tune-cap" id="tunecap">Hover a setting to see what it changes.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- WATCHED HISTORY -->
+      <section class="panel" data-panel="watched" role="tabpanel" id="panel-watched" aria-labelledby="tab-watched">
+        <div id="tab-reload-banner" class="reload-banner" style="display: none">
+          <span>Unsynth was updated — open YouTube tabs need a reload to resume tracking.</span>
+          <button id="reload-yt-tabs" type="button">Reload YouTube tabs</button>
+        </div>
+
+        <h2>Watched history</h2>
+        <p class="hint">
+          Import from <b>Watchmarker</b> or <b>Google Takeout</b>, or let Unsynth track as you watch (past 75%). Everything stays on this device
+          unless you turn on <b>Sync across devices</b> below.
+          Takeout unlocks full <b>Stats</b>; live tracking keeps them growing between imports.
+        </p>
+
+        <div class="live-card" id="live-tracker-card">
+          <div class="live-card-head">
+            <b>Live tracker</b>
+            <span class="live-tracking-on" id="live-tracking-on">Live tracking: on</span>
+            <span class="live-badge" id="live-source-badge">—</span>
+          </div>
+          <div class="live-grid">
+            <div class="live-cell" data-live-drill="today"><span class="live-num" id="live-today">0</span><span class="live-lbl">plays today</span></div>
+            <div class="live-cell" data-live-drill="total"><span class="live-num" id="live-total">0</span><span class="live-lbl">total plays</span></div>
+            <div class="live-cell" data-live-drill="distinct"><span class="live-num" id="live-distinct">0</span><span class="live-lbl">marked watched</span></div>
+            <div class="live-cell" data-live-drill="last"><span class="live-num" id="live-last">—</span><span class="live-lbl">last active</span></div>
+          </div>
+          <p class="hint live-breakdown" id="live-breakdown" hidden></p>
+          <p class="hint live-sync" id="live-sync-line">Click any stat for details.</p>
+        </div>
+        <p class="hint live-track-note">Tracking is local and always on while the <b>Watch history</b> module is enabled — nothing is uploaded unless you turn on <b>Sync across devices</b> below. Clicking a feed badge to mark watched adds to <b>distinct</b> only — not play count.</p>
+
+        <div class="bar">
+          <button id="import-watched" class="primary">Import Takeout / Watchmarker…</button>
+          <input type="file" id="import-watched-file" accept=".database,.html,.json,.htm" class="hidden-file" />
+          <button id="import-backup">Import backup JSON…</button>
+          <input type="file" id="import-backup-file" accept=".json,application/json" class="hidden-file" />
+          <button id="export-backup">Export backup</button>
+          <button id="export-watchmarker" type="button" title="Watchmarker .database format">Export Watchmarker…</button>
+          <button id="view-stats" disabled>📊 View your stats</button>
+          <span class="status" id="watched-status" aria-live="polite"></span>
+        </div>
+        <p class="hint mt-14">
+          <b id="watched-count" class="clickable-watched" title="Click for breakdown">0</b> videos marked watched. <button id="clear-watched" style="margin-left: 8px">Clear all</button>
+        </p>
+
+        <details class="mt-8" id="tracked-videos-details">
+          <summary class="hint" style="cursor: pointer">Show tracked videos</summary>
+          <p class="hint mt-8">Only the video id is stored (and synced) — titles and channel names shown below are looked up live from YouTube for display, never saved.</p>
+          <div id="tracked-videos-list" class="mt-8"></div>
+          <div class="bar" id="tracked-videos-loadmore-bar" hidden>
+            <button id="tracked-videos-loadmore" type="button">Load more</button>
+            <span class="hint" id="tracked-videos-count-hint"></span>
+          </div>
+        </details>
+
+        <p class="hint mt-8">
+          Drop files in <code>youtube-history-to-import/</code> for easy access — see <code>IMPORT-FORMATS.txt</code> for the full list.
+          Watch + search are <b>two separate imports</b> (pick each file once).
+        </p>
+
+
+        <div class="dash-card" id="dash-history-sync">
+          <h3>Sync across devices</h3>
+          <p class="hint">
+            Optional. Sends only your watched-video IDs and progress percentages to your Unsynth deployment, keyed to your Google account.
+            Never sends titles, channels, or timestamps. Requires the Google OAuth setup on the Account tab to be completed on <b>each</b>
+            device you want synced.
+          </p>
+          <label class="row"><input type="checkbox" id="history-sync-enabled" /> Sync watch history across my devices</label>
+          <p class="acct-line" id="history-sync-status">Checking sync…</p>
+          <div class="bar">
+            <button id="history-sync-now" class="primary" type="button">Sync now</button>
+            <button id="history-sync-revoke" type="button">Turn off &amp; delete synced data</button>
+            <span class="status" id="history-sync-action-status"></span>
+          </div>
+
+          <label class="row"><input type="checkbox" id="queue-sync-enabled" /> Also sync my watch queue</label>
+          <p class="hint">
+            Separate opt-in, because unlike watch history this <b>does</b> send video titles, channel names and thumbnail URLs —
+            the queue cannot be drawn without them. Chrome's own sync already mirrors roughly the first 25 queue items between
+            signed-in Chrome browsers for free; turning this on removes that cap and works in any browser. Leave it off and the
+            queue still syncs via Chrome, just limited.
+          </p>
+          <p class="acct-line" id="queue-sync-status"></p>
+
+          <label class="row"><input type="checkbox" id="library-sync-enabled" /> Sync subscription groups and playlist folders</label>
+          <p class="hint">
+            Same OAuth as the queue. Sends group names with channel keys, and folder names with playlist ids — not watch history.
+            Chrome's 8KB sync cap cannot hold these maps, so they stay on this device until you turn this on.
+          </p>
+          <p class="acct-line" id="library-sync-status"></p>
+        </div>
+
+        <h2 class="mt-24">Display settings</h2>
+        <p class="hint" style="margin-top: -8px">
+          Mix and match. Badges won't show on hidden tiles. Uses <b>Unsynth's tracker</b> (not YouTube's red progress bars).
+        </p>
+        <div class="wd-panel" id="watched-display">
+          <label class="row"><input type="checkbox" id="wd-badges" /> Show badges (✓ watched / % in progress)</label>
+          <label class="wd-lbl">Finished videos (75%+)</label>
+          <select id="wd-finished" class="wd-select">
+            <option value="show">Show normally</option>
+            <option value="dim">Dim on feeds</option>
+            <option value="hide">Hide from feeds</option>
+          </select>
+          <label class="wd-lbl">Feed filter</label>
+          <select id="wd-filter" class="wd-select">
+            <option value="all">Show everything</option>
+            <option value="only-watched">Only watched videos</option>
+            <option value="only-unseen">Only never-started videos</option>
+          </select>
+          <label class="row"><input type="checkbox" id="wd-hide-partial" /> Also hide in-progress (started but not finished)</label>
+          <p class="hint wd-preview" id="wd-preview"></p>
+          <p class="hint"><b>Finished threshold</b> — percent watched to count as fully watched (default 75%).</p>
+          <div class="threshold-row">
+            <input type="range" id="wd-threshold" min="50" max="95" step="5" />
+            <span id="wd-threshold-val" class="threshold-val">75%</span>
+          </div>
+          <p class="hint"><b>Quick presets</b> (overwrites custom mix below)</p>
+          <div class="presets" id="watched-presets"></div>
+          <div class="bar watched-save-bar">
+            <span class="status" id="watched-display-status"></span>
+            <span class="hint">Changes save automatically when you adjust toggles.</span>
+          </div>
+        </div>
+
+        <details class="mt-8">
+          <summary class="hint" style="cursor: pointer">How to get your Takeout file</summary>
+          <p class="hint">
+            Go to <a href="https://takeout.google.com/" target="_blank" rel="noopener">takeout.google.com</a> → Deselect all → tick
+            <b>YouTube and YouTube Music</b> → its “All YouTube data included” → keep only <b>history</b> (format HTML or JSON) → export. Unzip and
+            import the <code>watch-history.html</code> (or <code>.json</code>) file above.
+          </p>
+        </details>
+
+        <details class="mt-8">
+          <summary class="hint" style="cursor: pointer">Troubleshooting live tracking</summary>
+          <p class="hint">
+            After reloading the extension on your browser’s extensions page (<code data-env="extensions-url">chrome://extensions</code>), you must <b>reload each open YouTube tab</b> (or open a fresh one) before
+            tracking resumes. Watch past 75%, then check the Live tracker card above. In DevTools console:
+          </p>
+          <pre class="code-snippet">chrome.storage.local.get('watchStats', d => {
+  const w = d.watchStats || {};
+  const today = new Date().toISOString().slice(0, 10);
+  console.log('plays:', w.total, '| distinct:', w.uniqueVideos,
+    '| today:', (w.byDate||{})[today], '| live:', w.live);
+});</pre>
+        </details>
+      </section>
+
+      <!-- CREATOR STUDIO -->
+      <section class="panel" data-panel="creator" role="tabpanel" id="panel-creator" aria-labelledby="tab-creator">
+        <h2>Creator Studio</h2>
+        <p class="hint">Keyword research, rank tracking, thumbnail A/B notes, and publish schedule — stored locally. Use the stats overlay on any watch page for live keyword suggestions.</p>
+
+        <div class="dash-card creator-next" id="creator-next-card">
+          <b>Next steps</b>
+          <ul class="creator-next-list" id="creator-next-list"></ul>
+          <div class="bar">
+            <button id="creator-rank-check-all" type="button">Check all ranks</button>
+            <button id="creator-export" type="button">Export creator data</button>
+          </div>
+        </div>
+
+        <div class="dash-card">
+          <h3>Rank tracking</h3>
+          <p class="hint">Track search position for a keyword + video. Click <b>Check rank</b> to refresh (top 50 results).</p>
+          <div class="grid2">
+            <div class="field">
+              <label for="creator-rank-kw">Keyword</label>
+              <input id="creator-rank-kw" type="text" placeholder="e.g. react tutorial 2025" />
+            </div>
+            <div class="field">
+              <label for="creator-rank-vid">Video ID</label>
+              <input id="creator-rank-vid" type="text" placeholder="jNQXAC9IVRw" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="creator-rank-title">Video title (optional label)</label>
+            <input id="creator-rank-title" type="text" placeholder="Display name in list" />
+          </div>
+          <div class="bar">
+            <button id="creator-rank-add" type="button" class="primary">Add track</button>
+            <span class="status" id="creator-rank-status"></span>
+          </div>
+          <div id="creator-rank-list" class="creator-list"></div>
+        </div>
+
+        <div class="dash-card">
+          <h3>Publish schedule</h3>
+          <p class="hint">Draft queue with target publish date. Connect OAuth on Account tab for YouTube upload tools.</p>
+          <div class="field">
+            <label for="creator-sched-title">Title</label>
+            <input id="creator-sched-title" type="text" placeholder="Video working title" />
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label for="creator-sched-at">Publish date</label>
+              <input id="creator-sched-at" type="datetime-local" />
+            </div>
+            <div class="field">
+              <label for="creator-sched-vid">Video ID (optional)</label>
+              <input id="creator-sched-vid" type="text" placeholder="After upload" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="creator-sched-notes">Notes</label>
+            <textarea id="creator-sched-notes" rows="3" placeholder="Thumbnail idea, tags, checklist…"></textarea>
+          </div>
+          <div class="bar">
+            <button id="creator-sched-add" type="button" class="primary">Add to schedule</button>
+            <span class="status" id="creator-sched-status"></span>
+          </div>
+          <div id="creator-sched-list" class="creator-list"></div>
+        </div>
+
+        <div class="dash-card">
+          <h3>Thumbnail A/B lab</h3>
+          <p class="hint">Log variants and view counts when you switch thumbnails to compare performance.</p>
+          <div class="grid2">
+            <div class="field">
+              <label for="creator-thumb-vid">Video ID</label>
+              <input id="creator-thumb-vid" type="text" placeholder="Video to test" />
+            </div>
+            <div class="field">
+              <label for="creator-thumb-title">Video title</label>
+              <input id="creator-thumb-title" type="text" placeholder="Label" />
+            </div>
+          </div>
+          <div class="bar">
+            <button id="creator-thumb-add" type="button" class="primary">Start test</button>
+            <span class="status" id="creator-thumb-status"></span>
+          </div>
+          <div id="creator-thumb-list" class="creator-list"></div>
+        </div>
+      </section>
+
+      <!-- STATS -->
+      <section class="panel" data-panel="stats" role="tabpanel" id="panel-stats" aria-labelledby="tab-stats">
+        <h2>Your YouTube stats</h2>
+        <div class="dash-card" id="watch-queue-card">
+          <h3>Watch queue</h3>
+          <p class="hint">+Q and Play next write to YouTube's own Up next panel. This page no longer keeps a second list.</p>
+          <div id="watch-queue-list" class="watch-queue-list"></div>
+          <div class="bar">
+            <button id="watch-queue-play" type="button" class="primary sm">Play next</button>
+            <button id="watch-queue-clear" type="button" class="ghost-btn sm">Clear all</button>
+            <span class="status" id="watch-queue-status"></span>
+          </div>
+        </div>
+        <p class="hint">
+          Computed on this device from your Takeout import and/or live tracking on the <b>Watched</b> tab.
+          <button id="stats-pop" type="button" class="inline-link-btn">Open full screen</button>
+        </p>
+        <div class="dash-card" id="analytics-prefs-card">
+          <h3>Watch-page analytics overlay</h3>
+          <p class="hint">Which sections appear in the stats card on video pages.</p>
+          <div id="analytics-section-toggles" class="analytics-toggles"></div>
+          <label class="row"><input type="checkbox" id="analytics-collapsed" /> Start collapsed on watch pages</label>
+          <button id="save-analytics-prefs" type="button">Save overlay prefs</button>
+          <span class="status" id="analytics-prefs-status" aria-live="polite"></span>
+        </div>
+        <div id="stats-empty" class="hint stats-empty">No stats yet — import Takeout on the <b>Watched</b> tab or watch videos past your threshold with live tracking on.</div>
+        <iframe id="stats-frame" class="stats-frame" title="Your YouTube stats"></iframe>
+      </section>
+
+      <!-- SUBSCRIPTIONS -->
+      <!-- PLAYLISTS
+        Playlist controls were spread across four panels: the four module
+        toggles under Modules, mark-as-watched under Watched, folders and pins
+        under Subscriptions, and Forge under Stats. Nothing was missing, but
+        nobody could find it — the first place you look for playlist settings is
+        a Playlists tab, and there wasn't one.
+
+        The tools keep living in their own panels rather than being moved here,
+        because each is wired to JS that runs on its own panel's activation. This
+        panel owns the toggles and routes to the rest, so there is one obvious
+        starting point without duplicating a single control. -->
+      <section class="panel" data-panel="playlists" role="tabpanel" id="panel-playlists" aria-labelledby="tab-playlists">
+        <h2>Playlists</h2>
+
+        <!-- The organizer itself, not a link to it. It is a full workspace —
+             multi-select, select-all, copy/move between playlists, batch
+             delete, drag reorder, create — and it is the answer to "add and
+             remove things from playlists, or multiple". Embedded rather than
+             rebuilt here: duplicating 850 lines of working write logic would
+             mean two implementations of every destructive playlist operation.
+             Same extension origin, so no web_accessible_resources needed, and
+             the iframe is lazy so the panel does not pay for it until opened. -->
+        <div class="dash-card pl-organizer-card">
+          <div class="pl-organizer-head">
+            <h3>Organizer</h3>
+            <button id="pl-panel-organizer" type="button" class="ghost-btn sm">Open in its own tab ↗</button>
+          </div>
+          <p class="hint">
+            Open playlists side by side, tick the videos you want, then move, copy or delete them — one or a whole selection at
+            once. Drag to reorder, create a new playlist, and hide what you have already watched.
+          </p>
+          <div class="pl-organizer-frame" id="pl-organizer-frame">
+            <p class="hint pl-organizer-loading" id="pl-organizer-loading">Loading the organizer…</p>
+          </div>
+        </div>
+
+        <div class="dash-card">
+          <h3>Your library</h3>
+          <p class="hint" id="pl-panel-summary" aria-live="polite">Reading your pinned playlists…</p>
+          <!-- No jump-out buttons any more: folders/pins, mark-as-watched and
+               Forge all have their real cards on this panel now. -->
+          <p class="hint">Everything for playlists is on this page — folders and pins, marking a list watched, and Forge, all below.</p>
+        </div>
+
+        <div class="dash-card forge-callout">
+          <h3>Playlist Forge</h3>
+          <p class="hint">
+            Build playlists from your watch history. History-derived taste and folder maps are shared only after you opt in under Account → Playlist Forge sync.
+          </p>
+          <ul class="hint shortcuts-list">
+            <li><b>YouTube</b> — gold <b>Forge</b> tab on the right edge, or sidebar <b>Open Forge panel</b> / <b>Search playlists</b></li>
+            <li><b>Search</b> — taste-aware discover, judge, sort, queue &amp; playlist actions on each result</li>
+            <li><b>Suggest</b> — playlist ideas from watch/search stats (needs Takeout or live tracking)</li>
+            <li><b>Find similar</b> — stats overlay, AI panel, or sidebar on a watch page → opens Search in-panel</li>
+            <li><b>Create on YouTube</b> — uses Unsynth Account OAuth (write scope) from Search or Suggest</li>
+          </ul>
+          <button id="open-forge-panel" type="button" class="primary">Open Forge on YouTube</button>
+          <button id="open-forge" type="button">Open Forge site ↗</button>
+          <hr style="margin: 16px 0; border-color: var(--un-line)" />
+          <h4 style="margin: 0 0 8px">Sidebar panel</h4>
+          <label class="row"><input type="checkbox" id="forge-pref-sidebar" /> Show the Playlist Forge panel in the YouTube sidebar <span class="muted">— off by default so the sidebar leads with your groups. If this is off, the gold Forge tab on the page edge stays available.</span></label>
+          <hr style="margin: 16px 0; border-color: var(--un-line)" />
+          <h4 style="margin: 0 0 8px">Forge defaults</h4>
+          <p class="hint" style="margin-top: 0">Used by the YouTube Forge panel and stats page when creating playlists.</p>
+          <div class="field">
+            <label for="forge-avoid">Always avoid channels (comma-separated names)</label>
+            <input id="forge-avoid" type="text" placeholder="Only channels you choose to block" />
+            <p class="hint" style="margin: 4px 0 0">Steers discover away from reaction/review clones and channels you name here.</p>
+          </div>
+          <div class="grid2" style="margin-bottom: 10px">
+            <div class="field">
+              <label for="forge-count">Videos per playlist</label>
+              <input id="forge-count" type="number" min="5" max="100" value="25" />
+            </div>
+            <div class="field">
+              <label for="forge-privacy">New playlist privacy</label>
+              <select id="forge-privacy">
+                <option value="public">Public</option>
+                <option value="unlisted">Unlisted</option>
+                <option value="private">Private</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="forge-folder">Default folder (optional)</label>
+            <select id="forge-folder">
+              <option value="">None — don’t assign</option>
+            </select>
+            <p class="hint" style="margin: 6px 0 0">New playlists can be filed into your PocketTube-style folder map. Import folders on the Subscriptions tab.</p>
+          </div>
+          <div class="bar">
+            <button id="save-forge-prefs" type="button" class="primary">Save Forge defaults</button>
+            <span class="status" id="forge-prefs-status"></span>
+          </div>
+        </div>
+        <details class="dash-card dash-advanced" id="pl-folders-advanced">
+          <summary>Playlists <span class="muted">(pin to sidebar · optional folders)</span></summary>
+        <div id="pl-folders-section">
+        <p class="hint">Pin real YouTube playlists into the guide sidebar with <b>＋ Pin</b> on a playlist page or Library tile (module <b>Playlist groups</b> on the Modules tab). Optional folders below organize Library filtering — they are not a substitute for your playlists.</p>
+        <p class="hint">Pins follow this Chrome profile (same Google account, sync on). Playlist folders stay on this device — they are too big for Chrome's sync quota.</p>
+        <fieldset class="pl-sidebar-prefs" id="pl-folder-prefs">
+          <legend>Sidebar display</legend>
+          <label class="row"><input type="checkbox" id="pl-pref-sidebar" checked /> Show the Playlists section in the YouTube sidebar</label>
+          <label class="row"><input type="checkbox" id="pl-pref-showall" checked /> Show the <b>All playlists</b> (Library) row</label>
+          <label class="row"><input type="checkbox" id="pl-pref-showhistory" checked /> Show <b>History</b></label>
+          <label class="row"><input type="checkbox" id="pl-pref-showliked" checked /> Show <b>Liked videos</b></label>
+          <label class="row"><input type="checkbox" id="pl-pref-showwatchlater" checked /> Show <b>Watch later</b></label>
+          <label class="row"><input type="checkbox" id="pl-pref-hideempty" checked /> Hide empty folders</label>
+          <label class="row">Sort folders
+            <select id="pl-pref-sort" class="inline-select">
+              <option value="manual">As created</option>
+              <option value="name">Name (A–Z)</option>
+              <option value="count">Most playlists</option>
+            </select>
+          </label>
+        </fieldset>
+        <div class="bar" style="margin-bottom:14px">
+          <input type="text" id="new-pl-folder" placeholder="New folder name" class="flex-input" />
+          <button id="add-pl-folder" class="primary" type="button">Create folder</button>
+        </div>
+        <div id="pl-folder-list"></div>
+        <div class="bar subs-toolbar">
+          <button id="import-pl-from-yt" class="primary" type="button" title="Needs Connect YouTube on Account tab">Pin from my YouTube playlists</button>
+          <button id="export-pl-folders" type="button">Export playlist groups</button>
+          <button id="import-pl-folders" type="button">Import JSON</button>
+          <input type="file" id="import-pl-folders-file" accept="application/json" class="hidden-file" />
+          <button id="fetch-pl-titles" type="button" title="Resolve playlist titles (needs Connect YouTube)">Fetch playlist titles</button>
+          <span class="status" id="pl-folder-status"></span>
+        </div>
+        <div id="pl-yt-import"></div>
+        <label class="row mt-8"><input type="checkbox" id="import-pl-folders-merge" checked /> Merge with existing playlist groups</label>
+        <details class="hint mt-8">
+          <summary>Optional — PocketTube / bundled import</summary>
+          <div class="bar subs-toolbar mt-8">
+            <button id="import-pl-folders-bundled" type="button">Import bundled map…</button>
+          </div>
+          <p class="hint">For PocketTube users: <code>youtube-history-to-import/pockettube-playlist-manager.json</code>. Unsynth JSON and PocketTube exports are both supported.</p>
+        </details>
+        </div>
+        </details>
+        <div class="dash-card" id="dash-seen-playlists">
+          <h3>Mark a playlist as already watched</h3>
+          <p class="hint">
+            If you keep playlists of things you've already seen, this reads them and marks everything inside as watched, so the
+            watched filters actually hide them. Nothing is ever unmarked and nothing is removed from the playlists. Safe to re-run
+            whenever you add more. Needs the Google OAuth setup on the Account tab.
+          </p>
+          <div class="bar">
+            <button id="seen-playlists-open" class="primary" type="button">Choose playlists…</button>
+            <span class="status" id="seen-playlists-status" aria-live="polite"></span>
+          </div>
+          <div id="seen-playlists-panel" hidden>
+            <p class="hint" id="seen-playlists-hint">
+              Ticked below are the ones whose names look like &ldquo;already watched&rdquo; lists. Check the list carefully — untick
+              anything that is actually a to-watch list.
+            </p>
+            <div id="seen-playlists-list" class="mt-8" role="group" aria-label="Playlists to treat as watched"></div>
+            <p class="hint mt-8" id="seen-playlists-progress" aria-live="polite" hidden></p>
+            <!-- Persistent result. flash() self-clears after 2.6s, which is
+                 useless for a job that runs for minutes: the user looks away
+                 and comes back to a blank panel. This stays until the next
+                 run. -->
+            <div id="seen-playlists-result" class="mt-8" role="status" aria-live="polite" hidden></div>
+            <div class="bar">
+              <button id="seen-playlists-scan" class="primary" type="button">Count videos in selected</button>
+              <button id="seen-playlists-cancel" type="button">Cancel</button>
+              <span class="status" id="seen-playlists-scan-status" aria-live="polite"></span>
+            </div>
+          </div>
+        </div>
+        <div class="dash-card">
+          <h3>On-page features</h3>
+          <p class="hint">
+            These are the same switches as on the Modules tab — the controls they add appear on YouTube itself. Changes save
+            automatically; reload open YouTube tabs to apply them.
+          </p>
+          <label class="row"><input type="checkbox" data-module="playlistFolders" /> Playlist groups <span class="muted">— pin playlists in the sidebar; folders, ＋ Folder, Library filter</span></label>
+          <label class="row"><input type="checkbox" data-module="playlistBulk" /> Playlist bulk tools <span class="muted">— multi-select, dedupe, Forge links</span></label>
+          <label class="row"><input type="checkbox" data-module="forgeLink" /> Playlist Forge <span class="muted">— suggest &amp; build playlists on YouTube</span></label>
+          <label class="row"><input type="checkbox" data-module="quickSwitcher" /> Quick switcher <span class="muted">— Shift+P anywhere on YouTube to jump to any playlist or subscribed channel by name, folder or group</span></label>
+        </div>
+      </section>
+
+      <section class="panel" data-panel="subs" role="tabpanel" id="panel-subs" aria-labelledby="tab-subs">
+        <div class="dash-card active-filters-card subs-focus">
+          <h3>Active filter</h3>
+          <p class="hint">Set from the <b>Subscriptions</b> block at the top of YouTube's sidebar — click a group to filter your feed, or the chevron for a quick peek.</p>
+          <p class="active-filter-line">Subscription group: <b id="active-sub-group">All subscriptions</b> <button id="clear-sub-active" type="button" class="ghost-btn sm">Clear</button></p>
+          <p class="active-filter-line pl-filter-line" id="active-pl-filter-line" hidden>Playlist group: <b id="active-pl-folder">All playlists</b> <button id="clear-pl-active" type="button" class="ghost-btn sm">Clear</button></p>
+        </div>
+
+        <div class="dash-card subs-hero-card" id="subs-groups-card">
+        <div class="subs-hero-head">
+          <div>
+            <h2>Subscription groups</h2>
+            <p class="hint">Organize channels, filter your Subscriptions feed from the sidebar, or use <b>＋ Group</b> on any channel page.</p>
+            <p class="hint">Groups are stored on this device only — they won't follow you to Unsynth on another computer or browser (your filter settings and keywords do sync).</p>
+          </div>
+          <div class="subs-stats" id="subs-stats" aria-live="polite"></div>
+        </div>
+        <div class="bar subs-create-bar">
+          <input type="text" id="new-group" placeholder="New group name" class="flex-input" />
+          <button id="add-group" class="primary" type="button">Create</button>
+        </div>
+        <div class="bar subs-search-bar">
+          <input type="search" id="subs-group-search" placeholder="Search groups or channels…" class="flex-input subs-search-input" autocomplete="off" />
+          <button id="subs-delete-empty" type="button" class="ghost-btn" title="Remove groups with no channels">Delete empty</button>
+        </div>
+        <div id="group-list"></div>
+        <div class="bar subs-toolbar">
+          <button id="export-groups" type="button">Export groups (JSON)</button>
+          <button id="import-groups" type="button">Import (incl. PocketTube)</button>
+          <input type="file" id="import-groups-file" accept="application/json" class="hidden-file" />
+          <button id="import-groups-bundled" type="button" title="Load pockettube-subscription-manager.json from youtube-history-to-import/">Import bundled PocketTube…</button>
+          <button id="fetch-names" title="Resolve channel:UC… IDs to real names (OAuth or public lookup)">Fetch channel names</button>
+          <span class="status" id="subs-status"></span>
+        </div>
+        <label class="row mt-8"><input type="checkbox" id="import-groups-merge" checked /> Merge imports with existing groups (uncheck to replace all groups)</label>
+        <p class="hint">Bundled subs: <code>youtube-history-to-import/pockettube-subscription-manager.json</code> (Main, Night, Streamers).</p>
+        </div>
+
+        <div class="dash-card" id="sub-smart-rows-card">
+          <div class="subs-hero-head">
+            <div>
+              <h3>Smart rows</h3>
+              <p class="hint">Generated from your connected subscriptions and local taste profile. These never change your manual groups unless you add a channel yourself.</p>
+            </div>
+            <button id="refresh-sub-smart" type="button">Refresh subscriptions</button>
+          </div>
+          <div id="sub-smart-rows" class="sub-smart-grid"></div>
+          <span id="sub-smart-status" class="status" aria-live="polite"></span>
+        </div>
+
+        <div class="dash-card" id="dash-forge-subs">
+          <h3>Playlist Forge</h3>
+          <p class="hint">AI playlist discovery can use a compact Unsynth taste summary after you opt in under Account. Folder assignments sync both ways only while that consent is enabled.</p>
+          <p class="acct-line" id="forge-subs-status">Checking sync…</p>
+          <div class="bar">
+            <button id="forge-subs-open" class="primary" type="button">Open Playlist Forge ↗</button>
+          </div>
+        </div>
+
+        <div class="dash-card">
+        <h3>Import all subscriptions (OAuth)</h3>
+        <p class="hint">Pull your full YouTube subscription list to bulk-add channels to groups.</p>
+        <div class="bar">
+          <button id="import-subs" class="primary" type="button">Import my subscriptions</button>
+          <span class="hint">Needs <b>Connect YouTube</b> on the Account tab.</span>
+        </div>
+        <div id="subs-import"></div>
+        </div>
+
+      </section>
+
+      <!-- ACCOUNT -->
+      <section class="panel" data-panel="account" role="tabpanel" id="panel-account" aria-labelledby="tab-account">
+        <div class="dash-card" id="setup-checklist">
+          <h2>Setup checklist</h2>
+          <div class="setup-progress-wrap">
+            <div class="setup-progress-label"><span id="setup-progress-text">Core setup</span> <b id="setup-progress-pct">0%</b></div>
+            <div class="setup-progress-track"><div class="setup-progress-fill" id="setup-progress-fill"></div></div>
+          </div>
+          <p class="hint" id="setup-ready-banner" hidden><strong>Core ready.</strong> Browse YouTube — OAuth is optional for playlist writes; an AI key is optional for transcript Q&amp;A and fact-check.</p>
+          <p class="hint">
+            Core features work after install and a YouTube reload. Optional steps unlock playlist API tools and the AI assistant.
+            <button type="button" class="link-btn" id="open-setup-guide">In-extension guide</button>
+            <button type="button" class="link-btn" id="open-setup-site-online">Online guide ↗</button>
+          </p>
+          <ul class="setup-checklist" aria-label="Setup progress">
+            <li class="setup-done" data-step="install"><span class="setup-dot" aria-hidden="true"></span> Extension installed</li>
+            <li data-step="reload"><span class="setup-dot" aria-hidden="true"></span> YouTube tabs reloaded</li>
+            <li data-step="oauth"><span class="setup-dot" aria-hidden="true"></span> OAuth credentials saved <span class="muted">(optional)</span></li>
+            <li data-step="connect"><span class="setup-dot" aria-hidden="true"></span> YouTube connected <span class="muted">(optional)</span></li>
+            <li data-step="ai"><span class="setup-dot" aria-hidden="true"></span> AI provider configured <span class="muted">(optional)</span></li>
+          </ul>
+        </div>
+
+        <div class="dash-card" id="phaenex-support">
+          <h2>Support Phaenex</h2>
+          <p class="hint" id="donation-pitch">If Unsynth helps you, $1 tells me it was worth making this. Everything stays free either way.</p>
+          <div class="bar donation-bar">
+            <button id="donation-kofi" type="button" class="primary">Ko-fi — from $1</button>
+          </div>
+          <p class="hint muted">Phaenex · Ko-fi: phaenex · Tips never unlock features.</p>
+        </div>
+
+        <div class="dash-card" id="updates">
+          <h2>Updates</h2>
+          <p class="hint">
+            Unsynth is loaded unpacked from git — Chrome cannot pull updates for you. Push from your dev machine, run
+            <code>git pull</code> on other computers, then reload the extension and YouTube tabs.
+          </p>
+          <p class="acct-line">Installed version: <b id="update-local-version">—</b></p>
+          <p class="acct-line" id="update-remote-line" hidden>Published release: <b id="update-remote-version">—</b></p>
+          <p class="acct-line muted" id="update-last-check">Last check: never</p>
+          <p class="update-status" id="update-status-msg" aria-live="polite"></p>
+
+          <div class="dash-card update-wizard" id="update-wizard" hidden aria-live="polite">
+            <h3>Install update <span id="update-wizard-version">—</span></h3>
+            <ol class="update-wizard-steps hint">
+              <li>Download the release ZIP: <a id="update-wizard-download" href="https://unsynth.vercel.app/downloads/unsynth-latest.zip" target="_blank" rel="noopener">unsynth-latest.zip</a> or click <b>Fetch latest ZIP</b> below.</li>
+              <li id="update-wizard-sha-row" hidden>Verify SHA-256: <code id="update-wizard-sha"></code> <button type="button" id="copy-update-sha">Copy hash</button></li>
+              <li>Unzip over your existing Unsynth folder (same path as <code>manifest.json</code>).</li>
+              <li>Click <b>Reload Unsynth</b> on the extensions page or use the button below.</li>
+              <li>Click <b>Reload YouTube tabs</b> so filters and tracking attach again.</li>
+            </ol>
+            <p class="hint">Git clone? Run <code>npm run update</code> from the repo root instead — <button type="button" class="link-btn" id="copy-update-cmd-wizard">Copy update command</button></p>
+          </div>
+
+          <div class="field">
+            <label>GitHub token <span class="muted">(repo scope — private repo only; public repos work without a token; stored locally)</span></label>
+            <input id="github-pat" type="password" placeholder="ghp_… or github_pat_…" autocomplete="off" />
+          </div>
+          <div class="bar">
+            <button id="save-github-pat" type="button">Save token</button>
+            <button id="check-updates" class="primary" type="button">Check for updates</button>
+            <span class="status" id="update-check-status" aria-live="polite"></span>
+          </div>
+          <p class="hint" id="update-no-pat-hint" hidden>
+            The deployed release check needs no token. If that service is unavailable, add a GitHub token above to use private <code>main</code> on
+            <a href="https://github.com/Phaenex/unsynth" target="_blank" rel="noopener">Phaenex/unsynth</a>.
+            You can always update manually — see below.
+          </p>
+
+          <details class="update-manual" open>
+            <summary class="hint" style="cursor: pointer">Manual update steps</summary>
+            <ol class="hint update-steps">
+              <li>On the machine where you develop: commit and <code>git push</code>.</li>
+              <li>On this machine: open a terminal in your clone folder and run the command below (edit the path).</li>
+              <li>Click <b>Reload Unsynth</b>, then <b>Reload YouTube tabs</b>.</li>
+            </ol>
+            <p class="hint">Git clone? Run <code>npm run update</code> from the repo root (Windows / Mac / Linux) — use <b>Copy update command</b> below.</p>
+          </details>
+
+          <div class="bar update-actions">
+            <button id="copy-update-cmd" type="button">Copy update command</button>
+            <button id="fetch-update" class="primary" type="button">Fetch latest ZIP</button>
+            <button id="reload-extension" type="button">Reload Unsynth</button>
+            <button id="updates-reload-yt" type="button">Reload YouTube tabs</button>
+          </div>
+          <p class="hint">On Mac, <b>Fetch latest ZIP</b> downloads the deployed release. Unzip it over the existing Unsynth folder, keeping the same folder path, then reload Unsynth. If this is a git clone, <code>npm run update</code> remains the simplest option.</p>
+          <p class="hint" id="update-cmd-preview"></p>
+          <label class="row mt-8"><input type="checkbox" id="auto-reload-update" /> Auto-reload open YouTube tabs after an update <span class="muted">— recommended: brings the side panel &amp; player tools back without a manual refresh</span></label>
+        </div>
+
+        <h2>Google / YouTube account</h2>
+        <p class="hint">
+          <strong>Optional.</strong> Skip if you only need free features — core modules work without OAuth.
+          Needed for subscription &amp; playlist API tools (YouTube Data API). One-time setup: create a
+          <b>Web application</b> OAuth client and register the redirect URI below.
+          <button type="button" class="link-btn" id="open-setup-guide-oauth">OAuth walkthrough (online) ↗</button>
+        </p>
+        <p class="hint">
+          <b>Playlist Forge</b> and in-page playlist edits need <b>write</b> scope. Connect below requests read + write together.
+          Read-only tokens can browse subs but cannot create playlists.
+        </p>
+
+        <div class="oauth-redirect-callout dash-card">
+          <label>Redirect URI — paste this into Google Cloud <b>exactly</b></label>
+          <div class="copyrow"><code id="redirect-uri">…</code><button id="copy-redirect" type="button">Copy</button></div>
+          <p class="hint muted">Credentials → your OAuth client → Authorized redirect URIs. Must match character-for-character (no trailing slash unless shown).</p>
+        </div>
+
+        <details class="oauth-wizard dash-card">
+          <summary class="hint oauth-wizard-summary">Step-by-step Google Cloud setup</summary>
+          <ol class="hint oauth-wizard-steps">
+            <li><a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a> → create a project.</li>
+            <li><b>APIs &amp; Services → Library</b> → enable <b>YouTube Data API v3</b>.</li>
+            <li><b>OAuth consent screen</b> → External → add yourself as a <strong>Test user</strong> if the app is in Testing.</li>
+            <li><b>Credentials → OAuth client ID</b> → type <b>Web application</b>.</li>
+            <li>Add the redirect URI above under <b>Authorized redirect URIs</b> (must match exactly).</li>
+            <li>Paste Client ID + Secret below → Save → <b>Connect YouTube</b>.</li>
+          </ol>
+          <p class="hint">
+            Full details:
+            <button type="button" class="link-btn" id="open-setup-guide-inline">in-extension guide</button>
+            ·
+            <button type="button" class="link-btn" id="open-setup-site-online-wizard">full online guide ↗</button>
+          </p>
+        </details>
+
+        <div class="grid2">
+          <div class="field"><label>OAuth Client ID</label><input id="client-id" type="text" placeholder="…apps.googleusercontent.com" /></div>
+          <div class="field"><label>OAuth Client Secret</label><input id="client-secret" type="password" placeholder="GOCSPX-…" /></div>
+        </div>
+        <div class="bar">
+          <button id="save-oauth" class="primary">Save credentials</button>
+          <span class="status" id="oauth-status"></span>
+        </div>
+
+        <hr />
+
+        <div class="oauth-tips dash-card">
+          <p class="hint"><strong>Before you connect</strong></p>
+          <ul class="hint oauth-tip-list">
+            <li><code>redirect_uri_mismatch</code> — the URI in the callout above must match Google Cloud exactly.</li>
+            <li><strong>Testing mode</strong> — add your Google account under OAuth consent screen → <strong>Test users</strong>.</li>
+            <li><strong>Brave</strong> — Shields may block Google sign-in; try Chrome/Edge or allow Google login under Brave → Privacy and security.</li>
+          </ul>
+        </div>
+
+        <p class="hint muted" id="oauth-dev-seed-note" hidden>
+          This machine loaded developer OAuth credentials from a local seed file. Public zips do not include that file — other people still paste their own client.
+        </p>
+        <div class="bar">
+          <button id="connect" class="primary">Connect YouTube (read + write)</button>
+          <button id="signout">Sign out</button>
+          <span class="status" id="auth-status"></span>
+        </div>
+        <p class="acct-line" id="channel-line"></p>
+        <p class="acct-line muted" id="quota-line"></p>
+
+        <div class="dash-card" id="dash-forge-account">
+          <h3>Playlist Forge sync</h3>
+          <p class="hint">Optional. When enabled and Forge is open, Unsynth shares a compact taste summary (counts, top channels/search terms) plus playlist-folder assignments. Raw watch/search history, video IDs, OAuth tokens, and API keys are never sent.</p>
+          <label class="row"><input type="checkbox" id="forge-sync-enabled" /> Allow Playlist Forge sync on this device</label>
+          <p class="acct-line" id="forge-account-status">Checking sync…</p>
+          <div class="bar">
+            <button id="forge-account-open" class="primary" type="button">Open Playlist Forge ↗</button>
+            <button id="forge-sync-now" type="button">Sync now</button>
+            <button id="forge-sync-revoke" type="button">Turn off sync</button>
+            <span class="status" id="forge-sync-status"></span>
+          </div>
+        </div>
+        <div class="dash-card">
+          <h3>Local diagnostics</h3>
+          <p class="hint">Copies extension version, module state, scan timing, recent deduplicated errors, and storage size. It excludes history contents, API keys, OAuth tokens, and GitHub credentials.</p>
+          <!-- Drift warning. Selector misses used to be invisible: a renderer
+               rename broke a feature and the only report was the user
+               noticing. This makes the extension say so itself. -->
+          <div id="drift-warning" class="mt-8" hidden></div>
+          <div class="bar">
+            <button id="copy-diagnostics" type="button">Copy diagnostics</button>
+            <span class="status" id="diagnostics-status"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI -->
+      <section class="panel" data-panel="ai" role="tabpanel" id="panel-ai" aria-labelledby="tab-ai">
+        <h2>AI provider</h2>
+        <p class="hint">Bring your own key (OpenRouter, OpenAI, or Anthropic). Powers transcript summaries, video Q&amp;A, and fact-check. AI content filter and Forge discover do not need a key. Keys stay on this device only.</p>
+
+        <div class="grid2">
+          <div class="field">
+            <label>Provider</label>
+            <select id="ai-provider">
+              <option value="openrouter">OpenRouter (multi-model)</option>
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Model <span class="muted">— pick one or type any; blank = provider default</span></label>
+            <input id="ai-model" type="text" list="ai-model-list" placeholder="openai/gpt-4o-mini" autocomplete="off" />
+            <datalist id="ai-model-list">
+              <option value="gpt-4o-mini"></option>
+              <option value="gpt-4o"></option>
+              <option value="gpt-4.1-mini"></option>
+              <option value="gpt-5"></option>
+              <option value="o4-mini"></option>
+              <option value="claude-haiku-4-5"></option>
+              <option value="claude-sonnet-4-6"></option>
+              <option value="claude-opus-4-8"></option>
+              <option value="openai/gpt-4o-mini"></option>
+              <option value="anthropic/claude-3.5-haiku"></option>
+              <option value="google/gemini-2.0-flash-001"></option>
+            </datalist>
+          </div>
+        </div>
+
+        <div class="field"><label>OpenRouter key <span class="muted" id="k-openrouter"></span></label><input id="key-openrouter" type="password" placeholder="sk-or-v1-…" /></div>
+        <div class="field"><label>OpenAI key <span class="muted" id="k-openai"></span></label><input id="key-openai" type="password" placeholder="sk-proj-…" /></div>
+        <div class="field"><label>Anthropic key <span class="muted" id="k-anthropic"></span></label><input id="key-anthropic" type="password" placeholder="sk-ant-…" /></div>
+
+        <div class="bar">
+          <button id="save-ai" class="primary">Save</button>
+          <button id="test-ai">Test</button>
+          <span class="status" id="ai-status"></span>
+        </div>
+        <p class="acct-line" id="ai-test-out"></p>
+
+        <h3>Custom prompt library</h3>
+        <p class="hint">Pills on the watch-page AI panel. JSON: <code>[{"name":"…","prompt":"…"}]</code></p>
+        <textarea id="ai-prompts-json" rows="10" spellcheck="false" class="code-snippet ai-prompts-area"></textarea>
+        <div class="bar">
+          <button id="save-ai-prompts" type="button">Save prompts</button>
+          <button id="reset-ai-prompts" type="button">Reset to defaults</button>
+          <span class="status" id="ai-prompts-status"></span>
+        </div>
+
+        <div class="dash-card">
+          <h3>Watch-page panel defaults</h3>
+          <label class="row"><input type="checkbox" id="ai-panel-open" /> Open AI panel by default on watch pages</label>
+          <label class="row">Panel width (px) <input type="number" id="ai-panel-width" min="280" max="600" step="10" class="num-input" /></label>
+          <div class="bar">
+            <button id="save-ai-panel-prefs" type="button">Save panel prefs</button>
+            <span class="status" id="ai-panel-prefs-status"></span>
+          </div>
+        </div>
+      </section>
+        </main>
+      </div>
+    </div>
+
+    <div class="onboard" id="onboard" role="dialog" aria-modal="true" aria-labelledby="onboard-title" hidden>
+      <div class="onboard-box onboard-wide">
+        <h2 id="onboard-title">Welcome to Unsynth</h2>
+        <p class="hint onboard-lead">Pick what you want — <b>Essentials</b> covers filter, layout, dislikes, watch history, SponsorBlock, and ad skip. Use <b>Full stack</b> to replace PocketTube, Return YouTube Dislike, and creator lite tools in one extension.</p>
+        <p class="sec-label">I'm here for…</p>
+        <div class="use-case-grid onboard-cases" id="onboard-use-cases"></div>
+        <p class="hint onboard-steps-summary">Then one click activates modules on YouTube. Core features need no keys. Full stack also enables AI assistant and fact-check toggles — those stay idle until you add a BYOK key.</p>
+        <p class="hint">
+          <button type="button" class="link-btn" id="onboard-setup-guide">In-extension guide</button>
+          ·
+          <button type="button" class="link-btn" id="onboard-setup-site-online">Online guide ↗</button>
+        </p>
+        <div class="bar">
+          <button id="onboard-oneclick" class="primary" type="button">One-click setup</button>
+          <button id="onboard-done" type="button">Skip for now</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="../shared/ai-keywords.js"></script>
+    <script src="../defaults.js"></script>
+    <script src="../shared/messages.js"></script>
+    <script src="../shared/auth-state.js"></script>
+    <script src="../shared/browser-env.js"></script>
+    <script src="../shared/open-page.js"></script>
+    <script src="../shared/modules-normalize.js"></script>
+    <script src="../shared/filter-form.js"></script>
+    <script src="../shared/ui-presets.js"></script>
+    <script src="../shared/sub-groups.js"></script>
+    <script src="../shared/sub-channel-thumbs.js"></script>
+    <script src="../shared/playlist-folders.js"></script>
+    <script src="../shared/watch-stats.js"></script>
+    <script src="../shared/taste-profile.js"></script>
+    <script src="../shared/sub-smart-rows.js"></script>
+    <script src="../shared/forge-links.js"></script>
+    <script src="../shared/forge-sync.js"></script>
+    <script src="../shared/watch-queue.js"></script>
+    <script src="../shared/seen-playlists.js"></script>
+    <script src="../shared/semver.js"></script>
+    <script src="../shared/update-check.js"></script>
+    <script src="../shared/drill-modal.js"></script>
+    <script src="../shared/watched-display.js"></script>
+    <script src="../shared/sponsorblock-segments.js"></script>
+    <script src="../shared/setup-links.js"></script>
+    <script src="../shared/donation-links.js"></script>
+    <script src="../shared/recommended-profile.js"></script>
+    <script src="../shared/use-case-presets.js"></script>
+    <script src="../shared/creator-studio.js"></script>
+    <script src="../shared/profile-sanitize.js"></script>
+    <script src="../shared/storage.js"></script>
+    <script src="dashboard-core.js"></script>
+    <script src="dashboard-subs.js"></script>
+    <script src="dashboard-account.js"></script>
+    <script src="dashboard-history-sync.js"></script>
+    <script src="dashboard-seen-playlists.js"></script>
+    <script src="dashboard-ai.js"></script>
+    <script src="dashboard-filter.js"></script>
+    <script src="dashboard-tune.js"></script>
+    <script src="dashboard-stats.js"></script>
+    <script src="dashboard-creator.js"></script>
+  </body>
+</html>

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Unsynth — Your YouTube in numbers</title>
+    <link rel="stylesheet" href="../shared/design-tokens.css" />
+    <link rel="stylesheet" href="../shared/controls.css" />
+    <link rel="stylesheet" href="stats.css" />
+    <link rel="stylesheet" href="../shared/drill-modal.css" />
+  </head>
+  <body>
+    <header class="hd">
+      <div class="hd-in">
+        <span class="brand"><span class="dot"></span>Unsynth</span>
+        <div class="hd-title">
+          <h1 id="hd-h1">Your YouTube, in numbers</h1>
+          <p class="hd-sub" id="hd-sub">Loading your watch history…</p>
+        </div>
+        <button id="open-dash">Dashboard</button>
+      </div>
+    </header>
+
+    <main id="app"><!-- rendered by stats.js --></main>
+
+    <footer class="ft">Computed on this device from your import and/or live tracking. Nothing is uploaded.</footer>
+
+    <div id="stats-toast" class="stats-toast" aria-live="polite"></div>
+
+    <script src="../shared/browser-env.js"></script>
+    <script src="../shared/open-page.js"></script>
+    <script src="../shared/messages.js"></script>
+    <script src="../shared/auth-state.js"></script>
+    <script src="../shared/playlist-folders.js"></script>
+    <script src="../shared/drill-modal.js"></script>
+    <script src="../shared/watch-stats.js"></script>
+    <script src="../shared/forge-discover.js"></script>
+    <script src="stats.js"></script>
+  </body>
+</html>

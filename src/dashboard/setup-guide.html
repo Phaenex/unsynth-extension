@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Unsynth — Setup guide</title>
+    <link rel="stylesheet" href="../shared/design-tokens.css" />
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--un-bg);
+        color: var(--un-txt);
+        font-family: var(--un-font);
+        line-height: 1.55;
+        font-size: 14px;
+      }
+      .wrap {
+        max-width: 820px;
+        margin: 0 auto;
+        padding: 32px 24px 48px;
+      }
+      h1 {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 32px 0 10px;
+        padding-top: 8px;
+        border-top: 1px solid var(--un-line-soft);
+      }
+      h2:first-of-type { border-top: none; padding-top: 0; }
+      h3 { font-size: 15px; margin: 20px 0 8px; }
+      p, li { color: var(--un-dim); }
+      p.lead { font-size: 15px; color: var(--un-txt); }
+      a { color: var(--un-accent); }
+      code, kbd {
+        background: rgba(255, 255, 255, 0.06);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 12.5px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 12px 0;
+        font-size: 13px;
+      }
+      th, td {
+        border: 1px solid var(--un-line-soft);
+        padding: 8px 10px;
+        text-align: left;
+      }
+      th { color: var(--un-txt); background: rgba(255, 255, 255, 0.03); }
+      ol, ul { padding-left: 1.25rem; }
+      li { margin: 6px 0; }
+      .topbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .btn {
+        background: var(--un-accent);
+        color: #fff;
+        border: none;
+        padding: 8px 14px;
+        border-radius: var(--un-radius-sm);
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        flex: none;
+      }
+      .btn-ghost {
+        background: transparent;
+        border: 1px solid var(--un-line-soft);
+        color: var(--un-dim);
+      }
+      .note {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--un-line-soft);
+        border-radius: var(--un-radius-sm);
+        padding: 12px 14px;
+        margin: 16px 0;
+      }
+      .guide-img {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        margin: 16px 0 20px;
+        border-radius: var(--un-radius-sm);
+        border: 1px solid var(--un-line-soft);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+      }
+      .guide-img-caption {
+        margin: -12px 0 20px;
+        font-size: 12.5px;
+        color: var(--un-dim);
+        text-align: center;
+      }
+      .cost-free { color: #6ee787; font-weight: 600; }
+      .cost-paid { color: #e8c878; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="topbar">
+        <div>
+          <h1>Unsynth setup guide</h1>
+          <p class="lead">Install, optional YouTube OAuth, and BYOK AI keys — all on your machine.</p>
+        </div>
+        <div style="display:flex;gap:8px;flex:none">
+          <button type="button" class="btn btn-ghost" id="open-online">Online ↗</button>
+          <button type="button" class="btn btn-ghost" id="back-dashboard">← Dashboard</button>
+        </div>
+      </div>
+
+      <img class="guide-img" src="images/setup-06-overview-flow.png" alt="Setup overview: Install, Reload, OAuth, AI keys, Import, Updates" width="820" height="auto" />
+      <p class="guide-img-caption">Setup flow — only steps 1–2 are required; everything else is optional.</p>
+
+      <div class="note">
+        <strong>I only need free features — skip OAuth and AI.</strong> Install → Reload YouTube tabs → browse. No Google Cloud project, no OAuth client, no AI key. Come back to sections 3–4 only when you need playlist API tools or transcript Q&amp;A.
+      </div>
+
+      <div class="note">
+        <strong>Quick path:</strong> Load unpacked → open dashboard → Reload YouTube tabs. Most features work with <span class="cost-free">$0</span> and no API keys. Unsynth is <strong>not</strong> in the Chrome Web Store — Developer mode + Load unpacked is expected, and updates are manual (replace folder → Reload extension → Reload YouTube tabs).
+      </div>
+
+      <h2 id="free-path">Free path checklist</h2>
+      <table>
+        <thead><tr><th>Do now</th><th>Skip until asked</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#install">Install extension</a></td><td><a href="#oauth">Google OAuth</a> — subs, playlist API, Forge writes</td></tr>
+          <tr><td><a href="#reload">Reload YouTube tabs</a></td><td><a href="#ai">AI keys</a> — assistant &amp; fact-check only</td></tr>
+        </tbody>
+      </table>
+      <p>After install + reload: AI filter, watch history, UI Tune, SponsorBlock, feed stats, local groups, Forge Search, player tools — all free.</p>
+
+      <h2 id="ai-explained">AI features explained</h2>
+      <table>
+        <thead><tr><th>Feature</th><th>Needs your AI key?</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>AI content filter</td><td class="cost-free">No</td><td>On-device heuristics</td></tr>
+          <tr><td>Playlist Forge discover / Search</td><td class="cost-free">No</td><td>Hosted discover — not your AI key</td></tr>
+          <tr><td>AI assistant (summary &amp; Q&amp;A)</td><td class="cost-paid">Yes — BYOK</td><td>OpenRouter / OpenAI / Anthropic</td></tr>
+          <tr><td>AI fact-check</td><td class="cost-paid">Yes — BYOK</td><td>Same key as the assistant</td></tr>
+        </tbody>
+      </table>
+      <p>Nobody pays Phaenex. Tips never unlock features.</p>
+
+      <h2 id="costs">Costs at a glance</h2>
+      <img class="guide-img" src="images/setup-00-costs-overview.png" alt="Cost breakdown: free vs optional paid items" width="820" height="auto" />
+      <table>
+        <thead><tr><th>Item</th><th>Cost</th><th>Required?</th></tr></thead>
+        <tbody>
+          <tr><td>Extension + core features</td><td class="cost-free">Free</td><td>Yes (after reload)</td></tr>
+          <tr><td>Google Cloud + YouTube API</td><td class="cost-free">Free (10k units/day)</td><td>Optional</td></tr>
+          <tr><td>AI assistant + fact-check (OpenRouter / OpenAI / Anthropic)</td><td class="cost-paid">Pay-per-use</td><td>Optional</td></tr>
+          <tr><td>GitHub PAT, Takeout import</td><td class="cost-free">Free</td><td>Optional</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="checklist">Checklist</h2>
+      <table>
+        <thead><tr><th>Step</th><th>Required?</th><th>Time</th></tr></thead>
+        <tbody>
+          <tr><td><a href="#install">Install extension</a></td><td>Yes</td><td>~5 min</td></tr>
+          <tr><td><a href="#reload">Reload YouTube tabs</a></td><td>Yes</td><td>~1 min</td></tr>
+          <tr><td><a href="#oauth">Google OAuth</a></td><td>Optional</td><td>~15–30 min</td></tr>
+          <tr><td><a href="#ai">AI provider keys</a></td><td>Optional</td><td>~5 min</td></tr>
+          <tr><td><a href="#history">Import history</a></td><td>Optional</td><td>~10–30 min</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="privacy">Privacy / Data Flow</h2>
+      <img class="guide-img" src="images/setup-07-privacy-flow.png" alt="Privacy Data Flow" width="820" height="auto" />
+      <p><strong>There is no Unsynth analytics server, and nothing is collected by default.</strong> The only exceptions are features you turn on yourself — each one is opt-in and sends a minimal, disclosed payload, never your full history.</p>
+      <ul>
+        <li><strong>Local Storage:</strong> Watch history, watch progress, stats, subscription groups, playlist folders, and settings all live in <code>chrome.storage.local</code> on your own device by default. Watch history and progress are uploaded only if you explicitly enable <strong>Sync across devices</strong> (Watched tab) — otherwise nothing here ever leaves your device.</li>
+        <li><strong>Secrets:</strong> OAuth client secrets, AI provider API keys, and GitHub access tokens stay only on your machine.</li>
+        <li><strong>External Calls:</strong> Unsynth only talks to the services you opt into, or to public community APIs: <code>www.youtube.com</code>, <code>music.youtube.com</code>, <code>suggestqueries.google.com</code> (Creator Studio autocomplete), <code>returnyoutubedislikeapi.com</code> / <code>sponsor.ajay.app</code> / <code>dearrow-thumb.ajay.app</code> (community modules, can be disabled), <code>raw.githubusercontent.com</code> (24h AiSList community blocklist sync), <code>unsynth.vercel.app</code> / <code>api.github.com</code> (update checks), <code>oauth2.googleapis.com</code> / <code>www.googleapis.com</code> (OAuth, opt-in), <code>openrouter.ai</code> / <code>api.openai.com</code> / <code>api.anthropic.com</code> (AI APIs, opt-in), <code>playlist-forge.vercel.app</code> (Playlist Forge sync, opt-in), <code>unsynth.vercel.app/api/sync/*</code> (Watch History Sync — watched-video IDs and progress percentages only, opt-in).</li>
+      </ul>
+
+      <h2 id="install">1. Install the extension</h2>
+      <img class="guide-img" src="images/setup-01-install.png" alt="Install: Developer mode, Load unpacked, select manifest.json folder" width="820" height="auto" />
+      <p>Unsynth is sideloaded — not from the Chrome Web Store.</p>
+      <ol>
+        <li>Get the folder (git clone, zip, or <code>.crx</code>).</li>
+        <li>Open <code>chrome://extensions</code> (or Edge/Brave equivalent).</li>
+        <li>Enable <strong>Developer mode</strong> → <strong>Load unpacked</strong> → select the folder with <code>manifest.json</code>.</li>
+      </ol>
+      <p>Requires Chromium 120+. Firefox is not supported.</p>
+
+      <h2 id="reload">2. Reload YouTube tabs</h2>
+      <img class="guide-img" src="images/setup-02-reload-youtube.png" alt="Open dashboard and click Reload YouTube tabs" width="820" height="auto" />
+      <ol>
+        <li>Open the Unsynth dashboard (toolbar icon → ⚙).</li>
+        <li>Click <strong>Reload YouTube tabs</strong>.</li>
+      </ol>
+
+      <h2 id="oauth">3. Google OAuth (YouTube API)</h2>
+      <p><strong>Optional — skip if you only need free features.</strong> For subscription import, playlist tools, and Forge “Create on YouTube”. Each user creates their own OAuth client — never share someone else’s secret. <strong class="cost-free">Free</strong> at personal scale.</p>
+
+      <img class="guide-img" src="images/setup-03-google-cloud.png" alt="Google Cloud: new project, enable YouTube Data API v3, OAuth consent screen" width="820" height="auto" />
+      <p><em>Illustrative — a simplified recreation of the Google Cloud Console, not a live screenshot. Your actual screen will look like Google's current console design.</em></p>
+
+      <h3>3.1 Google Cloud project</h3>
+      <ol>
+        <li><a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a> → <strong>New project</strong>.</li>
+        <li><strong>APIs &amp; Services → Library</strong> → enable <strong>YouTube Data API v3</strong>.</li>
+        <li><strong>OAuth consent screen</strong> → External → fill required fields → add yourself as a <strong>Test user</strong> if the app is in Testing.</li>
+      </ol>
+
+      <img class="guide-img" src="images/setup-04-oauth-credentials.png" alt="Create OAuth web client and match redirect URI from Unsynth Account tab" width="820" height="auto" />
+      <p><em>Illustrative — same as above, not a live screenshot of the real credentials page.</em></p>
+
+      <h3>3.2 OAuth client</h3>
+      <ol>
+        <li><strong>Credentials → Create credentials → OAuth client ID</strong>.</li>
+        <li>Type: <strong>Web application</strong>.</li>
+        <li><strong>Authorized redirect URI:</strong> copy from dashboard → <strong>Account</strong> tab — must match exactly.</li>
+        <li>Copy <strong>Client ID</strong> and <strong>Client secret</strong>.</li>
+      </ol>
+
+      <h3>3.3 Connect in Unsynth</h3>
+      <ol>
+        <li>Dashboard → <strong>Account</strong> → paste credentials → <strong>Save credentials</strong>.</li>
+        <li>Click <strong>Connect YouTube (read + write)</strong>.</li>
+      </ol>
+
+      <p><strong>Troubleshooting:</strong></p>
+      <table>
+        <thead><tr><th>Problem</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td><code>redirect_uri_mismatch</code></td><td>URI must match dashboard exactly</td></tr>
+          <tr><td>Consent blocked</td><td>Add account under Test users</td></tr>
+          <tr><td>Brave fails</td><td>Use Chrome or Edge, or allow Google login under Brave Privacy Settings</td></tr>
+          <tr><td>“Add credentials first”</td><td>Save Client ID + Secret before Connect</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="ai">4. AI provider keys (BYOK)</h2>
+      <img class="guide-img" src="images/setup-05-ai-keys.png" alt="AI tab: pick provider, paste key, Save and Test" width="820" height="auto" />
+      <p><strong>Optional — skip unless you want transcript Q&amp;A or fact-check.</strong> <strong>Needed for:</strong> watch-page <strong>AI assistant</strong> (transcript summaries, Q&amp;A) and <strong>AI fact-check</strong>. <strong>Not needed for:</strong> AI content filter or Forge Search discover. <strong class="cost-paid">Pay-per-use</strong> — typical small models ~$0.15–0.50 per million tokens.</p>
+      <table>
+        <thead><tr><th>Provider</th><th>Key</th><th>Typical cost</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://openrouter.ai/keys" target="_blank" rel="noopener">OpenRouter</a></td><td><code>sk-or-v1-</code></td><td class="cost-paid">~$0.15/M tokens</td></tr>
+          <tr><td><a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI</a></td><td><code>sk-proj-</code></td><td class="cost-paid">~$0.15/M tokens</td></tr>
+          <tr><td><a href="https://console.anthropic.com/" target="_blank" rel="noopener">Anthropic</a></td><td><code>sk-ant-</code></td><td class="cost-paid">~$0.25/M tokens</td></tr>
+        </tbody>
+      </table>
+      <ol>
+        <li>Dashboard → <strong>AI</strong> tab.</li>
+        <li>Pick OpenRouter, OpenAI, or Anthropic and paste your key.</li>
+        <li><strong>Save</strong> → <strong>Test</strong>.</li>
+      </ol>
+
+      <h2 id="history">5. Import watch history (optional)</h2>
+      <p>Google Takeout or PocketTube/Watchmarker JSON via the <strong>Watched</strong> tab. <strong class="cost-free">Free.</strong> See <code>youtube-history-to-import/IMPORT-FORMATS.txt</code> in the repo.</p>
+
+      <h2 id="stats">Video stats &amp; compare</h2>
+      <p>After reload, Unsynth shows <strong>likes, dislikes, ratio, and views</strong> on <strong>search, home, and subscription feeds</strong> (under each title) and on watch pages — powered by Return YouTube Dislike. On watch pages you also get counts on the like/dislike buttons, a stats strip with <strong>Compare</strong>, and the sidebar <strong>✦ Stats</strong> overlay. Optional — configure under Modules → Video stats (toggle feed tiles there).</p>
+      <p><a href="https://unsynth.vercel.app/#support" target="_blank" rel="noopener">Support Phaenex</a> (optional tips) · <a href="https://unsynth.vercel.app" target="_blank" rel="noopener">Full online guide</a></p>
+
+      <h2 id="updates">6. Staying updated</h2>
+      <p>After <code>git pull</code>: reload the extension on <code>chrome://extensions</code>, then Reload YouTube tabs. <strong class="cost-free">Free.</strong></p>
+      <p>Public repo: <strong>Check for updates</strong> works without a GitHub token. Private repo: add your own PAT with <code>repo</code> scope on Account → Updates.</p>
+
+      <h2 id="profile">Recommended profile (optional)</h2>
+      <p>If the author shares an <code>unsynth-profile.json</code>, import it on the <strong>Modules</strong> tab → Import settings profile. You still add your own OAuth and AI keys afterward.</p>
+
+      <h2 id="secrets">What never to share</h2>
+      <ul>
+        <li>OAuth Client Secret, AI keys, GitHub PAT</li>
+        <li>Google OAuth tokens (auto-managed)</li>
+        <li><code>tools/extension-key.pem</code> (local packing key)</li>
+      </ul>
+      <p>Settings profile export includes preferences only — no secrets.</p>
+    </div>
+    <script src="../shared/setup-links.js"></script>
+    <script src="setup-guide.js"></script>
+  </body>
+</html>

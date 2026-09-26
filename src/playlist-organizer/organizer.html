@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Playlist Organizer · Unsynth</title>
+    <link rel="stylesheet" href="../shared/design-tokens.css" />
+    <link rel="stylesheet" href="../shared/controls.css" />
+    <link rel="stylesheet" href="organizer.css" />
+  </head>
+  <body>
+    <header class="org-header">
+      <div class="org-brand">
+        <span class="org-mark" aria-hidden="true">✦</span>
+        <div>
+          <h1>Playlist Organizer</h1>
+          <p>Open playlists side by side, select videos, then put them where they belong.</p>
+        </div>
+      </div>
+      <div class="org-header-actions">
+        <span id="auth-state" class="org-connection" aria-live="polite">Checking YouTube…</span>
+        <button id="connect-youtube" class="primary" type="button" hidden>Connect YouTube</button>
+        <button id="refresh-all" type="button">Refresh</button>
+        <button id="open-settings" type="button">Settings</button>
+      </div>
+    </header>
+
+    <div id="notice" class="org-notice" role="status" aria-live="polite" hidden></div>
+
+    <main class="org-layout">
+      <aside class="org-library" aria-label="Your playlists">
+        <div class="org-library-head">
+          <div>
+            <h2>Your playlists</h2>
+            <span id="playlist-total">0 loaded</span>
+          </div>
+          <div class="org-library-acts">
+            <button id="create-playlist" class="quiet" type="button">New playlist</button>
+            <button id="close-all" class="quiet" type="button">Close all</button>
+          </div>
+        </div>
+        <label class="org-search">
+          <span class="sr-only">Find a playlist</span>
+          <input id="playlist-search" type="search" placeholder="Find a playlist" autocomplete="off" />
+        </label>
+        <section id="pin-manager" class="org-pin-manager" hidden>
+          <div class="org-pin-head">
+            <div>
+              <b>Sidebar pins</b>
+              <span id="pin-count">0 pinned</span>
+            </div>
+            <button id="unpin-all-stale" class="quiet" type="button" hidden>Clean dead</button>
+          </div>
+          <div id="pin-list" class="org-pin-list"></div>
+        </section>
+        <div id="playlist-list" class="org-playlist-list"></div>
+      </aside>
+
+      <section class="org-workspace" aria-label="Open playlists">
+        <div class="org-toolbar">
+          <label class="org-global-search">
+            <span class="sr-only">Search videos in open playlists</span>
+            <input id="video-search" type="search" placeholder="Search videos in open playlists" autocomplete="off" />
+          </label>
+          <div class="org-selection-summary">
+            <b id="selected-count">0 selected</b>
+            <button id="clear-selection" class="quiet" type="button" disabled>Clear</button>
+            <button id="select-all-open" class="quiet" type="button">Select all shown</button>
+          </div>
+          <label class="org-destination">
+            <span>Destination</span>
+            <select id="destination" disabled>
+              <option value="">Choose playlist…</option>
+            </select>
+          </label>
+          <label class="org-hide-watched">
+            <input id="hide-watched" type="checkbox" />
+            <span>Hide watched</span>
+          </label>
+          <button id="copy-selected" type="button" disabled>Copy</button>
+          <button id="move-selected" class="primary" type="button" disabled>Move</button>
+          <button id="delete-selected" class="danger" type="button" disabled>Delete</button>
+        </div>
+
+        <div id="workspace-empty" class="org-empty">
+          <div class="org-empty-graphic" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <h2>Open a few playlists</h2>
+          <p>Use the list on the left. Each playlist becomes a column you can search, compare, and clean up.</p>
+        </div>
+        <div id="playlist-columns" class="org-columns"></div>
+      </section>
+    </main>
+
+    <dialog id="confirm-dialog" class="org-dialog">
+      <form method="dialog">
+        <h2 id="confirm-title">Confirm</h2>
+        <p id="confirm-message"></p>
+        <div class="org-dialog-actions">
+          <button value="cancel" type="submit">Cancel</button>
+          <button id="confirm-action" value="confirm" class="danger" type="submit">Delete</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="create-dialog" class="org-dialog">
+      <form method="dialog" id="create-form">
+        <h2>New playlist</h2>
+        <label class="org-create-field">
+          <span>Name</span>
+          <input id="create-title" type="text" maxlength="150" required autocomplete="off" />
+        </label>
+        <label class="org-create-field">
+          <span>Privacy</span>
+          <select id="create-privacy">
+            <option value="private">Private</option>
+            <option value="unlisted">Unlisted</option>
+            <option value="public">Public</option>
+          </select>
+        </label>
+        <div class="org-dialog-actions">
+          <button value="cancel" type="submit" formnovalidate>Cancel</button>
+          <button id="create-action" value="confirm" class="primary" type="submit">Create</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="../shared/messages.js"></script>
+    <script src="../shared/auth-state.js"></script>
+    <script src="../shared/playlist-folders.js"></script>
+    <script src="../shared/playlist-library.js"></script>
+    <script src="../shared/playlist-budget.js"></script>
+    <script src="organizer.js"></script>
+  </body>
+</html>

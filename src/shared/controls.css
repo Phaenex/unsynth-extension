@@ -1,0 +1,69 @@
+/* Shared Unsynth controls — one switch component for popup + dashboard so the
+   same module toggles look identical everywhere. Requires design-tokens.css. */
+
+/* Toggle switch: styled directly on the checkbox (no wrapper markup needed).
+   Applies to any checkbox with .un-switch, and to dashboard module toggles
+   ([data-module]) so existing markup picks it up unchanged. */
+input[type='checkbox'].un-switch,
+input[type='checkbox'][data-module] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 40px;
+  height: 22px;
+  margin: 0;
+  border: none;
+  border-radius: var(--un-radius-pill);
+  background: var(--un-track);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex: none;
+}
+input[type='checkbox'].un-switch::before,
+input[type='checkbox'][data-module]::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.15s;
+}
+input[type='checkbox'].un-switch:checked,
+input[type='checkbox'][data-module]:checked {
+  background: var(--un-accent);
+}
+input[type='checkbox'].un-switch:checked::before,
+input[type='checkbox'][data-module]:checked::before {
+  transform: translateX(18px);
+}
+input[type='checkbox'].un-switch:disabled,
+input[type='checkbox'][data-module]:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Keyboard focus — visible ring on every interactive control, only for
+   keyboard navigation (:focus-visible), never on mouse click. */
+input[type='checkbox'].un-switch:focus-visible,
+input[type='checkbox'][data-module]:focus-visible,
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[role='tab']:focus-visible {
+  outline: 2px solid var(--un-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  input[type='checkbox'].un-switch,
+  input[type='checkbox'][data-module],
+  input[type='checkbox'].un-switch::before,
+  input[type='checkbox'][data-module]::before {
+    transition: none;
+  }
+}

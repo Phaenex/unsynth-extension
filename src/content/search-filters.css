@@ -1,0 +1,146 @@
+/* Search filters toolbar.
+   Injected into YouTube, so every colour falls back to a YouTube-appropriate
+   value when the extension's own tokens are not present, and the whole thing
+   is theme-aware -- YouTube can be light or dark and the bar sits inside its
+   results column either way. */
+
+#un-sf-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--un-yt-line, rgba(0, 0, 0, 0.12));
+  border-radius: 10px;
+  background: var(--un-yt-panel, rgba(0, 0, 0, 0.03));
+  font-family: var(--un-font, "Roboto", "Arial", sans-serif);
+  font-size: 13px;
+  color: var(--un-yt-text, #0f0f0f);
+}
+
+.un-sf-toggle {
+  appearance: none;
+  border: 1px solid var(--un-yt-line, rgba(0, 0, 0, 0.15));
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.un-sf-toggle:hover { background: var(--un-hover, rgba(0, 0, 0, 0.06)); }
+.un-sf-toggle:focus-visible {
+  outline: 2px solid var(--un-accent, #ff5a5f);
+  outline-offset: 2px;
+}
+
+.un-sf-count {
+  color: var(--un-yt-text-dim, #606060);
+  font-size: 12px;
+}
+/* Only colour the count when filters are actually on, so an unfiltered page
+   does not look like it is hiding something. */
+.un-sf-count.on {
+  color: var(--un-accent, #ff5a5f);
+  font-weight: 500;
+}
+
+.un-sf-panel {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--un-yt-line, rgba(0, 0, 0, 0.1));
+}
+.un-sf-panel[hidden] { display: none; }
+
+.un-sf-group { display: flex; flex-direction: column; gap: 8px; }
+
+/* The two groups behave differently -- one reloads the page, one is instant --
+   so they are labelled rather than left to be discovered. */
+.un-sf-group-title {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--un-yt-text-dim, #606060);
+}
+
+.un-sf-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+
+.un-sf-field { display: flex; flex-direction: column; gap: 3px; }
+.un-sf-label { font-size: 11px; color: var(--un-yt-text-dim, #606060); }
+
+.un-sf-num, .un-sf-text, .un-sf-date, .un-sf-select {
+  font: inherit;
+  color: inherit;
+  padding: 5px 8px;
+  border: 1px solid var(--un-yt-line, rgba(0, 0, 0, 0.2));
+  border-radius: 6px;
+  background: var(--un-yt-bg, #fff);
+}
+.un-sf-num { width: 100px; font-variant-numeric: tabular-nums; }
+.un-sf-text { min-width: 260px; flex: 1; }
+.un-sf-date { width: 150px; }
+.un-sf-select { min-width: 170px; }
+
+.un-sf-num:focus-visible,
+.un-sf-text:focus-visible,
+.un-sf-date:focus-visible,
+.un-sf-select:focus-visible {
+  outline: 2px solid var(--un-accent, #ff5a5f);
+  outline-offset: 1px;
+}
+
+.un-sf-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.un-sf-clear {
+  align-self: flex-start;
+  appearance: none;
+  border: 1px solid var(--un-yt-line, rgba(0, 0, 0, 0.15));
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.un-sf-clear:hover { background: var(--un-hover, rgba(0, 0, 0, 0.06)); }
+.un-sf-clear:focus-visible {
+  outline: 2px solid var(--un-accent, #ff5a5f);
+  outline-offset: 2px;
+}
+
+/* YouTube dark. The fallbacks above are light-mode values, so without this the
+   bar renders as a light card inside a dark page. */
+@media (prefers-color-scheme: dark) {
+  #un-sf-bar {
+    border-color: var(--un-yt-line, rgba(255, 255, 255, 0.14));
+    background: var(--un-yt-panel, rgba(255, 255, 255, 0.05));
+    color: var(--un-yt-text, #f1f1f1);
+  }
+  .un-sf-count { color: var(--un-yt-text-dim, #aaa); }
+  .un-sf-group-title { color: var(--un-yt-text-dim, #aaa); }
+  .un-sf-label { color: var(--un-yt-text-dim, #aaa); }
+  .un-sf-panel { border-top-color: var(--un-yt-line, rgba(255, 255, 255, 0.12)); }
+  .un-sf-toggle, .un-sf-clear { border-color: var(--un-yt-line, rgba(255, 255, 255, 0.18)); }
+  .un-sf-toggle:hover, .un-sf-clear:hover { background: var(--un-hover, rgba(255, 255, 255, 0.08)); }
+  .un-sf-num, .un-sf-text, .un-sf-date, .un-sf-select {
+    background: var(--un-yt-bg, #0f0f0f);
+    border-color: var(--un-yt-line, rgba(255, 255, 255, 0.2));
+  }
+}
+
+@media (max-width: 700px) {
+  .un-sf-text { min-width: 0; width: 100%; }
+  .un-sf-row { gap: 8px; }
+}

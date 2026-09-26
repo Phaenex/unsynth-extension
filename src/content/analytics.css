@@ -1,0 +1,866 @@
+/* ============================================================
+   Unsynth Analytics — stats card injected into #secondary.
+
+   THEMED. This file used to say it used shared design-tokens.css while
+   carrying 114 raw literals and zero theme handling, so every value was a dark
+   one and the whole card was unreadable on a light YouTube page. Measured live
+   before the fix: 191 failing elements on watch-light, the largest remaining
+   contrast cluster in the extension after the Forge panel.
+
+   Measured against the card ground. Dark values on light: --un-an-txt 1.65:1,
+   good 1.56:1, warn 1.61:1, faint 2.36:1, accent 3.05:1.
+
+   The identity coral (#ff5a5f) is 3.05:1 on white, so it stays for rules and
+   fills and text takes --un-an-accent. Brand is not semantics.
+   ============================================================ */
+.un-stats,
+.un-seo,
+.un-bar-row,
+.un-why-cue {
+  --un-an-txt: #1f1f26;
+  --un-an-dim: #5c5c66;
+  --un-an-faint: #6b6b75;
+  --un-an-accent: #c8302f;
+  --un-an-good: #17632c;
+  --un-an-warn: #7d5a0d;
+  --un-an-bad: #a32020;
+  /* Card surfaces. Light values sit just off the YouTube page white so a tile
+     reads as a tile without a border doing all the work. */
+  --un-an-tile: #f7f7f8;
+  --un-an-tile-hover: #eeeef0;
+  --un-an-inset: #f2f2f4;
+  --un-an-rule: #e2e2e6;
+}
+[dark] .un-stats,
+[dark] .un-seo,
+[dark] .un-bar-row,
+[dark] .un-why-cue {
+  --un-an-txt: #c9c9cf;
+  --un-an-dim: #8a8a92;
+  --un-an-faint: #a8a8b0;
+  --un-an-accent: #ff5a5f;
+  --un-an-good: #6ee787;
+  --un-an-warn: #ffc15a;
+  --un-an-bad: #ff8a80;
+  --un-an-tile: #141414;
+  --un-an-tile-hover: #1b1b1b;
+  --un-an-inset: #161616;
+  --un-an-rule: #2a2a2a;
+}
+.un-stats {
+  background: var(--un-yt-bg, #0f0f0f);
+  border: 1px solid var(--un-yt-line, #262626);
+  border-radius: var(--un-radius, 10px);
+  margin: 0 0 16px;
+  padding: 14px 16px 16px;
+  font-family: var(--un-font, Roboto, Arial, sans-serif);
+  color: var(--un-an-txt);
+  box-shadow: var(--un-shadow-sm, 0 4px 16px rgba(0, 0, 0, 0.2));
+  /* Never exceed the sidebar column — keep content from clipping off the edge. */
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.un-stats-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.un-stats-sum {
+  display: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--un-an-dim);
+}
+.un-stats.collapsed .un-stats-sum {
+  display: block;
+  flex: 1 1 auto;
+}
+/* Closed, the header is one line: the title may not wrap ("Stat / s" did, in
+   a 390px column), the summary yields with an ellipsis, and the HEURISTIC tag
+   is detail for the open card, not the closed one. */
+.un-stats.collapsed .un-stats-title { white-space: nowrap; flex: none; }
+.un-stats.collapsed .un-stats-tag { display: none; }
+.un-stats-caret {
+  margin-left: auto;
+  color: var(--un-an-dim);
+  font-size: 11px;
+  transition: transform 0.15s;
+}
+.un-stats.collapsed .un-stats-caret {
+  transform: rotate(-90deg);
+}
+.un-stats.collapsed .un-stats-head {
+  margin-bottom: 0;
+}
+.un-stats.collapsed .un-stats-body {
+  display: none;
+}
+.un-stats-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+.un-stats-title::first-letter {
+  color: var(--un-an-accent);
+}
+.un-stats-tag {
+  font-size: var(--un-text-label, 10px);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--un-an-dim);
+  border: 1px solid var(--un-yt-line, #2c2c2c);
+  border-radius: var(--un-radius-sm, 8px);
+  padding: 1px 6px;
+}
+.un-stats-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1px;
+  background: var(--un-an-rule);
+  border: 1px solid var(--un-an-rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.un-stat {
+  background: var(--un-an-tile);
+  padding: 11px 12px;
+  min-width: 0;
+}
+.un-stat.clickable {
+  cursor: pointer;
+  position: relative;
+}
+.un-stat.clickable:hover {
+  background: var(--un-an-tile-hover);
+}
+.un-stat.clickable::after {
+  content: '›';
+  position: absolute;
+  top: 7px;
+  right: 9px;
+  color: var(--un-an-faint);
+  font-size: 13px;
+}
+.un-stat.active {
+  background: var(--un-an-tile-hover);
+  box-shadow: inset 0 0 0 1px rgba(255, 90, 95, 0.5);
+}
+.un-stat-detail {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--un-an-txt);
+  background: var(--un-an-inset);
+  border: 1px solid var(--un-an-rule);
+  border-radius: 8px;
+  padding: 9px 11px;
+  margin-top: 8px;
+}
+
+/* header grade badge + breakdown */
+.un-grade {
+  /* 24px, not 20: this is the grade badge and it is a button that opens the
+     breakdown. WCAG 2.5.8 target minimum. */
+  min-width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--un-an-rule);
+  color: var(--un-an-dim);
+  font: 800 13px/20px Roboto, Arial, sans-serif;
+  text-align: center;
+  cursor: pointer;
+  padding: 0 5px;
+}
+.un-grade.has {
+  background: color-mix(in srgb, var(--gc, #888) 18%, var(--un-an-tile));
+  color: var(--un-an-txt);
+}
+.un-grade-bd {
+  margin-top: 10px;
+  background: var(--un-an-inset);
+  border: 1px solid var(--un-an-rule);
+  border-radius: 8px;
+  padding: 10px 11px;
+}
+.un-grade-bd-h {
+  font-size: 11px;
+  color: var(--un-an-dim);
+  margin-bottom: 8px;
+}
+.un-grade-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.un-grade-rl {
+  font-size: 11.5px;
+  width: 78px;
+  flex: none;
+  color: var(--un-an-txt);
+}
+.un-grade-track {
+  flex: 1;
+  height: 6px;
+  background: var(--un-an-rule);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.un-grade-fill {
+  height: 100%;
+  background: #ff5a5f;
+  border-radius: 3px;
+}
+.un-grade-rv {
+  font-size: 11px;
+  color: var(--un-an-dim);
+  width: 38px;
+  text-align: right;
+  flex: none;
+}
+.un-grade-row.clickable,
+.un-seo-row.clickable,
+.un-ring.clickable {
+  cursor: pointer;
+}
+.un-grade-row.clickable:hover,
+.un-seo-row.clickable:hover {
+  background: var(--un-an-tile-hover);
+  border-radius: 4px;
+}
+.un-grade-summary,
+.un-grade-why,
+.un-seo-why {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--un-an-faint);
+  margin-top: 8px;
+  padding: 8px 9px;
+  background: var(--un-an-inset);
+  border-radius: 6px;
+  border: 1px solid var(--un-an-rule);
+}
+.un-grade-summary {
+  margin-top: 0;
+  margin-bottom: 6px;
+  color: var(--un-an-dim);
+  border: none;
+  background: transparent;
+  padding: 0 0 4px;
+}
+.un-bar-row.clickable {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+}
+.un-bar-row.clickable:hover {
+  background: var(--un-an-tile-hover);
+}
+.un-eng-why {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--un-an-faint);
+  margin-top: 8px;
+  padding: 8px 9px;
+  background: var(--un-an-inset);
+  border-radius: 6px;
+  border: 1px solid var(--un-an-rule);
+}
+
+.un-stat-l {
+  font-size: var(--un-text-label, 10.5px);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--un-an-dim);
+}
+.un-stat-v {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 3px;
+  letter-spacing: -0.01em;
+}
+.un-stat-s {
+  font-size: 10.5px;
+  color: var(--un-an-dim);
+  margin-top: 3px;
+}
+.un-stats-sec {
+  margin-top: 16px;
+  border-top: 1px solid var(--un-an-rule);
+  padding-top: 14px;
+}
+.un-seo-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--un-an-dim);
+  margin-bottom: 10px;
+}
+.un-seo-score {
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+.un-seo-score.good {
+  color: var(--un-an-good);
+}
+.un-seo-score.mid {
+  color: var(--un-an-warn);
+}
+.un-seo-score.low {
+  color: var(--un-an-bad);
+}
+.un-seo-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  padding: 4px 4px;
+  margin: 0 -4px;
+  border-radius: 6px;
+  color: var(--un-an-txt);
+}
+.un-seo-text {
+  flex: 1;
+  min-width: 0;
+}
+.un-seo-row .un-why-cue {
+  margin-left: auto;
+}
+.un-seo-mark {
+  font-weight: 700;
+  width: 14px;
+  text-align: center;
+}
+.un-seo-mark.y {
+  color: var(--un-an-good);
+}
+.un-seo-mark.n {
+  color: var(--un-an-bad);
+}
+.un-stats-copy {
+  background: var(--un-an-inset);
+  color: var(--un-an-txt);
+  border: 1px solid var(--un-an-rule);
+  border-radius: var(--un-radius-xs, 6px);
+  padding: 3px 9px;
+  font-size: 11px;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.un-stats-copy:hover {
+  border-color: var(--un-an-accent);
+}
+.un-stats-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.un-stats-tagchip {
+  background: var(--un-an-inset);
+  border: 1px solid #2c2c2c;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11px;
+  color: var(--un-an-dim);
+}
+.un-stats-none {
+  font-size: 12px;
+  color: var(--un-an-dim);
+}
+
+/* settings gear + popover */
+.un-stats-gear {
+  margin-left: auto;
+  background: none;
+  border: 0;
+  color: var(--un-an-dim);
+  font-size: 13px;
+  cursor: pointer;
+  /* 24px minimum target. These were padding: 0 4px with no height, measuring
+     18x17 and 19x17 — under the WCAG 2.5.8 floor and awkward to hit with a
+     mouse, let alone a trackpad. The glyph stays the same size; the hit area
+     grows around it. */
+  min-width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+.un-stats-gear:hover {
+  color: var(--un-an-accent);
+}
+.un-stats-caret {
+  margin-left: 8px;
+}
+.un-stats-settings {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  background: var(--un-an-tile);
+  border: 1px solid #262626;
+  border-radius: 8px;
+}
+.un-stats.settings-open .un-stats-settings {
+  display: flex;
+}
+.un-set-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--un-an-txt);
+  cursor: pointer;
+}
+.un-set-row input {
+  accent-color: var(--un-accent);
+}
+
+/* Summarize-with-AI bridge button */
+.un-stats-sumbtn {
+  width: 100%;
+  margin-top: 11px;
+  background: var(--un-accent-soft, rgba(255, 90, 95, 0.14));
+  color: var(--un-an-accent);
+  border: 1px solid color-mix(in srgb, var(--un-accent) 40%, transparent);
+  border-radius: var(--un-radius-sm, 8px);
+  padding: 9px;
+  font: 600 var(--un-text-body, 13px)/1 var(--un-font, Roboto, Arial, sans-serif);
+  cursor: pointer;
+}
+.un-stats-sumbtn:hover {
+  background: color-mix(in srgb, var(--un-accent) 22%, transparent);
+}
+a.un-stats-forge,
+button.un-stats-forge {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  text-align: center;
+  text-decoration: none;
+  background: var(--un-forge-soft, rgba(110, 231, 135, 0.08));
+  color: var(--un-an-good);
+  border: 1px solid color-mix(in srgb, var(--un-forge) 28%, transparent);
+  border-radius: var(--un-radius-sm, 8px);
+  padding: 8px;
+  font: 600 var(--un-text-body, 12.5px)/1 var(--un-font, Roboto, Arial, sans-serif);
+  cursor: pointer;
+}
+a.un-stats-forge:hover,
+button.un-stats-forge:hover {
+  background: var(--un-forge-soft, rgba(110, 231, 135, 0.16));
+  border-color: color-mix(in srgb, var(--un-forge) 35%, transparent);
+  color: var(--un-an-good);
+}
+
+/* engagement bars */
+.un-bar-row {
+  margin: 11px 0;
+}
+.un-bar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--un-an-txt);
+  margin-bottom: 5px;
+}
+.un-bar-label {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.un-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  min-width: 0;
+}
+.un-bar-rate {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.un-bar-rate.good {
+  color: var(--un-an-good);
+  background: rgba(110, 231, 135, 0.14);
+}
+.un-bar-rate.avg {
+  color: var(--un-an-warn);
+  background: rgba(255, 193, 90, 0.14);
+}
+.un-bar-rate.low {
+  color: var(--un-an-bad);
+  background: rgba(255, 106, 95, 0.14);
+}
+.un-bar-val {
+  font-family: "SF Mono", Consolas, monospace;
+  color: var(--un-an-txt);
+}
+.un-why-cue {
+  color: var(--un-an-faint);
+  font-size: 11px;
+  flex: none;
+  transition: color 0.12s;
+}
+.un-bar-row.clickable:hover .un-why-cue,
+.un-seo-row.clickable:hover .un-why-cue,
+.un-bar-row.clickable:focus-visible .un-why-cue,
+.un-seo-row.clickable:focus-visible .un-why-cue {
+  color: var(--un-an-bad);
+}
+.un-bar-track {
+  height: 7px;
+  background: var(--un-an-rule);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.un-bar-fill {
+  height: 100%;
+  background: #4a5568;
+  border-radius: 4px;
+  transition: width 0.4s cubic-bezier(0.2, 0, 0, 1);
+}
+.un-bar-fill.good {
+  background: #6ee787;
+}
+.un-bar-fill.avg {
+  background: #ffc15a;
+}
+.un-bar-fill.low {
+  background: #ff7a6f;
+}
+
+/* SEO ring gauge */
+.un-seo-top {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.un-ring {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: conic-gradient(var(--col, #6ee787) calc(var(--pct, 0) * 1%), var(--un-an-rule) 0);
+  display: grid;
+  place-items: center;
+  position: relative;
+  transition: background 0.5s ease;
+}
+.un-ring::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  background: var(--un-an-tile);
+  border-radius: 50%;
+}
+.un-ring span {
+  position: relative;
+  font-weight: 800;
+  font-size: 16px;
+  /* The score sits on the punched-out disc, not the card, so it takes the tile
+     text colour rather than inheriting whatever the ring is drawn in. */
+  color: var(--un-an-txt);
+}
+.un-seo-checks {
+  flex: 1;
+}
+.un-seo-label {
+  font-size: var(--un-text-label, 11px);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--un-an-dim);
+  margin-bottom: 6px;
+}
+
+.un-stats-pop {
+  /* NOT margin-left: auto. Both this and .un-stats-gear claimed the free space,
+     so they resolved to overlapping positions — 3 measured collisions at every
+     width. The gear keeps the auto margin and pushes the group right; this sits
+     beside it. */
+  background: none;
+  border: 0;
+  color: var(--un-an-dim);
+  font-size: 14px;
+  cursor: pointer;
+  /* 24px minimum target. These were padding: 0 4px with no height, measuring
+     18x17 and 19x17 — under the WCAG 2.5.8 floor and awkward to hit with a
+     mouse, let alone a trackpad. The glyph stays the same size; the hit area
+     grows around it. */
+  min-width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+.un-stats-pop:hover {
+  color: var(--un-an-accent);
+}
+
+.un-stats.floating,
+#un-stats-float {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2147483645;
+  width: min(420px, calc(100vw - 32px));
+  max-height: min(86vh, 720px);
+  overflow: auto;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+}
+.un-stats-float-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483644;
+  background: rgba(0, 0, 0, 0.55);
+}
+.un-stats-float-hint {
+  font-size: 11px;
+  color: var(--un-an-dim);
+  margin: 0 0 10px;
+  line-height: 1.45;
+  padding: 8px 10px;
+  background: var(--un-an-inset);
+  border-radius: 6px;
+  border: 1px solid var(--un-an-rule);
+}
+
+.un-compare-inline {
+  margin-top: 4px;
+}
+
+.un-compare-title {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 6px;
+  line-height: 1.35;
+}
+.un-compare-lead {
+  font-size: 11px;
+  color: var(--un-an-dim);
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+.un-compare-table-wrap {
+  overflow-x: auto;
+}
+.un-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+.un-compare-table th,
+.un-compare-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #242424;
+  text-align: left;
+}
+.un-compare-table th {
+  color: var(--un-an-dim);
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.un-compare-val.current {
+  color: var(--un-an-txt);
+  font-weight: 700;
+}
+.un-compare-val.up {
+  color: var(--un-an-good);
+}
+.un-compare-val.down {
+  color: var(--un-an-bad);
+}
+.un-compare-val.flat {
+  color: var(--un-an-dim);
+}
+.un-compare-note,
+.un-compare-empty,
+.un-compare-loading {
+  font-size: 11px;
+  color: var(--un-an-dim);
+  margin: 8px 0 0;
+  line-height: 1.45;
+}
+.un-compare-subhead {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--un-an-dim);
+  margin: 12px 0 8px;
+  font-weight: 700;
+}
+.un-compare-related {
+  margin-top: 4px;
+}
+.un-compare-rel-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.un-compare-rel-bar {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--un-an-rule);
+  overflow: hidden;
+}
+.un-compare-rel-fill {
+  height: 100%;
+  background: #888;
+  border-radius: 4px;
+}
+.un-vid-stats-panel .un-compare-rel-fill.current {
+  background: #ff5a5f;
+}
+.un-compare-rel-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+.un-compare-rel-title {
+  min-width: 0;
+  flex: 1;
+  color: var(--un-an-txt);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.un-compare-rel-views {
+  color: var(--un-an-dim);
+  flex-shrink: 0;
+}
+
+.un-stats-popout {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483100;
+}
+.un-stats-popout-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+.un-stats-popout-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, calc(100vw - 24px));
+  max-height: min(88vh, 760px);
+  overflow: auto;
+  background: var(--un-yt-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
+  padding: 16px 18px;
+}
+.un-stats-popout-body {
+  overflow-y: auto;
+}
+/* Visible keyboard focus on interactive analytics controls */
+.un-stat.clickable:focus-visible,
+.un-bar-row.clickable:focus-visible,
+.un-grade-row.clickable:focus-visible,
+.un-seo-row.clickable:focus-visible,
+.un-stats-pop:focus-visible,
+.un-stats-popout-close:focus-visible,
+.un-stats-gear:focus-visible,
+.un-stats-tool:focus-visible {
+  outline: 2px solid var(--un-focus);
+  outline-offset: 2px;
+}
+.un-stats-popout-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.un-stats-popout-title {
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+}
+.un-stats-popout-close {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  color: var(--un-an-dim);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+}
+.un-stats-popout-close:hover {
+  color: var(--un-an-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .un-stats-caret,
+  .un-bar-fill {
+    transition: none !important;
+  }
+}
+
+/* ============================================================
+   Publish-date chip — sits under the watch-page title.
+
+   YouTube only shows the upload date inside the collapsed description, as
+   relative text ("20 years ago"). Measured live: the title renders at y=684
+   and that date at y=1111, so reading it costs a scroll plus a click on
+   every video. This puts the real date on the title line.
+
+   Deliberately quiet. It is metadata under a heading, not a control: no
+   background fill, no border, no accent colour, nothing that competes with
+   the title above it or reads as a button. It borrows YouTube's own secondary
+   text colour so it looks like part of the page rather than an add-on.
+   ============================================================ */
+.un-pubdate-chip {
+  display: block;
+  margin: 2px 0 0;
+  font-family: var(--un-font, Roboto, Arial, sans-serif);
+  /* Matches YouTube's own secondary metadata size/weight. */
+  /* 13.5px, not 12px. At 12px it sat under a 20px title and read as fine print
+     you had to lean in for — reported as "the date thing we have is a little
+     small". This is the one fact the chip exists to deliver, so it gets the
+     size of YouTube's own metadata line rather than a footnote's. The colour
+     stays secondary: bigger, not louder. */
+  font-size: 13.5px;
+  line-height: 18px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  color: var(--un-an-dim);
+  /* The title is a heading; keep the chip from inheriting its huge size. */
+  text-transform: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}

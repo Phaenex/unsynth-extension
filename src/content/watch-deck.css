@@ -1,0 +1,1054 @@
+/* ==========================================================================
+   The watch guide: YouTube's creator row and Unsynth's deck as one surface.
+
+   REDESIGN 2026-09-22 (docs/design/WATCH-GUIDE-DDR.md). This file replaces
+   four stacked generations of rules that restyled the same selectors three
+   times over; the reasoning each of them paid for is kept below as the rule
+   it produced, not as the history of the override.
+
+   Composition, wide:
+
+     ┌ creator row (YouTube's own nodes, our surface) ───────────────────────┐
+     │ avatar  channel  Subscribe                     like  share  save  ⋯   │
+     ├───────────────────────────────────────────────────────────────────────┤
+     │ 17:49 after skips                    │ ▥ Stats      99.1% liked · … › │
+     │ Full length 18:40 · Skippable 0:51   │ ◈ Fact check  Not checked  Rev │
+     │ ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁█                 │ ✦ Ask AI     Summarize, …    › │
+     │ ■ Sponsor ■ Reminder   Click to skip │ ≡ Forge      Suggest, …      › │
+     ├───────────────────────────────────────────────────────────────────────┤
+     │ Chapters  0:00 Intro  1:07 Neurons  2:42 Layers  …  +3  Description ⌄ │
+     │ Links     patreon.com  3blue1brown.com                                │
+     └───────────────────────────────────────────────────────────────────────┘
+
+   Left: the one question still open on a page you have already clicked —
+   how long is this really. Right: every door into the side panel, each
+   carrying its own glance value (DESIGN-STANDARD rule A). Bottom: where to
+   go inside the video, with names, not only times.
+   ========================================================================== */
+
+.un-watch-deck,
+ytd-watch-metadata:has(#un-watch-deck:not(.is-empty)),
+html:has(#un-watch-deck.is-side:not(.is-empty)) ytd-watch-metadata {
+  --un-guide-bg: #16171b;
+  --un-guide-raised: #202228;
+  --un-guide-hover: #272a31;
+  --un-guide-line: #33363e;
+  --un-guide-ink: #f1f2f4;
+  --un-guide-muted: #b3b8c2;
+  /* Warm = "an Unsynth action you can take", never a verdict (§9). */
+  --un-guide-action: #ffc39a;
+  --un-guide-focus: #ffc39a;
+  --un-guide-track: #2c2f36;
+  /* Chips: measured on --un-guide-raised, not on the page (rule F). */
+  --un-deck-chip-bg: #24262d;
+  --un-deck-chip-hover: #2f323a;
+  --un-deck-chip-ink: #eceef2;
+  --un-deck-chip-sub: #bfc4cd;
+  /* Old names, still read by modules that style inside the deck. */
+  --un-rt-bg: var(--un-guide-bg);
+  --un-rt-label: var(--un-guide-muted);
+  --un-rt-val: var(--un-guide-ink);
+  --un-deck-action: var(--un-guide-action);
+  --un-deck-action-bg: #33261c;
+  --un-deck-action-border: #9c6b45;
+}
+html:not([dark]) .un-watch-deck,
+html:not([dark]) ytd-watch-metadata:has(#un-watch-deck:not(.is-empty)),
+html:not([dark]):has(#un-watch-deck.is-side:not(.is-empty)) ytd-watch-metadata {
+  --un-guide-bg: #f7f7f9;
+  --un-guide-raised: #eceef2;
+  --un-guide-hover: #e3e6ec;
+  --un-guide-line: #d8dbe2;
+  --un-guide-ink: #1c1f26;
+  --un-guide-muted: #525966;
+  --un-guide-action: #8a3d0b;
+  --un-guide-focus: #8a3d0b;
+  --un-guide-track: #d9dce3;
+  --un-deck-chip-bg: #eceef2;
+  --un-deck-chip-hover: #e0e3ea;
+  --un-deck-chip-ink: #1c1f26;
+  --un-deck-chip-sub: #4a505c;
+  --un-deck-action-bg: #fff1e4;
+  --un-deck-action-border: #b27a4f;
+}
+
+/* ---- the creator row: YouTube's nodes, our surface ----------------------
+   Native controls are never moved or cloned; only the ground around them is
+   ours. Radius 12 matches YouTube's own card radius (a 14/16 radius beside
+   theirs read as a botched clone — measured in an earlier pass). */
+ytd-watch-metadata:has(#un-watch-deck:not(.is-empty)) #top-row {
+  box-sizing: border-box;
+  margin-bottom: 0;
+  padding: 14px 20px 14px;
+  background: var(--un-guide-bg);
+  border: 1px solid var(--un-guide-line);
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+ytd-watch-metadata:has(#un-watch-deck:not(.is-empty)) #top-row > #owner {
+  min-width: 0;
+  flex: 1 1 320px;
+  margin-right: 0;
+}
+ytd-watch-metadata:has(#un-watch-deck:not(.is-empty)) #top-row > #actions {
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+  margin-left: 0;
+}
+
+/* ---- the deck ------------------------------------------------------------ */
+.un-watch-deck {
+  box-sizing: border-box;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  grid-auto-rows: auto;
+  column-gap: 28px;
+  row-gap: 0;
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 16px;
+  padding: 16px 20px 14px;
+  background: var(--un-guide-bg);
+  border: 1px solid var(--un-guide-line);
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+  color: var(--un-guide-ink);
+  font: 400 14px/1.4 Roboto, Arial, sans-serif;
+  container-type: inline-size;
+}
+/* A hairline between YouTube's row and ours, inset to the content edge: the
+   two halves are one surface but not one thing. */
+.un-watch-deck::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: var(--un-guide-line);
+}
+.un-watch-deck.is-empty,
+.un-deck-slot.is-empty { display: none; }
+.un-deck-slot { min-width: 0; padding: 0; }
+
+.un-deck-runtime {
+  grid-column: 1;
+  grid-row: 1 / span 4;
+  align-self: stretch;
+  min-width: 0;
+  padding: 6px 28px 4px 0;
+  border-right: 1px solid var(--un-guide-line);
+  box-sizing: border-box;
+}
+.un-deck-stats,
+.un-deck-fact,
+.un-deck-ai,
+.un-deck-forge { grid-column: 2; }
+.un-deck-desc {
+  grid-column: 1 / -1;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--un-guide-line);
+}
+/* No runtime (an ad is playing, a live stream, SponsorBlock off): the doors
+   take the full width as a two-column list instead of stretching four
+   1300px bars with their text crammed at the left edge (captured 2026-09-22
+   at 1920 during a pre-roll). */
+.un-watch-deck:has(> .un-deck-runtime.is-empty) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.un-watch-deck:has(> .un-deck-runtime.is-empty) > :is(.un-deck-stats, .un-deck-fact, .un-deck-ai, .un-deck-forge) {
+  grid-column: auto;
+}
+/* In two columns "the rows after the first" is not "the rows below a row" —
+   a sibling rule drew a rule over Fact check and none over Stats. Every row
+   carries its own top rule here, and the deck's inset hairline steps aside
+   so the first row's rule is the seam with the creator row. */
+.un-watch-deck:has(> .un-deck-runtime.is-empty) > .un-deck-slot.is-launcher:not(.is-empty) {
+  border-top: 1px solid var(--un-guide-line);
+  column-gap: 28px;
+}
+.un-watch-deck:has(> .un-deck-runtime.is-empty) { column-gap: 28px; padding-top: 8px; }
+.un-watch-deck:has(> .un-deck-runtime.is-empty)::before { display: none; }
+
+/* ---- slot headers: shared ------------------------------------------------ */
+.un-deck-head {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--un-guide-ink);
+  font: 500 14px/1.3 Roboto, Arial, sans-serif;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: none;
+  cursor: pointer;
+}
+.un-deck-head:hover { background: var(--un-guide-hover); }
+.un-deck-head:focus-visible {
+  outline: 2px solid var(--un-guide-focus);
+  outline-offset: 1px;
+}
+.un-deck-head-t { flex: none; }
+.un-deck-head-s {
+  min-width: 0;
+  color: var(--un-guide-muted);
+  font: 400 13px/1.35 Roboto, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.un-deck-head-a:empty { display: none; }
+.un-deck-head-a {
+  flex: none;
+  color: var(--un-guide-action);
+  font: 600 13px/1.3 Roboto, Arial, sans-serif;
+}
+
+/* Chevron, drawn from two borders so it takes the text colour and a rotation
+   says the direction: › opens to the side, ‹ is open, ⌄ / ⌃ fold. */
+.un-deck-caret {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin: 0 3px 0 2px;
+  border: solid currentColor;
+  border-width: 0 1.8px 1.8px 0;
+  color: var(--un-guide-muted);
+  transform: rotate(-45deg);
+}
+.un-deck-slot.is-launcher > .un-deck-head[aria-expanded="true"] .un-deck-caret { transform: rotate(135deg); }
+.un-deck-slot:not(.is-launcher) > .un-deck-head .un-deck-caret { transform: translateY(-2px) rotate(45deg); }
+.un-deck-slot:not(.is-launcher):not(.is-collapsed) > .un-deck-head .un-deck-caret { transform: translateY(2px) rotate(-135deg); }
+
+/* Row glyphs: one line icon per door at YouTube's visual weight, drawn as a
+   mask so they take currentColor in both themes. Decorative (aria-hidden);
+   the label names the row. */
+.un-deck-ico {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  background: var(--un-guide-muted);
+  -webkit-mask: var(--un-deck-ico) center / 18px 18px no-repeat;
+  mask: var(--un-deck-ico) center / 18px 18px no-repeat;
+}
+.un-deck-stats,
+.un-deck-more-row[data-ico="stats"] { --un-deck-ico: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'><path d='M5 20V11M12 20V4M19 20v-6'/></svg>"); }
+.un-deck-fact,
+.un-deck-more-row[data-ico="fact"] { --un-deck-ico: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3l7 3v5.5c0 4.4-3 7.8-7 9.5-4-1.7-7-5.1-7-9.5V6z'/><path d='M9 12l2.2 2.2L15.5 10'/></svg>"); }
+.un-deck-ai,
+.un-deck-more-row[data-ico="ai"] { --un-deck-ico: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'><path d='M11 3l1.9 5.4L18 10.3l-5.1 1.9L11 18l-1.9-5.8L4 10.3l5.1-1.9z'/><path d='M18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z'/></svg>"); }
+.un-deck-forge,
+.un-deck-more-row[data-ico="forge"] { --un-deck-ico: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 6h13M4 11h13M4 16h8'/><path d='M16 14.5l5 3-5 3z'/></svg>"); }
+.un-deck-desc,
+.un-deck-more-row[data-ico="desc"] { --un-deck-ico: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'><path d='M5 7h14M5 12h14M5 17h9'/></svg>"); }
+
+/* ---- the doors: launcher rows ------------------------------------------
+   One list, hairlines between rows, no slab per row. Label left, the glance
+   value right, then the chevron — a readout you can scan down, and every row
+   the same kind of object (the old right column was two differently-coloured
+   buttons with a dead gap between them). */
+.un-deck-slot.is-launcher > .un-deck-head {
+  display: grid;
+  grid-template-columns: 18px auto minmax(0, 1fr) auto auto;
+  column-gap: 10px;
+}
+.un-deck-slot.is-launcher > .un-deck-head .un-deck-head-s {
+  justify-self: end;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+.un-deck-slot.is-launcher:not(.is-empty) ~ .un-deck-slot.is-launcher:not(.is-empty) {
+  border-top: 1px solid var(--un-guide-line);
+}
+/* A launcher's glance IS its header; its body (if any) does not render under
+   the video — that was a 99%-green meter repeating the same numbers. */
+.un-deck-slot.is-launcher > .un-deck-body { display: none; }
+/* Open: the row the side panel is showing. Accent bar is a selected state,
+   which brand colour may mark (§4). The value steps aside so the deck and
+   the open tab never print the same numbers twice (SIDE-PANEL-REVIEW item 1). */
+.un-deck-slot.is-launcher > .un-deck-head[aria-expanded="true"] {
+  background: var(--un-guide-raised);
+  box-shadow: inset 3px 0 0 var(--un-accent, #ff4e45);
+}
+.un-deck-slot.is-launcher > .un-deck-head[aria-expanded="true"] .un-deck-head-s,
+.un-deck-slot.is-launcher > .un-deck-head[aria-expanded="true"] .un-deck-head-a { visibility: hidden; }
+.un-deck-slot.is-launcher > .un-deck-head[aria-expanded="true"] .un-deck-ico { background: var(--un-guide-ink); }
+/* Not run: the value says "Not checked", the action says what pressing does.
+   Warm text, not a warm slab — unchecked is not a verdict (§9). */
+.un-deck-fact.is-action-only > .un-deck-head .un-deck-head-s { color: var(--un-guide-muted); }
+.un-deck-fact.is-action-only > .un-deck-head:hover .un-deck-head-a { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---- chapters & links --------------------------------------------------- */
+.un-deck-desc:not(.is-empty) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 16px;
+  align-items: start;
+}
+.un-deck-desc > .un-deck-preview { grid-column: 1; grid-row: 1; min-width: 0; }
+.un-deck-desc > .un-deck-head { grid-column: 2; grid-row: 1; }
+.un-deck-desc > .un-deck-body { grid-column: 1 / -1; grid-row: 2; }
+/* Without a preview (the digest has not parsed yet) the header carries the
+   count summary and takes the whole row. */
+.un-deck-desc:not(.has-preview) > .un-deck-head { grid-column: 1 / -1; }
+.un-deck-desc > .un-deck-head {
+  width: auto;
+  min-height: 34px;
+  padding: 6px 10px;
+  color: var(--un-guide-muted);
+  font-size: 13px;
+}
+.un-deck-desc > .un-deck-head:hover { color: var(--un-guide-ink); }
+.un-deck-desc.has-preview > .un-deck-head .un-deck-ico,
+.un-deck-desc.has-preview > .un-deck-head .un-deck-head-s { display: none; }
+.un-deck-desc:not(.has-preview) > .un-deck-head .un-deck-head-s { flex: 1 1 auto; }
+
+.un-deck-preview { display: flex; flex-direction: column; gap: 6px; }
+.un-deck-preview:empty { display: none; }
+.un-deck-pv-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+.un-deck-pv-lab {
+  flex: none;
+  width: 64px;
+  padding-top: 7px;
+  color: var(--un-guide-muted);
+  font: 500 13px/1 Roboto, Arial, sans-serif;
+}
+.un-deck-pv-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.un-deck-chip {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 240px;
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--un-deck-chip-bg);
+  color: var(--un-deck-chip-ink);
+  font: 500 13px/1.2 Roboto, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: default;
+}
+a.un-deck-chip, button.un-deck-chip { cursor: pointer; }
+a.un-deck-chip:hover, button.un-deck-chip:hover {
+  background: var(--un-deck-chip-hover);
+  border-color: var(--un-guide-line);
+}
+a.un-deck-chip:focus-visible, button.un-deck-chip:focus-visible {
+  outline: 2px solid var(--un-guide-focus);
+  outline-offset: 2px;
+}
+/* Time as the quiet address, the chapter name as the value. */
+.un-deck-chip-t { flex: none; color: var(--un-deck-chip-sub); font-weight: 500; }
+.un-deck-chip-s { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* The overflow chip is an action, not a value: warm, so "+3" never reads as
+   a chapter called "+3". */
+.un-deck-chip-more {
+  color: var(--un-guide-action);
+  background: transparent;
+  border-color: var(--un-guide-line);
+  font-weight: 600;
+}
+/* Inside the deck the digest body carries only what the preview does not:
+   the one-line summary and the control that opens YouTube's own description.
+   Its chapter and link lists are the preview above — rendering them again
+   is the 113px duplicate an earlier pass measured and removed. */
+.un-watch-deck .un-desc-digest { padding: 8px 0 0; font-size: 14px; }
+.un-watch-deck .un-desc-digest .un-desc-stamps { display: none; }
+/* LINKS FLIPPED (2026-09-24). The body's links used to be the duplicate of
+   the preview's website chips, so they were hidden here. They now say what
+   each link is for, grouped by purpose, which the chips cannot; so the
+   chips are the duplicate and give way wherever the body is showing. */
+.un-watch-deck .un-deck-desc:not(.is-collapsed):has(.un-desc-linkgroups) .un-deck-pv-row:has(> .un-deck-pv-list[aria-label="Links"]) { display: none; }
+.un-watch-deck .un-desc-digest .un-desc-links { margin: 4px 0 0; }
+.un-watch-deck .un-desc-blurb { color: var(--un-guide-ink); font-size: 14px; -webkit-line-clamp: 3; }
+.un-watch-deck .un-desc-more { font-size: 13px; min-height: 32px; color: var(--un-guide-action); padding: 6px 0; margin: 0; }
+
+/* ---- runtime, inside the deck ------------------------------------------- */
+.un-watch-deck #un-vid-stats,
+.un-watch-deck #un-desc-digest,
+.un-watch-deck .un-fc-panel {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  width: 100%;
+  max-width: none;
+}
+.un-watch-deck .un-sb-rt { padding: 0; background: none; box-shadow: none; }
+.un-watch-deck .un-sb-rt-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 18px;
+  row-gap: 6px;
+  margin-bottom: 14px;
+}
+/* Hero first, its label after it: "17:49 after skips" reads as a sentence. */
+.un-watch-deck .un-sb-rt-stat:first-child {
+  flex-basis: 100%;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.un-watch-deck .un-sb-rt-lab {
+  color: var(--un-guide-muted);
+  font: 400 13px/1.3 Roboto, Arial, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.un-watch-deck .un-sb-rt-stat:first-child .un-sb-rt-lab { font-size: 14px; }
+.un-watch-deck .un-sb-rt-val {
+  color: var(--un-guide-ink);
+  font: 500 14px/1.2 Roboto, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.un-watch-deck .un-sb-rt-val.is-hero {
+  font: 600 36px/1 Roboto, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.un-watch-deck .un-sb-rt-prov { color: var(--un-guide-muted); font-size: 13px; }
+/* The tape: a quiet track with the reported segments in colour. The hatch
+   that used to fill the track said "unmarked" across 88% of every video —
+   the loudest texture on the surface spent on an absence (rule E). The
+   track now recedes; the tape's label and each plain region's tooltip still
+   say unreported is not checked. */
+.un-watch-deck .un-sb-rt-tape {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--un-guide-track);
+}
+.un-watch-deck .un-sb-rt-seg.is-unchecked { background: transparent; }
+.un-watch-deck .un-sb-rt-seg.is-skip { box-shadow: none; border-radius: 2px; }
+.un-watch-deck .un-sb-rt-seg.is-skip::before,
+.un-watch-deck .un-sb-rt-seg.is-skip::after { display: none; }
+.un-watch-deck .un-sb-rt-playhead { top: -4px; bottom: -4px; border-radius: 2px; }
+.un-watch-deck .un-sb-rt-key {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  margin-top: 10px;
+  color: var(--un-guide-muted);
+  font: 400 13px/1.4 Roboto, Arial, sans-serif;
+}
+.un-sb-rt-key-item { display: inline-flex; align-items: center; gap: 7px; color: var(--un-guide-ink, inherit); }
+.un-sb-rt-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.un-watch-deck .un-sb-rt-hint { margin-left: auto; color: var(--un-guide-muted); }
+.un-watch-deck .un-sb-rt-legend {
+  white-space: normal;
+  max-width: 100%;
+  font: 500 13px/1.4 Roboto, Arial, sans-serif;
+  letter-spacing: 0;
+}
+/* Nothing reported: one sentence, the duration leading it. */
+.un-sb-rt-quiet {
+  margin: 6px 0 0;
+  color: var(--un-guide-muted, #aaa);
+  font: 400 14px/1.5 Roboto, Arial, sans-serif;
+}
+.un-sb-rt-quiet .un-sb-rt-val {
+  color: var(--un-guide-ink, inherit);
+  font: 600 14px/1.5 Roboto, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+/* The divider spans the doors; the one quiet line sits centred beside them. */
+.un-watch-deck .un-deck-runtime:has(.un-sb-rt.is-quiet) { display: flex; align-items: center; }
+
+/* ---- fallbacks: a slot expanded in place (no side panel host) ----------- */
+.un-deck-slot.is-collapsed .un-deck-body { display: none; }
+.un-deck-slot:not(.is-launcher):not(.is-collapsed):not(.un-deck-desc) .un-deck-head-s { display: none; }
+.un-deck-body { min-width: 0; }
+.un-watch-deck:has(.un-deck-stats:not(.is-collapsed):not(.is-launcher):not(.is-empty)),
+.un-watch-deck:has(.un-deck-fact:not(.is-collapsed):not(.is-launcher):not(.is-empty)) {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.un-watch-deck:has(.un-deck-stats:not(.is-collapsed):not(.is-launcher):not(.is-empty)) .un-deck-runtime,
+.un-watch-deck:has(.un-deck-fact:not(.is-collapsed):not(.is-launcher):not(.is-empty)) .un-deck-runtime {
+  padding-right: 0;
+  border-right: 0;
+}
+.un-watch-deck .un-deck-fact .un-fc-title { display: none; }
+
+/* ---- narrow: one column, runtime, doors, then chapters ------------------ */
+@container (max-width: 720px) {
+  .un-deck-runtime {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    padding: 2px 0 14px;
+    margin-bottom: 6px;
+    border-right: 0;
+    border-bottom: 1px solid var(--un-guide-line);
+    min-height: 0;
+  }
+  .un-deck-stats, .un-deck-fact, .un-deck-ai, .un-deck-forge { grid-column: 1 / -1; }
+  .un-watch-deck .un-sb-rt-hint { display: none; }
+}
+@container (max-width: 520px) {
+  .un-deck-pv-row { flex-direction: column; gap: 6px; }
+  .un-deck-pv-lab { padding-top: 0; }
+  .un-deck-desc:not(.is-empty) { grid-template-columns: minmax(0, 1fr); }
+  .un-deck-desc > .un-deck-head { grid-column: 1; grid-row: 2; justify-self: start; }
+  .un-deck-desc > .un-deck-body { grid-row: 3; }
+  .un-watch-deck:has(> .un-deck-runtime.is-empty) { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 1000px) {
+  .un-watch-deck { padding: 14px; }
+  .un-watch-deck::before { left: 14px; right: 14px; }
+  ytd-watch-metadata:has(#un-watch-deck:not(.is-empty)) #top-row { padding: 14px; }
+  ytd-watch-metadata:has(#un-watch-deck:not(.is-empty)) #top-row > #owner { flex-basis: 100%; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .un-deck-head,
+  .un-deck-chip { transition: background-color .12s ease, border-color .12s ease, color .12s ease; }
+  .un-deck-caret { transition: transform .14s ease; }
+}
+
+/* ---- the published date, under the channel name ------------------------- */
+.un-deck-published {
+  display: block;
+  margin: 4px 0 0;
+  color: var(--un-guide-muted, #535b69);
+  font: 400 13px/1.4 Roboto, Arial, sans-serif;
+}
+
+/* ---- Subscribe keeps YouTube's own appearance ----------------------------
+   The accent is for Unsynth actions; Subscribe is not ours, and it carries
+   subscribed/not state through YouTube's own fill. Repainting it erased that
+   and competed with the deck's real primary action.
+
+   ONE THING WE DO SET: the label colour. Inside this container YouTube's
+   dark-theme light pill (#f1f1f1) computed its text to #f1f1f1 as well —
+   1.00:1, an invisible word — reproduced with and without any repaint of
+   ours. The pill inverts with the theme, so each theme names its own value
+   (a single value measured 17.16:1 in one theme and 1.04:1 in the other), and
+   no var() fallback: --yt-spec-* does not resolve from the extension context.
+   Set on the button (what creator-guide.spec.js inspects) and the inner span
+   (what the user reads), with !important because it overrides a host style,
+   scoped to watch pages carrying the guide (since 2026-09-22 the guide may
+   sit beside the video, outside this block, so the scope is the page, not
+   the container) — no other YouTube surface changes. */
+html[dark]:has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata :is(#subscribe-button, yt-subscribe-button-view-model) button,
+html[dark]:has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata :is(#subscribe-button, yt-subscribe-button-view-model) button :is(span, .ytSpecButtonShapeNextButtonTextContent) {
+  color: #0f0f0f !important;
+}
+html:not([dark]):has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata :is(#subscribe-button, yt-subscribe-button-view-model) button,
+html:not([dark]):has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata :is(#subscribe-button, yt-subscribe-button-view-model) button :is(span, .ytSpecButtonShapeNextButtonTextContent) {
+  color: #f1f1f1 !important;
+}
+/* The watch-page Block channel control, under the subscriber count. It was
+   disabled on every video until 2026-09-22 (it read the avatar link's empty
+   text as the channel name), and rendered at 0.35 opacity. Working, it is a
+   quiet secondary text button: the creator row's primary control is
+   YouTube's Subscribe, not ours. */
+html:has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata .un-watch-blockbtn {
+  margin-top: 6px;
+  padding: 4px 10px 4px 8px;
+  min-height: 26px;
+  border-color: var(--un-guide-line);
+  background: transparent;
+  color: var(--un-guide-muted);
+  font: 500 12px/1 Roboto, Arial, sans-serif;
+}
+html:has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata .un-watch-blockbtn:hover:not(:disabled) { color: var(--un-guide-ink); }
+html:has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata #un-sub-blockbtn:not(:disabled) {
+  opacity: 1;
+  color: var(--un-guide-muted);
+  background: transparent;
+  border: 1px solid var(--un-guide-line);
+  font-size: 13px;
+  min-height: 28px;
+}
+
+/* ==========================================================================
+   THE GUIDE BESIDE THE VIDEO (2026-09-22, .is-side)
+
+   Owner request: move the guide beside the video so nobody has to scroll to
+   reach it, and make the menus one clean, simple system. Under the player
+   the guide began at y≈650 on a 900px window. In the related column it
+   begins beside the player at the top of the page.
+
+   And it is one system now, not three: the doors ARE the panel's tabs, and
+   whatever a door opens appears right under the doors, in the same card, in
+   place of the chapters. Close it and the chapters come back.
+
+     ┌ 17:49 after skips ──────────────┐
+     │ Full 18:40 · Skippable 0:51     │
+     │ ▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁█               │
+     ├─────────────────────────────────┤
+     │ ▥ Stats      99.1% liked …    ⌄ │
+     │ ◈ Fact check Not checked  Rev ⌄ │
+     │ ✦ Ask AI     Summarize, …     ⌄ │
+     │ ≡ Forge      Suggest, …       ⌄ │
+     ├─────────────────────────────────┤
+     │ CHAPTERS                        │
+     │ 0:00  Introduction example      │
+     │ 1:07  Series preview      …     │
+     │ LINKS  patreon.com  github.com  │
+     └─────────────────────────────────┘
+   ========================================================================== */
+.un-watch-deck.is-side {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 16px;
+  padding: 14px 14px 10px;
+  border: 1px solid var(--un-guide-line);
+  border-radius: 12px;
+}
+.un-watch-deck.is-side::before { display: none; }
+.un-watch-deck.is-side > .un-deck-runtime {
+  padding: 0 2px 12px;
+  margin-bottom: 4px;
+  border-right: 0;
+  border-bottom: 1px solid var(--un-guide-line);
+}
+.un-watch-deck.is-side .un-sb-rt-head { margin-bottom: 10px; column-gap: 14px; }
+.un-watch-deck.is-side .un-sb-rt-val.is-hero { font-size: 30px; }
+.un-watch-deck.is-side .un-sb-rt-prov { display: none; }
+.un-watch-deck.is-side .un-sb-rt-hint { display: none; }
+.un-watch-deck.is-side .un-sb-rt-key { margin-top: 8px; gap: 4px 12px; }
+.un-watch-deck.is-side .un-deck-runtime:has(.un-sb-rt.is-quiet) { display: block; }
+.un-watch-deck.is-side .un-sb-rt-quiet { margin: 0; font-size: 13px; }
+
+/* Doors: a tight list. They open downward here, so the chevron says so. */
+.un-watch-deck.is-side .un-deck-slot.is-launcher > .un-deck-head {
+  min-height: 40px;
+  padding: 7px 8px;
+  column-gap: 9px;
+}
+.un-watch-deck.is-side .un-deck-slot.is-launcher > .un-deck-head .un-deck-caret { transform: translateY(-2px) rotate(45deg); }
+.un-watch-deck.is-side .un-deck-slot.is-launcher > .un-deck-head[aria-expanded="true"] .un-deck-caret { transform: translateY(2px) rotate(-135deg); }
+
+/* No runtime (an ad): the first door must not draw a rule under the card's
+   own top edge. The two-column no-runtime layout is for under the video. */
+.un-watch-deck.is-side:has(> .un-deck-runtime.is-empty) { padding-top: 8px; }
+.un-watch-deck.is-side:has(> .un-deck-runtime.is-empty) > .un-deck-runtime.is-empty + .un-deck-slot.is-launcher { border-top: 0; }
+
+/* The view area: chapters and links by default. */
+.un-watch-deck.is-side > .un-deck-desc {
+  display: block;
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--un-guide-line);
+}
+/* YouTube's own description is directly under the video now, so the
+   "Description" disclosure and its summary line would only repeat it. */
+.un-watch-deck.is-side > .un-deck-desc > .un-deck-head,
+.un-watch-deck.is-side > .un-deck-desc > .un-deck-body { display: none; }
+/* Nothing to view (desc-digest off, or a video with no chapters or links):
+   the rule above leaves only the top hairline, a divider over nothing.
+   Seen in the owner's browser on /@LofiGirl/live, 2026-09-23 (13px, is-empty). */
+/* ...unless the digest has something of its own (a quick description, what
+   is worth knowing): that is content, not a divider over nothing. */
+.un-watch-deck.is-side > .un-deck-desc:not(.has-preview):not(:has(.un-desc-digest)) { display: none; }
+.un-watch-deck.is-side .un-deck-preview { gap: 12px; }
+.un-watch-deck.is-side .un-deck-pv-row { flex-direction: column; align-items: stretch; gap: 6px; }
+.un-watch-deck.is-side .un-deck-pv-lab {
+  width: auto;
+  padding: 0 2px;
+  font: 600 12px/1.2 Roboto, Arial, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+/* Chapters read as a table of contents: time, then title, one per line. */
+.un-watch-deck.is-side .un-deck-pv-list[aria-label="Chapters"] { flex-direction: column; flex-wrap: nowrap; gap: 0; }
+.un-watch-deck.is-side .un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip {
+  max-width: none;
+  width: 100%;
+  min-height: 32px;
+  padding: 5px 8px;
+  gap: 12px;
+  background: transparent;
+  border-radius: 6px;
+}
+.un-watch-deck.is-side .un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip:hover { background: var(--un-guide-hover); border-color: transparent; }
+.un-watch-deck.is-side .un-deck-pv-list[aria-label="Chapters"] .un-deck-chip-t { min-width: 42px; }
+.un-watch-deck.is-side .un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip-more { width: auto; align-self: flex-start; margin: 4px 0 0 8px; border-color: var(--un-guide-line); }
+/* A door is open: its content takes the view area. */
+.un-watch-deck.is-side:has(> #un-side-panel.is-open:not(.is-popped)) > .un-deck-desc { display: none; }
+
+/* The published date now sits in YouTube's own owner row, outside the guide's
+   tokens, so its colour comes from the page theme. The guide-token fallback
+   (#535b69) was a dark grey that would have been ~2.6:1 on a dark page. */
+.un-deck-published { color: var(--un-yt-text-dim); }
+/* Narrow side column (~320px at a 1100 window): "Not che… Review claims"
+   truncated the status into noise. The action says everything needed. */
+@container (max-width: 340px) {
+  .un-watch-deck.is-side .un-deck-fact.is-action-only > .un-deck-head .un-deck-head-s { display: none; }
+}
+
+/* ==========================================================================
+   THEATER: A COLUMN, NEVER AN OVERLAY (2026-09-23, expert panel decision)
+
+   The slide-in drawer was rejected as "in the face". In theater the guide
+   is a column inside YouTube's own theater row (#full-bleed-container is a
+   flexbox): the player narrows to make room, so nothing covers the picture
+   and nothing needs a scroll. Most of the width comes out of the black side
+   bars a 16:9 video already has in theater (1620x911 -> 1489x838 measured
+   at 1920x1080). Fullscreen still gives the whole screen to the picture.
+   ========================================================================== */
+.un-theater-col { display: none; }
+html.un-theater-guide ytd-watch-flexy[theater] #full-bleed-container > #player-full-bleed-container {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+html.un-theater-guide ytd-watch-flexy[theater] #un-theater-col {
+  display: block;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: clamp(340px, 23vw, 420px);
+  max-height: 100%;
+  padding: 12px 16px 12px 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+html.un-theater-guide ytd-watch-flexy[theater] #un-theater-col .un-watch-deck.is-side { margin: 0; }
+/* Outside theater (or off /watch) the column is empty and takes no space. */
+ytd-watch-flexy:not([theater]) #un-theater-col { display: none !important; }
+
+/* ==========================================================================
+   COMPACT: YIELD TO THE QUEUE AND THE CHAT (2026-09-23)
+
+   On a playlist page YouTube's queue sits at the top of the side column; on
+   a live stream, the chat. The full guide pushed the queue to y=629. Here the
+   guide stays above them, reachable without a scroll, but compact: the
+   runtime as one line, the four doors in one row, chapters on demand.
+   ========================================================================== */
+.un-watch-deck.is-side.is-compact {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 4px;
+  padding: 10px 10px 6px;
+}
+.un-watch-deck.is-side.is-compact > .un-deck-runtime,
+.un-watch-deck.is-side.is-compact > .un-deck-desc,
+.un-watch-deck.is-side.is-compact > #un-side-panel { grid-column: 1 / -1; }
+.un-watch-deck.is-side.is-compact > .un-deck-runtime { padding: 2px 4px 8px; margin-bottom: 4px; }
+.un-watch-deck.is-side.is-compact .un-sb-rt-wrap,
+.un-watch-deck.is-side.is-compact .un-sb-rt-key { display: none; }
+.un-watch-deck.is-side.is-compact .un-sb-rt-head { margin-bottom: 0; row-gap: 2px; }
+.un-watch-deck.is-side.is-compact .un-sb-rt-val.is-hero { font-size: 22px; }
+.un-watch-deck.is-side.is-compact .un-sb-rt-quiet { font-size: 12.5px; }
+/* Doors as one row of equal buttons: icon over name. The glance values
+   stay one click away, in the section each door opens. */
+.un-watch-deck.is-side.is-compact > .un-deck-slot.is-launcher { border-top: 0 !important; grid-column: auto; }
+/* The under-video layout's narrow-container rule spans every door across the
+   row, and the side guide is always narrower than its 720px breakpoint — so
+   it matched here and stacked the "row" into four full-width rows (336px,
+   measured). The compact doors keep their own cells. */
+@container (max-width: 720px) {
+  .un-watch-deck.is-side.is-compact > .un-deck-slot.is-launcher { grid-column: auto; }
+}
+.un-watch-deck.is-side.is-compact .un-deck-slot.is-launcher > .un-deck-head {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-height: 54px;
+  padding: 6px 4px;
+  font-size: 12.5px;
+  text-align: center;
+}
+.un-watch-deck.is-side.is-compact .un-deck-slot.is-launcher > .un-deck-head :is(.un-deck-head-s, .un-deck-head-a, .un-deck-caret) { display: none; }
+.un-watch-deck.is-side.is-compact .un-deck-slot.is-launcher > .un-deck-head[aria-expanded="true"] { box-shadow: inset 0 -2px 0 var(--un-accent, #ff4e45); }
+/* Fact check not run: the warm label is the door's own name here. */
+.un-watch-deck.is-side.is-compact .un-deck-fact.is-action-only > .un-deck-head .un-deck-head-t { color: var(--un-guide-action); }
+/* Chapters on demand: the head is a real toggle in compact mode. */
+.un-watch-deck.is-side.is-compact > .un-deck-desc { margin-top: 4px; padding-top: 4px; }
+.un-watch-deck.is-side.is-compact > .un-deck-desc > .un-deck-head {
+  display: flex;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 8px;
+  color: var(--un-guide-ink);
+  font-size: 13px;
+}
+.un-watch-deck.is-side.is-compact > .un-deck-desc > .un-deck-head .un-deck-ico { display: block; }
+.un-watch-deck.is-side.is-compact > .un-deck-desc.is-collapsed > .un-deck-preview { display: none; }
+.un-watch-deck.is-side.is-compact > .un-deck-desc:not(.is-collapsed) > .un-deck-preview { padding-top: 6px; }
+
+/* ==========================================================================
+   NOW AND MORE TOOLS (2026-09-24)
+
+   Now: the chapter you are in, what is left at your speed and when it ends,
+   one line at the top with a hairline progress track under it.
+   More tools: every watch-page feature that is switched off, named, said in
+   one line, and one press from on. The owner's profile had most modules off and
+   the guide showed only Stats, with nothing saying the rest existed.
+   ========================================================================== */
+.un-deck-runtime,
+.un-deck-more-row[data-ico="runtime"] { --un-deck-ico: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 6l7 6-7 6z'/><path d='M13 6l7 6-7 6z'/></svg>"); }
+
+.un-deck-now {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  grid-template-areas: "dot ch t" "bar bar bar";
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 8px;
+  grid-column: 1 / -1;
+  margin: 0 0 6px;
+  padding: 2px 4px 10px;
+  border-bottom: 1px solid var(--un-guide-line);
+  font: 500 13px/1.3 Roboto, Arial, sans-serif;
+  color: var(--un-guide-ink);
+}
+.un-deck-now[hidden] { display: none; }
+.un-deck-now-dot {
+  grid-area: dot;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--un-guide-muted);
+}
+.un-deck-now.is-live .un-deck-now-dot { background: #e5484d; }
+.un-deck-now-ch {
+  grid-area: ch;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.un-deck-now-ch[hidden] { display: block; visibility: hidden; }
+.un-deck-now-t {
+  grid-area: t;
+  color: var(--un-guide-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.un-deck-now-bar {
+  grid-area: bar;
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--un-guide-track);
+  overflow: hidden;
+}
+.un-deck-now-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--un-guide-muted);
+  transition: width .9s linear;
+}
+.un-deck-now.is-live .un-deck-now-bar { display: none; }
+@media (prefers-reduced-motion: reduce) { .un-deck-now-fill { transition: none; } }
+
+.un-deck-more {
+  grid-column: 1 / -1;
+  margin: 6px 0 0;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--un-guide-line);
+}
+.un-deck-more-h {
+  margin: 0 0 4px;
+  padding: 0 10px;
+  font: 500 12px/1.3 Roboto, Arial, sans-serif;
+  letter-spacing: .02em;
+  color: var(--un-guide-muted);
+}
+.un-deck-more-list { margin: 0; padding: 0; list-style: none; }
+.un-deck-more-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  min-height: 40px;
+  padding: 3px 6px 3px 10px;
+  border-radius: 8px;
+}
+.un-deck-more-row:hover { background: var(--un-guide-hover); }
+.un-deck-more-txt { display: flex; flex-direction: column; min-width: 0; }
+.un-deck-more-t { font: 500 14px/1.3 Roboto, Arial, sans-serif; color: var(--un-guide-ink); }
+.un-deck-more-b {
+  font: 400 12.5px/1.35 Roboto, Arial, sans-serif;
+  color: var(--un-guide-muted);
+  /* The line that says what a feature does is the point of the row: wrap it
+     (two lines at most) rather than cut it at 300px mid-word. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.un-deck-more-b.is-err { color: var(--un-guide-action); white-space: normal; }
+.un-deck-more-on {
+  /* Quiet by design (independent review 2026-09-24): five warm filled pills
+     stacked in a column were the loudest thing on the card, louder than the
+     stats and runtime they sit under. A neutral outline says "available"
+     without shouting; the warm action colour arrives on hover and focus. */
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--un-guide-line);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--un-guide-ink);
+  font: 500 13px/1 Roboto, Arial, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.un-deck-more-on:hover:not(:disabled),
+.un-deck-more-on:focus-visible {
+  border-color: var(--un-deck-action-border);
+  background: var(--un-deck-action-bg);
+  color: var(--un-guide-action);
+}
+.un-deck-more-on:focus-visible { outline: 2px solid var(--un-guide-focus); outline-offset: 2px; }
+.un-deck-more-on:disabled { cursor: progress; opacity: .75; }
+
+/* Compact (playlist queue or live chat under the guide): the list becomes
+   one row of named buttons. The blurbs go; the names and the press stay. */
+.un-watch-deck.is-side.is-compact > .un-deck-now,
+.un-watch-deck.is-side.is-compact > .un-deck-more { grid-column: 1 / -1; }
+.un-watch-deck.is-side.is-compact .un-deck-more-h { display: none; }
+.un-watch-deck.is-side.is-compact .un-deck-more-list { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 4px 4px; }
+.un-watch-deck.is-side.is-compact .un-deck-more-row { display: contents; }
+.un-watch-deck.is-side.is-compact .un-deck-more-row > .un-deck-ico,
+.un-watch-deck.is-side.is-compact .un-deck-more-txt { display: none; }
+.un-deck-more-name { display: none; }
+.un-watch-deck.is-side.is-compact .un-deck-more-verb { display: none; }
+.un-watch-deck.is-side.is-compact .un-deck-more-name { display: inline; }
+.un-watch-deck.is-side.is-compact .un-deck-more-name::before { content: "+ "; }
+/* Compact keeps Now to one tight line: no track, no rule. The compact guide
+   has a 200px budget so the playlist queue stays near the top of the column
+   (side-panel.spec.js); the full Now row pushed it to 221px. */
+.un-watch-deck.is-side.is-compact > .un-deck-now {
+  grid-template-areas: "dot ch t";
+  row-gap: 0;
+  margin: 0;
+  padding: 0 4px 4px;
+  border-bottom: 0;
+}
+.un-watch-deck.is-side.is-compact > .un-deck-now .un-deck-now-bar { display: none; }
+/* The fold button exists only in compact; the full guide lists every row. */
+.un-deck-more-toggle { display: none; }
+.un-watch-deck.is-side.is-compact .un-deck-more { margin-top: 4px; padding-top: 6px; }
+.un-watch-deck.is-side.is-compact .un-deck-more-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  margin: 0 4px 4px;
+  padding: 0 12px;
+  border: 1px solid var(--un-guide-line);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--un-guide-ink);
+  font: 500 13px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+}
+.un-watch-deck.is-side.is-compact .un-deck-more-toggle:hover,
+.un-watch-deck.is-side.is-compact .un-deck-more-toggle:focus-visible {
+  border-color: var(--un-deck-action-border);
+  background: var(--un-deck-action-bg);
+  color: var(--un-guide-action);
+}
+.un-watch-deck.is-side.is-compact .un-deck-more:not(.is-open) .un-deck-more-list { display: none; }
+
+/* ==========================================================================
+   THE DESCRIPTION'S NEW CONTENT SHOWS BESIDE THE VIDEO (2026-09-24)
+
+   The side guide hid the description body (above: head + body display:none)
+   because the body only repeated YouTube's own description. It now carries
+   what YouTube does not show: what each link is for, grouped, and the lines
+   worth knowing (a code, a disclosure, a correction, the credits). The owner asked
+   for exactly that, and it was rendering into a hidden box (measured: the
+   digest was in the DOM at height 0). Beside the video the body shows,
+   minus the chapter buttons the preview above already lists; the bare
+   website chips give way to the grouped list they duplicate. Compact mode
+   keeps the short version so the playlist queue keeps its place.
+   ========================================================================== */
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc > .un-deck-body { display: block; }
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc .un-desc-stamps { display: none; }
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc:has(.un-desc-linkgroups) .un-deck-pv-row:has(> .un-deck-pv-list[aria-label="Links"]) { display: none; }
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc .un-desc-digest { padding: 10px 2px 0; }
+/* Whole, not clamped (owner request, 2026-09-24: never cut off, nothing
+   to expand). The parser already ends it at a sentence within 600 chars. */
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc .un-desc-blurb {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc .un-desc-h {
+  font: 600 12px/1.2 Roboto, Arial, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--un-guide-muted);
+}
+/* Every link is listed now, and on a sponsor-heavy video the view area ran to
+   1051px, pushing related videos a full screen down. It scrolls inside itself
+   instead, the way YouTube's own playlist panel does: the doors stay put, the
+   guide ends near the bottom of the player, nothing is hidden. */
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc {
+  max-height: 520px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc { overflow-x: hidden; }
+
+/* ABOUT FIRST (2026-09-24). The quick description rendered under the chapter
+   list and started below the view's edge (screenshot), so it still took a
+   scroll to read, which is the opposite of "there without needing to
+   expand". Beside the video the section is one column in reading order:
+   about, the button that opens the rest in place, chapters, what is worth
+   knowing, the links. The digest's wrappers step out of the layout
+   (display: contents) so its parts can be ordered among the chapters. */
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc:is(.has-preview, :has(.un-desc-digest)) {
+  display: flex;
+  flex-direction: column;
+}
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc > .un-deck-body,
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc > .un-deck-body > .un-desc-digest { display: contents; }
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc .un-desc-blurb { order: 1; margin: 0 2px 2px; }
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc .un-desc-more { order: 2; align-self: flex-start; margin: 0 0 8px 2px; }
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc .un-desc-full { order: 3; }
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc > .un-deck-preview { order: 4; }
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc .un-desc-know { order: 5; }
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc .un-desc-linkgroups { order: 6; }
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc .un-desc-know,
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc .un-desc-linkgroups { padding: 0 2px; }
+
+/* The chapter you are in (renderNow marks it as the video plays). A warm
+   rule and full ink, never a fill that could read as a hover. */
+.un-watch-deck .un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip.is-current {
+  box-shadow: inset 2px 0 0 var(--un-guide-action);
+  color: var(--un-guide-ink);
+}
+.un-watch-deck .un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip.is-current .un-deck-chip-t { color: var(--un-guide-action); }
+
+/* More below: fade the bottom edge of the scrolling view (see syncViewFade). */
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc.has-more-below {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
+}

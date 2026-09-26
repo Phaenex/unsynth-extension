@@ -1,0 +1,1014 @@
+@import url('shared/design-tokens.css');
+
+.pop-fatal {
+  padding: 4px 0;
+}
+.pop-fatal p {
+  margin: 10px 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--un-txt, #eee);
+}
+.pop-fatal-hint {
+  color: var(--un-dim, #aaa);
+  font-size: 12px;
+}
+.pop-fatal-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--un-accent, #ff5a5f);
+  border-radius: 8px;
+  background: rgba(255, 90, 95, 0.12);
+  color: var(--un-accent, #ff5a5f);
+  font-weight: 700;
+  cursor: pointer;
+}
+.pop-health {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #5a3d12;
+  background: rgba(255, 180, 60, 0.12);
+  color: #ffd28a;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.pop-health code {
+  font-size: 11px;
+}
+
+body {
+  /* content-box + 28px of horizontal padding made the real border box 368px,
+     not the 340px this file (and popup-layout.spec.js) states. Chrome sizes the
+     action popup to the document, so every user got a popup 28px wider than the
+     design, with each card 28px wider than the layout assumes; overflow-x:hidden
+     only hid the evidence. border-box makes the declared width the actual one. */
+  box-sizing: border-box;
+  width: 340px;
+  /* The flat 33-toggle list once made this ~1840px tall, which overflowed
+     Chrome's action-popup window with no scrollbar of its own — the bottom was
+     simply unreachable, and max-height + overflow was the patch for that.
+     The content is now split across two tabs ("Now" holds the handful of
+     controls most openings need; "Features" holds the grouped, collapsed
+     toggles), so neither tab needs to scroll at a normal window height. The
+     cap stays as a backstop for very short screens and for the Features tab
+     with several groups expanded at once. */
+  max-height: 580px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 14px 14px 16px;
+  background: var(--un-bg);
+  color: var(--un-txt);
+  font-family: var(--un-font);
+}
+.pop-use-cases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.pop-uc {
+  border: 1px solid var(--un-line);
+  background: var(--un-panel);
+  color: var(--un-dim);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.pop-uc.on {
+  border-color: var(--un-accent);
+  color: var(--un-accent);
+  background: rgba(255, 90, 95, 0.12);
+}
+.pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.pop-brand {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--un-accent);
+  box-shadow: 0 0 10px rgba(255, 90, 95, 0.5);
+}
+.icobtn {
+  border: 1px solid var(--un-line);
+  background: var(--un-panel);
+  color: var(--un-dim);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--un-radius-sm);
+  font-size: 15px;
+  cursor: pointer;
+}
+.icobtn:hover {
+  border-color: var(--un-accent);
+  color: #fff;
+}
+
+.pop-card {
+  background: var(--un-panel);
+  border: 1px solid var(--un-line-soft);
+  border-radius: var(--un-radius);
+  padding: 12px 14px;
+  /* 8px, not 10: the Now tab must clear body's 580px max-height on Windows,
+     whose font metrics render each text line a hair taller than on Linux/CI. */
+  margin-bottom: 8px;
+  box-shadow: var(--un-shadow-sm, 0 4px 16px rgba(0, 0, 0, 0.2));
+}
+.pop-master {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.master-txt b {
+  display: block;
+  font-size: 14px;
+}
+.master-txt span {
+  font-size: 11.5px;
+  color: var(--un-dim);
+}
+.pop-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 8px;
+}
+.pop-actions button {
+  width: 100%;
+  /* Long channel names ("Block — <channel>") must not blow out the popup */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The AI-channel scan is a once-in-a-while action and carries a long label;
+   as a full-height primary button it cost more vertical space than it earns.
+   Rendered as a quiet link-style row it reads the same and saves ~24px. */
+.pop-actions button.secondary {
+  background: transparent;
+  border: 0;
+  color: var(--un-dim);
+  font-size: 11.5px;
+  padding: 3px 0 1px;
+  text-align: center;
+}
+.pop-actions button.secondary:hover:not(:disabled) {
+  color: var(--un-txt);
+  background: transparent;
+}
+
+.count {
+  font-size: 12px;
+  color: var(--un-dim);
+  margin: 0 0 8px;
+  text-align: center;
+}
+.pop-active-badge {
+  font-size: var(--un-text-label, 11px);
+  color: rgba(140, 180, 255, 0.9);
+  margin: 0 0 10px;
+  padding: 5px 8px;
+  background: rgba(100, 150, 255, 0.08);
+  border-radius: var(--un-radius-sm, 6px);
+  border: 1px solid rgba(100, 150, 255, 0.18);
+}
+.pop-active-badge.clickable {
+  cursor: pointer;
+}
+.pop-active-badge.clickable:hover {
+  background: rgba(100, 150, 255, 0.13);
+  border-color: rgba(100, 150, 255, 0.3);
+}
+
+.pop-reload-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  background: #2a1818;
+  border: 1px solid #ff5a5f;
+  border-radius: var(--un-radius-sm, 6px);
+  font-size: 11px;
+  line-height: 1.35;
+}
+.pop-reload-banner button {
+  background: #ff5a5f;
+  border: 0;
+  /* Dark ink on the coral: white measured 3.05:1 (2026-09-23). */
+  color: var(--un-on-accent, #0b0b0b);
+  font-weight: 700;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch .track,
+  .switch .track::before,
+  .wmodes button {
+    transition: none !important;
+  }
+}
+.pop-active-badge[hidden] {
+  display: none;
+}
+.count b {
+  color: var(--un-txt);
+}
+
+button#block-channel {
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 90, 95, 0.35);
+  border-radius: var(--un-radius-sm);
+  background: rgba(255, 90, 95, 0.1);
+  color: #ffa8aa;
+  font: 600 12.5px/1.2 var(--un-font);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+button#block-channel:hover:not(:disabled) {
+  background: rgba(255, 90, 95, 0.18);
+  border-color: rgba(255, 90, 95, 0.55);
+}
+button#block-channel:disabled {
+  background: transparent;
+  border-color: var(--un-line);
+  color: var(--un-dim);
+  cursor: default;
+}
+/* Styled as a quiet secondary row, NOT a second primary button. The rule
+   below it (.pop-actions button.secondary) has always intended that, but an
+   ID selector here (0,1,0,1) outranked that class rule (0,0,2,1) on every
+   shared property, so the button kept full padding, a border and 13px text.
+   The ~24px the secondary treatment is supposed to save was never actually
+   saved -- which matters, because the Now tab is fighting a 580px cap. Keep
+   these selectors at the same specificity as the .secondary rule so the two
+   compose instead of one silently cancelling the other. */
+button#scan-ai {
+  border-radius: var(--un-radius-sm);
+  cursor: pointer;
+}
+button#scan-ai:hover:not(:disabled) {
+  color: var(--un-txt);
+}
+button#scan-ai:disabled {
+  color: var(--un-dim);
+  cursor: default;
+}
+
+.sec-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--un-dim);
+  margin: 4px 0 4px 2px;
+  font-weight: 700;
+}
+/* Six modes with labels as long as "Only unseen" — a single row gives each
+   ~53px and truncates them all to "Only u…", which is unreadable. Two rows of
+   three keeps every label intact and still costs less than the old wrap, which
+   produced uneven rows. */
+.wmodes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  background: var(--un-panel);
+  border: 1px solid var(--un-line-soft);
+  border-radius: var(--un-radius-sm);
+  padding: 3px;
+  margin-bottom: 8px;
+}
+.wmodes button {
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  color: var(--un-dim);
+  padding: 7px 2px;
+  font: 600 11.5px/1 var(--un-font);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wmodes button:hover {
+  color: var(--un-txt);
+  background: var(--un-hover, var(--un-panel-hover));
+}
+.wmodes button.on {
+  background: var(--un-accent);
+  color: #0b0b0b;
+}
+.pop-hint {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: var(--un-dim);
+  text-align: center;
+}
+.pop-hint a {
+  color: #ff8a8d;
+  text-decoration: none;
+}
+/* ---- feature groups (Features tab) ----------------------------------
+   33 toggles in one flat list was the bulk of the popup's old ~1840px of
+   content. They're grouped by where the feature acts, collapsed by default,
+   and each summary reports "on / total" so the state reads without opening. */
+.modgroups {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.modgroup {
+  background: var(--un-panel);
+  border: 1px solid var(--un-line-soft);
+  border-radius: var(--un-radius);
+  overflow: hidden;
+}
+.modgroup > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 9px 11px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  user-select: none;
+}
+.modgroup > summary::-webkit-details-marker {
+  display: none;
+}
+.modgroup > summary:hover {
+  background: var(--un-panel-hover);
+}
+.modgroup > summary:focus-visible {
+  outline: 2px solid var(--un-focus);
+  outline-offset: -2px;
+}
+.modgroup-caret {
+  color: var(--un-dim);
+  font-size: 9px;
+  transition: transform 0.16s ease;
+}
+.modgroup[open] .modgroup-caret {
+  transform: rotate(90deg);
+}
+.modgroup-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 13px;
+}
+.modgroup-count {
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--un-good);
+  background: var(--un-forge-soft);
+  border: 1px solid color-mix(in srgb, var(--un-good) 26%, transparent);
+  padding: 2px 7px;
+  border-radius: var(--un-radius-pill);
+}
+.modgroup-count.none {
+  color: var(--un-dim);
+  background: transparent;
+  border-color: var(--un-line);
+}
+.modgroup-items {
+  border-top: 1px solid var(--un-line-soft);
+  padding: 2px 0;
+}
+.modrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 11px;
+  font-size: 13px;
+}
+.modrow:hover {
+  background: var(--un-panel-hover);
+}
+.modrow[hidden] {
+  display: none;
+}
+.modrow-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.modrow-label {
+  line-height: 1.25;
+}
+.modrow-desc {
+  font-size: 11px;
+  color: var(--un-dim);
+  line-height: 1.3;
+}
+
+.pop-cf-keywords {
+  margin: 0 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pop-cf-keywords[hidden] {
+  display: none;
+}
+.pop-cf-keywords label {
+  font-size: 11px;
+  color: var(--un-dim);
+}
+.pop-cf-keywords textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 52px;
+  font: 12px/1.35 inherit;
+  background: var(--un-inset, #1a1a1a);
+  color: inherit;
+  border: 1px solid var(--un-line, #333);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+/* ---- feature search ---- */
+.pop-searchwrap {
+  position: relative;
+  margin-bottom: 10px;
+}
+.pop-searchicon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--un-dim);
+  pointer-events: none;
+}
+.pop-search {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--un-bg-elevated);
+  border: 1px solid var(--un-line);
+  color: var(--un-txt);
+  border-radius: var(--un-radius-sm);
+  padding: 8px 10px 8px 29px;
+  font-size: 12.5px;
+  font-family: var(--un-font);
+}
+.pop-search::placeholder {
+  color: var(--un-dim);
+}
+.pop-search:focus {
+  outline: none;
+  border-color: var(--un-accent);
+}
+.pop-search::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+.pop-no-results {
+  margin: 4px 0 12px;
+  font-size: 12.5px;
+  color: var(--un-dim);
+  text-align: center;
+}
+
+/* ---- tabs ---- */
+.pop-tabs {
+  display: flex;
+  gap: 3px;
+  margin: 0 0 12px;
+  border-bottom: 1px solid var(--un-line-soft);
+}
+.pop-tab {
+  flex: 1;
+  background: none;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  color: var(--un-dim);
+  font: 600 12.5px/1 var(--un-font);
+  padding: 9px 6px;
+  cursor: pointer;
+  border-radius: var(--un-radius-sm) var(--un-radius-sm) 0 0;
+  margin-bottom: -1px;
+}
+.pop-tab:hover {
+  color: var(--un-txt);
+}
+.pop-tab.on {
+  color: var(--un-txt);
+  background: var(--un-panel);
+  border-color: var(--un-line-soft);
+  border-bottom-color: var(--un-panel);
+}
+.pop-tab:focus-visible {
+  outline: 2px solid var(--un-focus);
+  outline-offset: -2px;
+}
+.pop-tab-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.62;
+  font-weight: 700;
+}
+.pop-pane[hidden] {
+  display: none;
+}
+
+/* Collapsed extras inside the audio card — the enhancer dropdown and its three
+   checkboxes are set-once options, not per-visit controls. */
+.pop-audio-more {
+  margin-top: 9px;
+  border-top: 1px solid var(--un-line-soft);
+  padding-top: 7px;
+}
+.pop-audio-more > summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 11.5px;
+  color: var(--un-dim);
+  padding: 2px 0;
+}
+.pop-audio-more > summary::-webkit-details-marker {
+  display: none;
+}
+.pop-audio-more > summary::before {
+  content: "▸ ";
+  font-size: 9px;
+}
+.pop-audio-more[open] > summary::before {
+  content: "▾ ";
+}
+.pop-audio-more > summary:hover {
+  color: var(--un-txt);
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 2px;
+}
+.pop-sync {
+  margin: 0;
+  /* 11px, wrapping. It was 10px on one nowrap line with an ellipsis, and once
+     the counters were spelled out it read "… Groups 0 · Folder…" — a status
+     line that hides its own status. Two lines of readable metadata beat one
+     line of cut-off metadata. */
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--un-dim);
+  white-space: normal;
+  overflow: visible;
+}
+.pop-sync a {
+  color: inherit;
+  text-decoration: none;
+}
+.pop-sync a:hover {
+  color: var(--un-txt);
+}
+.links a {
+  font-size: 12px;
+  color: #8ab4f8;
+  text-decoration: none;
+}
+.links a:hover {
+  color: var(--un-accent);
+}
+.pop-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Toggle switch now lives in shared/controls.css (.un-switch) so the popup and
+   dashboard render the same control. */
+
+/* Keyboard shortcuts disclosure */
+.pop-shortcuts {
+  margin: 6px 0 4px;
+  font-size: 11px;
+  color: var(--un-dim);
+}
+.pop-shortcuts summary {
+  cursor: pointer;
+  padding: 5px 2px;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pop-shortcuts summary::-webkit-details-marker { display: none; }
+.pop-shortcuts[open] summary { color: var(--un-txt); }
+.pop-shortcut-list {
+  margin: 4px 0 6px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pop-shortcut-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--un-dim);
+  font-size: 11px;
+}
+.pop-shortcut-list kbd {
+  font-family: var(--un-mono, ui-monospace, monospace);
+  font-size: 10px;
+  background: var(--un-panel);
+  border: 1px solid var(--un-line);
+  border-radius: 4px;
+  padding: 2px 5px;
+  color: var(--un-txt);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.pop-shortcuts-link {
+  display: block;
+  text-align: right;
+  font-size: 10px;
+  color: var(--un-dim);
+  text-decoration: none;
+  margin-top: 2px;
+}
+.pop-shortcuts-link:hover { color: var(--un-accent); }
+.pop-shortcuts-note {
+  margin: 6px 0 0;
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--un-dim);
+}
+
+/* Premium Audio Booster & EQ Panel */
+.pop-audio-panel {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(30, 30, 36, 0.95) 0%, rgba(20, 20, 24, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pop-audio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pop-audio-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pop-audio-icon {
+  font-size: 14px;
+}
+
+.pop-audio-badge {
+  font-family: var(--un-mono, monospace);
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--un-line);
+  padding: 2px 7px;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.pop-audio-badge.boosted {
+  /* Dark ink on the accent fill: #fff on --un-accent is only 3.05:1, under
+     the 4.5:1 floor for this 12px label. Near-black gives 6.45:1 and keeps
+     the badge reading as loud/boosted rather than muting the fill. */
+  color: #0b0b0b;
+  background: var(--un-accent);
+  box-shadow: 0 0 12px rgba(255, 90, 95, 0.5);
+  border-color: rgba(255, 90, 95, 0.3);
+}
+
+.pop-audio-slider-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.pop-audio-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--un-track);
+  outline: none;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+
+.pop-audio-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  cursor: pointer;
+}
+
+.pop-audio-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s, background-color 0.15s;
+  margin-top: -5px; /* Offset to center thumb on Chrome */
+}
+
+.pop-audio-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.pop-audio-slider:active::-webkit-slider-thumb {
+  transform: scale(1.2);
+}
+
+/* Filled portion of the track follows the actual level — popup.js sets
+   --pop-vol-fill from the current gain (100% volume = 16.6% of the 600 max). */
+.pop-audio-panel:not(.inactive) .pop-audio-slider {
+  background: linear-gradient(
+    to right,
+    var(--un-accent) 0%,
+    var(--un-accent) var(--pop-vol-fill, 16.6%),
+    var(--un-track) var(--pop-vol-fill, 16.6%),
+    var(--un-track) 100%
+  );
+}
+
+.pop-audio-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+/* Seven presets at 25% each wrapped onto two rows. A narrower basis fits them
+   on one, which is worth ~26px in a panel that opens on every visit. */
+.pop-audio-chip {
+  flex: 1 1 0;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: var(--un-dim);
+  padding: 5px 1px;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.pop-audio-chip:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.pop-audio-chip.active:not(:disabled) {
+  background: var(--un-accent);
+  color: #0b0b0b;
+  border-color: var(--un-accent);
+}
+
+.pop-audio-enhancements {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.pop-audio-enhancements label {
+  color: var(--un-dim);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.pop-select {
+  flex-grow: 1;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--un-line);
+  color: #fff;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.pop-select:hover:not(:disabled) {
+  border-color: var(--un-accent);
+}
+
+.pop-select option {
+  background: #1e1e24;
+  color: #fff;
+}
+
+.pop-audio-options {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.pop-audio-opt {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  color: var(--un-dim);
+  cursor: pointer;
+  user-select: none;
+}
+
+.pop-audio-opt input {
+  cursor: pointer;
+  margin: 0;
+}
+
+.pop-audio-opt:hover {
+  color: #fff;
+}
+
+/* Inactive state. This used to be a blurred overlay over the live controls —
+   a ghost of sliders showing through frosted glass — which read as a loading
+   skeleton that never finished. Now the controls are simply not shown and the
+   card is one plain line saying why. Also shorter, which the Now tab wants. */
+.pop-audio-inactive {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 10px;
+  color: var(--un-dim);
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: center;
+}
+.pop-audio-panel.inactive > :not(.pop-audio-inactive) {
+  display: none;
+}
+.pop-audio-panel.inactive {
+  border-color: var(--un-line-soft);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ============================================================
+   Playlists tab.
+
+   Everything playlist-shaped used to be spread across four toggles buried in
+   Features, one unlabelled ▤ icon in the header, and two tools that only
+   existed on the dashboard. This pane gathers them in the order they get
+   reached for: the thing that does the work, then the library it works on,
+   then the tools, then the switches that make the on-page features appear.
+   ============================================================ */
+
+/* The organizer is the one action worth leading with, so it gets the only
+   primary button in the pane. Stacked rather than side-by-side: at 340px a
+   button next to two lines of text leaves the text about 150px wide, which
+   wraps to four lines and reads worse than the stack. */
+.pop-pl-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+.pop-pl-hero-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pop-pl-hero-txt b {
+  font-size: 13px;
+  color: var(--un-txt);
+}
+.pop-pl-hero-txt span {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--un-dim);
+}
+
+/* Two counts, equal width. Numbers lead because that is what the eye is
+   after; the label under each is deliberately quiet. */
+.pop-pl-stats {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+.pop-pl-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 8px;
+  background: var(--un-panel);
+  border: 1px solid var(--un-line-soft);
+  border-radius: var(--un-radius);
+}
+.pop-pl-stat b {
+  font-size: 19px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--un-txt);
+}
+.pop-pl-stat span {
+  font-size: 10.5px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--un-dim);
+}
+
+/* Full-width stacked rows: three labels of very different lengths sitting in a
+   row would leave ragged gaps, and each opens a different destination, so they
+   read better as a list of choices than as a toolbar.
+
+   These three are PEERS - none is the recommended one - so they are styled
+   identically and explicitly. This pane deliberately does not reuse
+   .pop-actions, whose `.secondary` rule strips a button to bare centred text;
+   that is correct for one throwaway action beneath a primary button on the Now
+   tab, and wrong for a list of equals, where it made the first row read as a
+   button and the other two as links. */
+.pop-pl-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+.pop-pl-actions button {
+  width: 100%;
+  text-align: left;
+  background: var(--un-panel-hover);
+  border: 1px solid var(--un-line);
+  border-radius: var(--un-radius-sm);
+  color: var(--un-txt);
+  font: 500 12px/1.3 var(--un-font);
+  padding: 9px 10px;
+  cursor: pointer;
+  /* A long label must not blow the popup out past its 340px. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pop-pl-actions button:hover {
+  border-color: var(--un-accent);
+  color: var(--un-txt);
+}
+.pop-pl-actions button:focus-visible {
+  outline: 2px solid var(--un-accent);
+  outline-offset: 1px;
+}
+
+.pop-pl-note {
+  margin-top: 10px;
+}
+
+/* Nothing to control is one slim line, not an 86px empty card (2026-09-23). */
+.pop-audio-panel.inactive { padding-top: 6px; padding-bottom: 6px; min-height: 0; }
+.pop-audio-panel.inactive .pop-audio-inactive { justify-content: flex-start; padding: 4px 2px; font-size: 12px; }

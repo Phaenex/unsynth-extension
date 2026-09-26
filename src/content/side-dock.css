@@ -1,0 +1,42 @@
+/* AI + Forge side dock — panels sit side-by-side when both are open */
+
+html.un-dock-ai-open:not(.un-dock-forge-open) .un-forge-root .un-forge-tab {
+  right: var(--un-dock-ai-w, 380px);
+}
+
+html.un-dock-forge-open:not(.un-dock-ai-open) .un-ai-root .un-ai-tab {
+  right: var(--un-dock-forge-w, 420px);
+}
+
+html.un-dock-both-open .un-forge-root.open .un-forge-panel {
+  right: var(--un-dock-ai-w, 380px);
+}
+
+html.un-dock-both-open .un-forge-root.open .un-forge-tab {
+  right: calc(var(--un-dock-ai-w, 380px) + var(--un-dock-forge-w, 420px));
+}
+
+html.un-dock-both-open .un-forge-panel,
+html.un-dock-both-open .un-forge-tab {
+  transition:
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    right 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html.un-dock-ai-open .un-forge-tab,
+html.un-dock-forge-open .un-ai-tab {
+  transition: right 0.2s ease;
+}
+
+@media (max-width: 960px) {
+  html.un-dock-both-open .un-ai-panel {
+    width: min(var(--un-ai-w, 380px), 48vw) !important;
+  }
+  html.un-dock-both-open .un-forge-panel {
+    width: min(var(--un-forge-w, 420px), 48vw) !important;
+    right: min(var(--un-dock-ai-w, 380px), 48vw);
+  }
+  html.un-dock-both-open .un-forge-tab {
+    right: calc(min(var(--un-dock-ai-w, 380px), 48vw) + min(var(--un-dock-forge-w, 420px), 48vw));
+  }
+}

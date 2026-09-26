@@ -1,0 +1,522 @@
+/* AI fact-check — video panel + comment buttons */
+
+@keyframes un-fc-slidein {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* NO CARD IN THE DECK. Same reasoning as .un-desc-digest, and this one mattered
+   more: the rendered capture showed this as the single heaviest object under
+   the player — a filled, rounded, bordered panel with a coral left rule — and
+   it is the slot with the LEAST to say at rest. Weight was inverted against
+   value. The deck slot already groups it; spacing carries the rest. */
+.un-fact-check {
+  margin: 0;
+  padding: 2px 0 0;
+  border: 0;
+  background: none;
+  font: 500 12px/1.45 Roboto, Arial, sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+  animation: un-fc-slidein 0.2s ease;
+}
+
+/* The Shorts variant KEEPS its card, and that is not an inconsistency: it
+   floats over video rather than sitting in the deck, so it has no slot to
+   group it and needs its own ground to stay legible against moving frames. */
+
+.un-fact-check--shorts {
+  margin: 8px 6px 0;
+  max-width: 280px;
+  padding: 8px 10px 8px 10px;
+  background: rgba(0, 0, 0, 0.55);
+  /* Restated here because the base rule no longer carries them. Removing the
+     deck's card must not silently strip the overlay's ground as well — it is
+     the only thing keeping this readable over a moving frame. */
+  border-radius: 10px;
+  border-left: 3px solid rgba(255, 90, 95, 0.5);
+}
+
+/* On the watch page the panel lands inside YouTube's non-wrapping owner/action
+   flexbox (#top-row). Claim a full row and force that flex parent to wrap so the
+   panel drops below the buttons instead of overflowing into the sidebar. Scoped
+   to ytd-watch-metadata so the Shorts overlay (a column flexbox) is untouched;
+   flex-wrap is a no-op on non-flex parents, so it stays safe either way. */
+ytd-watch-metadata .un-fact-check {
+  flex: 0 0 100%;
+}
+ytd-watch-metadata :has(> .un-fact-check) {
+  flex-wrap: wrap;
+}
+
+.un-fc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.un-fc-title {
+  font: 600 12px/1.2 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text);
+  letter-spacing: -0.01em;
+}
+.un-fc-title::first-letter {
+  color: rgba(255, 90, 95, 0.85);
+}
+
+.un-fc-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.un-fc-btn {
+  border: 1px solid var(--un-yt-line);
+  background: transparent;
+  color: var(--un-yt-text);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font: 600 11px/1.2 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.un-fc-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.un-fc-btn.ghost {
+  font-weight: 500;
+  color: var(--un-yt-text-dim);
+}
+
+.un-fc-body {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--un-yt-text-dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.un-fact-check.expanded .un-fc-body {
+  max-height: min(40vh, 320px);
+  overflow-y: auto;
+}
+
+ytd-watch-flexy[theater] .un-fact-check.expanded .un-fc-body,
+ytd-watch-flexy[fullscreen] .un-fact-check.expanded .un-fc-body {
+  max-height: min(28vh, 240px);
+}
+
+.un-fc-body[hidden] {
+  display: none !important;
+}
+
+.un-fact-check.loading .un-fc-body {
+  color: var(--un-yt-text-dim);
+  font-style: italic;
+}
+
+.un-fc-body strong {
+  color: var(--un-yt-text);
+  font-weight: 600;
+}
+
+.un-fc-comment-btn {
+  border: 0;
+  background: transparent;
+  color: var(--un-focus);
+  font: 600 12px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  padding: 0 8px;
+  margin-left: 4px;
+  white-space: nowrap; /* keep "Fact check" on one line in the narrow action row */
+}
+
+.un-fc-comment-btn:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.un-fc-comment-btn.un-fc-warn {
+  color: var(--un-yt-text-dim);
+}
+
+.un-fc-comment-btn:focus-visible,
+.un-fc-btn:focus-visible {
+  outline: 2px solid var(--un-focus);
+  outline-offset: 2px;
+}
+
+.un-fc-comment-btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.un-fc-comment-result {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--un-yt-text-dim);
+}
+
+.un-fc-comment-result strong {
+  color: var(--un-yt-text);
+}
+
+.un-fc-err {
+  /* 2.24:1 on a white page. An ERROR message is the worst thing to lose to a
+     theme: it only appears when something already went wrong. 5.42:1 light,
+     8.56:1 dark. */
+  color: #a32b2b;
+}
+
+#actions + .un-fact-check,
+#un-vid-stats + .un-fact-check,
+#un-desc-digest + .un-fact-check {
+  flex-basis: 100%;
+  align-self: stretch;
+}
+
+/* ---- structured result: Ma'at scale + Ground-News-style bias ---- */
+.un-fc-result {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.un-fc-scale-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.un-fc-maat {
+  flex: 0 0 auto;
+  line-height: 0;
+}
+.un-fc-score {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.un-fc-score-num {
+  font: 800 30px/1 Roboto, Arial, sans-serif;
+  letter-spacing: -0.02em;
+}
+.un-fc-score-lbl {
+  font: 700 13px/1.2 Roboto, Arial, sans-serif;
+}
+.un-fc-score-cap {
+  font-size: 10.5px;
+  color: var(--un-yt-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+.un-fc-summary {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--un-yt-text);
+}
+
+/* bias spectrum */
+.un-fc-row-h {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font: 700 11px/1 Roboto, Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--un-yt-text-dim);
+  margin-bottom: 7px;
+}
+.un-fc-bias-label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--un-yt-text);
+}
+.un-fc-spectrum {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #4f8cff 0%, #7a7f8a 50%, #ff5a5f 100%);
+}
+.un-fc-spectrum-marker {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #0f0f0f;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  transform: translate(-50%, -50%);
+}
+.un-fc-spectrum-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--un-yt-text-dim);
+}
+.un-fc-basis {
+  margin-top: 6px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--un-yt-text-dim);
+}
+
+/* sensationalism meter */
+.un-fc-meter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11.5px;
+  color: var(--un-yt-text-dim);
+}
+.un-fc-meter-lbl {
+  flex: 0 0 auto;
+}
+.un-fc-meter {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+.un-fc-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #6ee787;
+}
+.un-fc-meter-fill.hot {
+  background: #ff8a5f;
+}
+.un-fc-meter-val {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--un-yt-text);
+}
+
+/* claims */
+.un-fc-claims-h {
+  font: 700 11px/1 Roboto, Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--un-yt-text-dim);
+  margin-bottom: 8px;
+}
+.un-fc-claim {
+  display: flex;
+  gap: 9px;
+  padding: 7px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.un-fc-verdict {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  font: 700 9.5px/1 Roboto, Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 4px 7px;
+  border-radius: 999px;
+}
+/* Light first, dark overridden. These four were single pale values sitting on
+   their own 15% tint: composited over white those grounds are near-white, and
+   the text measured 1.45:1, 1.50:1, 1.96:1 and 2.63:1. Every one passed on dark
+   (9.08, 8.76, 6.90, 6.05), which is the signature of a block authored in one
+   theme and never opened in the other.
+   Measured against each chip's OWN composited tint, not the page — a verdict
+   chip paints its ground before its text lands on it.
+   The unk chip's rgba(255,255,255,0.08) is also a white alpha, which is a tint
+   that does nothing over a white page; it keeps its own value only because the
+   text was re-measured against the near-white result. */
+.un-fc-verdict.good { color: #17632c; background: rgba(110, 231, 135, 0.15); }
+.un-fc-verdict.mid  { color: #7d5a0d; background: rgba(255, 193, 90, 0.15); }
+.un-fc-verdict.bad  { color: #a32b2b; background: rgba(255, 106, 95, 0.15); }
+.un-fc-verdict.unk  { color: #5c5c66; background: rgba(0, 0, 0, 0.06); }
+html[dark] .un-fc-verdict.good, [dark] .un-fc-verdict.good { color: #6ee787; }
+html[dark] .un-fc-verdict.mid,  [dark] .un-fc-verdict.mid  { color: #ffc15a; }
+html[dark] .un-fc-verdict.bad,  [dark] .un-fc-verdict.bad  { color: #ff8a80; }
+html[dark] .un-fc-verdict.unk,  [dark] .un-fc-verdict.unk  {
+  color: #9aa0aa;
+  background: rgba(255, 255, 255, 0.08);
+}
+.un-fc-claim-title {
+  font-size: 12px;
+  color: var(--un-yt-text);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.un-fc-claim-note {
+  font-size: 11.5px;
+  color: var(--un-yt-text-dim);
+  line-height: 1.45;
+  margin-top: 2px;
+}
+.un-fc-disclaimer {
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--un-yt-text-dim);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+}
+
+/* no-key / error notice */
+.un-fc-notice {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--un-yt-text-dim);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.un-fc-notice--key {
+  border-color: rgba(255, 193, 90, 0.4);
+  background: rgba(255, 193, 90, 0.08);
+}
+.un-fc-notice-h {
+  font-weight: 700;
+  color: var(--un-yt-text);
+  margin-bottom: 4px;
+}
+
+/* ============================================================
+   Summarize — the sibling of the fact check in the same panel.
+
+   Reuses the panel, the buttons and the notice/error styles rather than
+   introducing a second visual language for what is the same card. The only
+   new pieces are the ones this view actually needs: a section heading, a
+   bullet list, and the audience-mood chip.
+   ============================================================ */
+.un-fc-sec {
+  margin-top: 12px;
+}
+.un-fc-sec-h {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font: 700 10px/1 Roboto, Arial, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--un-yt-text-dim);
+  margin-bottom: 6px;
+}
+/* The mood word carries the colour; the count beside it says how much evidence
+   that word is standing on, so a read off three comments cannot masquerade as
+   a read off the whole audience. */
+.un-fc-mood {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.un-fc-mood-basis {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--un-yt-text-dim);
+}
+.un-fc-aud-summary {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--un-yt-text);
+  margin-bottom: 6px;
+}
+.un-fc-points {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--un-yt-text);
+}
+.un-fc-points li::marker {
+  color: var(--un-yt-text-dim);
+}
+.un-fc-why {
+  color: var(--un-yt-text-dim);
+}
+.un-fc-crosslink {
+  margin-top: 8px;
+}
+.un-fc-worth {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--un-yt-line);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--un-yt-text-dim);
+}
+
+/* Reduced motion (WCAG 2.3.3): the panel slides in from the side, which is
+   vestibular motion rather than a fade. Finite, but it is the largest movement
+   this sheet makes, so it goes. */
+@media (prefers-reduced-motion: reduce) {
+  .un-fact-check {
+    animation: none;
+  }
+}
+
+html[dark] .un-fc-err,
+[dark] .un-fc-err {
+  color: #e89898;
+}
+
+/* ---- inside the side panel (2026-09-22) ---------------------------------
+   The tab is the panel's name, so the module header is its action row:
+   Review claims (primary), Summarize, and Details once there is something
+   to detail. At not-run, the intro says what a review produces and what it
+   runs on — the tab used to open to one 90px row with the related videos
+   showing through underneath. */
+.un-sp-body .un-fact-check {
+  padding: 14px 16px 18px;
+  font: 400 14px/1.5 Roboto, Arial, sans-serif;
+  animation: none;
+}
+.un-sp-body .un-fc-head { justify-content: flex-start; }
+.un-sp-body .un-fc-actions { gap: 8px; flex-wrap: wrap; }
+.un-sp-body .un-fc-btn {
+  min-height: 34px;
+  padding: 6px 14px;
+  border-radius: 18px;
+  font: 500 14px/1.2 Roboto, Arial, sans-serif;
+}
+.un-fc-btn.is-primary {
+  background: var(--un-yt-text);
+  border-color: var(--un-yt-text);
+  color: var(--un-yt-bg);
+  font-weight: 600;
+}
+.un-fc-btn.is-primary:hover { opacity: 0.88; background: var(--un-yt-text); }
+.un-fact-check:not(.has-result) [data-action="toggle"] { display: none; }
+
+.un-fc-intro { display: none; }
+.un-sp-body .un-fact-check:not(.has-result):not(.loading) .un-fc-intro { display: block; }
+.un-fc-intro { margin: 16px 0 0; max-width: 60ch; }
+.un-fc-intro-h {
+  margin: 0 0 8px;
+  color: var(--un-yt-text);
+  font: 600 15px/1.35 Roboto, Arial, sans-serif;
+}
+.un-fc-intro-p {
+  margin: 0 0 10px;
+  color: var(--un-yt-text-dim);
+  font: 400 14px/1.5 Roboto, Arial, sans-serif;
+}
+.un-fc-intro-meta {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--un-yt-line);
+  color: var(--un-yt-text-dim);
+  font: 400 13px/1.45 Roboto, Arial, sans-serif;
+}

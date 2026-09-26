@@ -1,0 +1,1861 @@
+/* Playlist Forge — YouTube sidebar, slide-out panel
+   ====================================================================
+   LIGHT IS THE DEFAULT HERE, flipped by YouTube's own [dark] attribute.
+
+   This block used to hold one set of dark values with no light override, so
+   the whole panel rendered dark-on-light on every light page. Measured live
+   against the panel ground: --un-forge-txt #ececec was 1.06:1, the amber
+   accent 1.44:1 and --un-forge-dim 2.51:1 — roughly 200 failing elements
+   across four pages, and the single largest source of contrast failures in
+   the extension.
+
+   --un-forge-accent stays amber in both themes because it is the Forge
+   identity, but it is a DECORATIVE value: on light it fails text contrast, so
+   text takes --un-forge-accent-text instead. Brand is not semantics. */
+:root {
+  --un-forge-accent: #ffc14d;
+  --un-forge-accent-soft: rgba(255, 193, 77, 0.16);
+  --un-forge-accent-glow: rgba(255, 193, 77, 0.35);
+  /* 6.37:1 on the light panel. The amber itself is 1.44:1 and may not carry text. */
+  --un-forge-accent-text: #7a4f00;
+  /* Grade C in the A-F scale. The swatch amber (#e8c878) is 1.62:1 as text on a
+     light panel, so text uses this and fills keep the swatch. */
+  --un-forge-grade-c-text: #7d5a0d;
+  --un-forge-bg: var(--un-yt-bg);
+  --un-forge-panel: #ffffff;
+  --un-forge-line: var(--un-line);
+  --un-forge-txt: #0f0f0f;
+  --un-forge-dim: #5c5c66;
+  --un-forge-good: var(--un-forge);
+  --un-forge-bad: var(--un-bad);
+  --un-forge-w: min(520px, 96vw);
+}
+
+/* Keyed on YouTube's [dark] rather than prefers-color-scheme: the OS preference
+   says nothing about what theme the PAGE is in. Same values this block carried
+   unconditionally before — correct now that they only apply when the host is
+   actually dark. Measured on #141414: txt 15.59:1, dim 6.55:1, accent 11.39:1. */
+html[dark],
+[dark] {
+  --un-forge-accent-text: #ffc14d;
+  --un-forge-grade-c-text: #e8c878;
+  --un-forge-panel: #141414;
+  --un-forge-txt: #ececec;
+  --un-forge-dim: #9a9a9a;
+}
+
+#un-forge-guide {
+  padding: 8px 12px 12px;
+  border-bottom: 1px solid var(--un-yt-line);
+  margin-bottom: 8px;
+}
+.un-forge-guide-head {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--un-forge-accent-text);
+  font-weight: 700;
+  padding: 6px 0 2px;
+}
+.un-forge-guide-hint {
+  margin: 0 0 8px;
+  font: 11px/1.45 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+.un-forge-guide-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: var(--un-forge-txt);
+  font: 13px/1.4 Roboto, Arial, sans-serif;
+  padding: 7px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 2px;
+  transition: background 0.12s ease;
+}
+.un-forge-guide-item:hover {
+  background: var(--un-yt-line);
+}
+.un-forge-guide-item.primary {
+  background: var(--un-forge-accent-soft);
+  color: var(--un-forge-accent-text);
+  font-weight: 600;
+}
+
+/* ---- slide-out panel ---- */
+.un-forge-root {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: var(--un-z-forge, 2147482900);
+  font-family: Roboto, Arial, sans-serif;
+  pointer-events: none;
+}
+.un-forge-root * {
+  box-sizing: border-box;
+}
+.un-forge-backdrop {
+  position: fixed;
+  top: var(--ytd-masthead-height, 56px); /* the masthead stays clickable */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+  z-index: -1;
+}
+.un-forge-backdrop.on {
+  opacity: 1;
+  pointer-events: auto;
+}
+.un-forge-tab,
+.un-forge-panel {
+  pointer-events: auto;
+}
+/* A masthead chip (.un-wft-btn carries the look). It is only ever shown once
+   mountTab() has moved it into #un-synth-masthead-extra; inside its own root
+   it has no position to hold, so it stays hidden there. */
+.un-forge-root > .un-forge-tab {
+  display: none;
+}
+#un-synth-masthead-extra .un-forge-tab[aria-expanded="true"] {
+  background: var(--un-mb-on-bg, var(--un-yt-bg));
+  color: var(--un-mb-on-text, var(--un-yt-text));
+  border-color: var(--un-mb-on-bg, var(--un-yt-bg));
+}
+.un-forge-tab:focus-visible,
+.un-forge-btn:focus-visible,
+.un-forge-x:focus-visible {
+  outline: 2px solid var(--un-accent);
+  outline-offset: 2px;
+}
+.un-forge-panel {
+  position: fixed;
+  /* Below the masthead: the Forge chip that opens and closes this lives there
+     and was covered by the open panel (measured 2026-09-21 — the close click
+     was refused as obscured). */
+  top: var(--ytd-masthead-height, 56px);
+  right: 0;
+  width: var(--un-forge-w);
+  height: calc(100vh - var(--ytd-masthead-height, 56px));
+  background: var(--un-forge-bg);
+  color: var(--un-forge-txt);
+  border-left: 1px solid var(--un-forge-line);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.55);
+  transform: translateX(100%);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  padding: 14px 14px 40px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--un-line) transparent;
+}
+.un-forge-root.open .un-forge-panel {
+  transform: translateX(0);
+}
+
+.un-forge-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--un-forge-line);
+}
+.un-forge-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.un-forge-brand b {
+  font-size: 16px;
+  color: var(--un-forge-accent-text);
+}
+.un-forge-logo {
+  font-size: 18px;
+  line-height: 1;
+}
+.un-forge-head-acts {
+  display: flex;
+  gap: 6px;
+}
+.un-forge-x,
+.un-forge-link {
+  border: 0;
+  background: var(--un-yt-raised);
+  color: var(--un-yt-text-dim);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font: 12px Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.un-forge-x {
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 10px;
+}
+.un-forge-link:hover,
+.un-forge-x:hover {
+  background: var(--un-yt-raised);
+  color: var(--un-yt-text);
+}
+
+.un-forge-auth {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  font: 12px/1.4 Roboto, Arial, sans-serif;
+  background: var(--un-yt-panel);
+  border: 1px solid var(--un-forge-line);
+}
+.un-forge-auth.ok {
+  border-color: rgba(110, 231, 135, 0.35);
+  color: var(--un-forge-good);
+}
+.un-forge-auth.warn {
+  border-color: rgba(255, 193, 77, 0.35);
+  color: var(--un-forge-accent-text);
+}
+.un-forge-auth-acts {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.un-forge-stats-line {
+  margin: 0 0 6px;
+  font: 12px/1.45 Roboto, Arial, sans-serif;
+  color: var(--un-forge-dim);
+}
+.un-forge-stats-line.ok {
+  color: var(--un-forge-dim);
+}
+.un-forge-stats-line.warn {
+  color: var(--un-forge-accent-text);
+}
+
+.un-forge-status {
+  min-height: 18px;
+  margin-bottom: 10px;
+  font: 12px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+.un-forge-status.ok {
+  color: var(--un-forge-good);
+}
+.un-forge-status.err {
+  color: var(--un-forge-bad);
+}
+.un-forge-status.warn {
+  color: var(--un-forge-accent-text);
+}
+
+.un-forge-progress {
+  height: 4px;
+  background: var(--un-yt-raised);
+  border-radius: 4px;
+  margin: 0 0 10px;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.un-forge-progress.on {
+  opacity: 1;
+}
+.un-forge-progress-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #ffc14d, #e6a020);
+  transition: width 0.12s ease;
+}
+
+.un-forge-retry {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: rgba(255, 122, 122, 0.08);
+  border: 1px solid rgba(255, 122, 122, 0.25);
+  font: 12px Roboto, Arial, sans-serif;
+  color: #ff9a9a;
+}
+.un-forge-retry.on {
+  display: flex;
+}
+
+.un-forge-nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 4px;
+  background: var(--un-yt-panel);
+  border-radius: 10px;
+  border: 1px solid var(--un-forge-line);
+}
+.un-forge-nav button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--un-yt-text-dim);
+  font: 600 11px Roboto, Arial, sans-serif;
+  padding: 8px 4px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.un-forge-nav button:hover {
+  color: var(--un-yt-text-dim);
+  background: rgba(255, 255, 255, 0.04);
+}
+.un-forge-nav button.on {
+  background: var(--un-forge-accent-soft);
+  color: var(--un-forge-accent-text);
+}
+
+.un-forge-section {
+  display: none;
+}
+.un-forge-section.on {
+  display: block;
+  animation: un-forge-in 0.15s ease;
+}
+@keyframes un-forge-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.un-forge-h {
+  margin: 0 0 10px;
+  font: 700 11px/1 Roboto, Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--un-forge-accent-text);
+}
+.un-forge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.un-forge-build-acts {
+  margin-top: 12px;
+}
+.un-forge-btn {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font: 600 12px Roboto, Arial, sans-serif;
+  cursor: pointer;
+  background: var(--un-yt-raised);
+  color: var(--un-yt-text);
+  transition: background 0.12s ease, opacity 0.12s ease;
+}
+.un-forge-btn:hover:not(:disabled) {
+  background: var(--un-yt-raised-hover);
+}
+.un-forge-btn.primary {
+  background: var(--un-forge-accent-soft);
+  color: var(--un-forge-accent-text);
+  border: 1px solid var(--un-forge-accent-glow);
+}
+.un-forge-btn.primary:hover:not(:disabled) {
+  background: rgba(255, 193, 77, 0.24);
+}
+.un-forge-btn.ghost {
+  background: transparent;
+  border: 1px solid var(--un-line);
+}
+.un-forge-btn:disabled,
+.un-forge-btn.loading {
+  opacity: 0.6;
+  cursor: wait;
+}
+.un-forge-btn.loading {
+  position: relative;
+}
+.un-forge-btn.loading::after {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-left: 6px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: un-forge-spin 0.6s linear infinite;
+  vertical-align: -1px;
+}
+@keyframes un-forge-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.un-forge-query,
+.un-forge-title {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--un-line);
+  background: var(--un-yt-bg);
+  color: var(--un-yt-text);
+  font: 13px Roboto, Arial, sans-serif;
+  margin-bottom: 10px;
+  transition: border-color 0.12s ease;
+}
+.un-forge-query:focus,
+.un-forge-title:focus {
+  outline: none;
+  border-color: var(--un-forge-accent);
+}
+
+.un-forge-pl-pick,
+.un-forge-privacy {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--un-line);
+  background: var(--un-yt-bg);
+  color: var(--un-yt-text);
+  font: 12px Roboto, Arial, sans-serif;
+  min-width: 140px;
+}
+
+.un-forge-ideas,
+.un-forge-discover,
+.un-forge-ctx {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.un-forge-idea {
+  background: var(--un-forge-panel);
+  border: 1px solid var(--un-forge-line);
+  border-radius: 12px;
+  padding: 12px;
+  transition: border-color 0.12s ease;
+}
+.un-forge-idea:hover {
+  border-color: rgba(255, 193, 77, 0.25);
+}
+.un-forge-idea-kind {
+  display: inline-block;
+  font: 10px/1 Roboto, Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--un-forge-accent-text);
+  margin-bottom: 4px;
+  padding: 2px 6px;
+  background: var(--un-forge-accent-soft);
+  border-radius: 4px;
+}
+.un-forge-idea-title {
+  font: 600 14px/1.35 Roboto, Arial, sans-serif;
+  margin-bottom: 4px;
+}
+.un-forge-idea-why {
+  font: 12px/1.45 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+  margin-bottom: 10px;
+}
+.un-forge-idea-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.un-forge-idea-preview-lbl,
+.un-forge-idea-preview-head {
+  font: 11px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+  margin: 0 0 6px;
+}
+.un-forge-idea-preview-head {
+  color: var(--un-forge-accent-text);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.un-forge-idea .un-forge-discover {
+  margin: 8px 0 10px;
+  max-height: 420px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.un-forge-idea .un-forge-discover .un-forge-idea-preview-head {
+  grid-column: 1 / -1;
+}
+
+.un-forge-vid-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.un-forge-vid-thumbwrap {
+  border-radius: 10px;
+  overflow: hidden;
+}
+.un-forge-vid-card .un-forge-vid-ch {
+  font: 11px/1.35 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+  padding: 0 2px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.un-forge-empty,
+.un-forge-empty-sub {
+  margin: 0;
+  font: 12px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+.un-forge-empty-card {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px dashed var(--un-line);
+  background: rgba(255, 255, 255, 0.02);
+  text-align: center;
+}
+.un-forge-empty-card p:first-child {
+  margin: 0 0 6px;
+  font: 600 13px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+
+.un-forge-set {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 13px Roboto, Arial, sans-serif;
+  margin-bottom: 10px;
+}
+.un-forge-set input[type='number'] {
+  width: 72px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--un-line);
+  background: var(--un-yt-bg);
+  color: var(--un-yt-text);
+}
+.un-forge-hint {
+  margin: 8px 0 12px;
+  font: 11px/1.5 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+
+.un-forge-toast {
+  position: fixed;
+  bottom: 20px;
+  right: calc(var(--un-forge-w) + 16px);
+  max-width: 280px;
+  padding: 12px 14px;
+  background: var(--un-yt-panel);
+  border: 1px solid var(--un-forge-accent-glow);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 2147482901;
+}
+.un-forge-root.open .un-forge-toast {
+  pointer-events: auto;
+}
+.un-forge-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.un-forge-toast-msg {
+  font: 12px/1.45 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+  margin-bottom: 8px;
+}
+.un-forge-toast-link {
+  display: inline-block;
+  font: 600 12px Roboto, Arial, sans-serif;
+  color: var(--un-forge-accent-text);
+  text-decoration: none;
+}
+.un-forge-toast-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 520px) {
+  .un-forge-toast {
+    right: 12px;
+    left: 12px;
+    max-width: none;
+  }
+}
+
+/* ---- Search tab (full discover) ---- */
+.un-forge-search-req {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #3a3a3a;
+  background: var(--un-yt-bg);
+  color: #f1f1f1;
+  font: 13.5px/1.5 Roboto, Arial, sans-serif;
+  margin-bottom: 12px;
+  resize: vertical;
+  min-height: 84px;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.un-forge-search-req::placeholder {
+  color: #6a6a6a;
+}
+.un-forge-search-req:focus {
+  outline: none;
+  border-color: var(--un-forge-accent);
+  box-shadow: 0 0 0 3px var(--un-forge-accent-soft);
+}
+
+.un-forge-search-ctrl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+  margin-bottom: 10px;
+}
+.un-forge-search-ctl {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: 11px Roboto, Arial, sans-serif;
+  color: var(--un-forge-dim);
+}
+.un-forge-search-ctl select,
+.un-forge-search-ctl input[type='number'],
+.un-forge-search-ctl input[type='text'] {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--un-line);
+  background: var(--un-yt-bg);
+  color: var(--un-yt-text);
+  font: 12px Roboto, Arial, sans-serif;
+}
+.un-forge-search-adv {
+  margin-bottom: 10px;
+  font: 12px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+.un-forge-search-adv summary {
+  cursor: pointer;
+  color: var(--un-forge-accent-text);
+  margin-bottom: 6px;
+}
+.un-forge-search-saved-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+.un-forge-search-saved-pick {
+  flex: 1;
+  min-width: 120px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--un-line);
+  background: var(--un-yt-bg);
+  color: var(--un-yt-text);
+  font: 12px Roboto, Arial, sans-serif;
+}
+
+.un-forge-search-plan {
+  display: none;
+  margin-bottom: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #181818;
+  border: 1px solid var(--un-forge-line);
+}
+.un-forge-plan-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.un-forge-plan-row:last-child {
+  margin-bottom: 0;
+}
+.un-forge-chip {
+  display: inline-block;
+  padding: 4px 9px;
+  border-radius: 7px;
+  font: 11px Roboto, Arial, sans-serif;
+  background: #252525;
+  color: var(--un-yt-text-dim);
+}
+.un-forge-chip.plabel {
+  background: transparent;
+  color: var(--un-forge-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+  padding-left: 0;
+}
+.un-forge-chip.tag {
+  background: var(--un-forge-accent-soft);
+  color: var(--un-forge-accent-text);
+}
+.un-forge-chip.badge {
+  background: var(--un-yt-raised);
+  color: var(--un-yt-text-dim);
+}
+.un-forge-chip.qpill {
+  background: #1e1e1e;
+  border: 1px solid var(--un-line);
+}
+.un-forge-chip .qn {
+  color: var(--un-yt-text-dim);
+}
+
+.un-forge-search-summary {
+  display: none;
+  margin-bottom: 10px;
+  padding: 7px 11px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  font: 11.5px/1.45 Roboto, Arial, sans-serif;
+  color: #9a9a9a;
+}
+
+.un-forge-search-selbar {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font: 12px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+.un-forge-search-selbar #un-forge-search-selinfo {
+  flex: 1 1 100%;
+  margin-bottom: 2px;
+}
+.un-forge-search-resultctl {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.un-forge-search-verdictbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+}
+.un-forge-vchip {
+  border: 1px solid var(--un-line);
+  background: var(--un-yt-panel);
+  color: var(--un-yt-text-dim);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font: 11px Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.un-forge-vchip:hover:not(.on) {
+  border-color: rgba(255, 193, 77, 0.3);
+  color: var(--un-yt-text-dim);
+}
+.un-forge-vchip.on {
+  border-color: var(--un-forge-accent-glow);
+  background: var(--un-forge-accent-soft);
+  color: var(--un-forge-accent-text);
+}
+.un-forge-search-sortlbl {
+  font: 11px Roboto, Arial, sans-serif;
+  color: var(--un-forge-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.un-forge-search-sortlbl select {
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--un-line);
+  background: var(--un-yt-bg);
+  color: var(--un-yt-text);
+  font: 11px Roboto, Arial, sans-serif;
+}
+
+.un-forge-gradebar {
+  display: none;
+  margin-bottom: 10px;
+}
+.un-forge-gradebar.show {
+  display: block;
+}
+.un-forge-gb-track {
+  display: flex;
+  height: 6px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--un-yt-raised);
+  margin-bottom: 4px;
+}
+.un-forge-gb-seg {
+  display: block;
+  height: 100%;
+  cursor: pointer;
+  min-width: 2px;
+}
+.un-forge-gb-seg.gA { background: var(--un-forge); }
+.un-forge-gb-seg.gB { background: #8fd99a; }
+.un-forge-gb-seg.gC { background: #e8c878; }
+.un-forge-gb-seg.gD { background: #e8a060; }
+.un-forge-gb-seg.gF { background: var(--un-bad); }
+.un-forge-gb-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font: 10px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+.un-forge-gb-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 3px;
+  vertical-align: middle;
+}
+.un-forge-gb-dot.gA { background: var(--un-forge); }
+.un-forge-gb-dot.gB { background: #8fd99a; }
+.un-forge-gb-dot.gC { background: #e8c878; }
+.un-forge-gb-dot.gD { background: #e8a060; }
+.un-forge-gb-dot.gF { background: var(--un-bad); }
+
+.un-forge-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  overflow: visible;
+}
+
+.un-forge-s-card {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  background: #181818;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  transition: border-color 0.12s ease;
+  overflow: hidden;
+  position: relative;
+}
+.un-forge-s-card:hover {
+  border-color: rgba(255, 193, 77, 0.15);
+}
+.un-forge-s-card.offtopic {
+  opacity: 0.55;
+}
+.un-forge-s-pick {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 4;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--un-forge-accent);
+  cursor: pointer;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55);
+  border-radius: 3px;
+}
+.un-forge-s-thumbwrap {
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+  width: 168px;
+  align-self: stretch;
+  min-height: 94px;
+  background: #111;
+  border-radius: 10px 0 0 10px;
+  overflow: hidden;
+}
+.un-forge-s-thumbshade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.15) 0%,
+    rgba(0, 0, 0, 0) 35%,
+    rgba(0, 0, 0, 0.55) 72%,
+    rgba(0, 0, 0, 0.88) 100%
+  );
+  opacity: 0.72;
+  transition: opacity 0.16s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+.un-forge-s-thumbwrap:hover .un-forge-s-thumbshade,
+.un-forge-s-thumbwrap:focus-within .un-forge-s-thumbshade {
+  opacity: 1;
+}
+.un-forge-s-thumbacts {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  z-index: 3;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+.un-forge-s-thumbwrap:hover .un-forge-s-thumbacts,
+.un-forge-s-thumbwrap:focus-within .un-forge-s-thumbacts,
+.un-forge-s-thumbwrap:has(.un-forge-s-plmenu.on) .un-forge-s-thumbacts {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (hover: none) {
+  .un-forge-s-thumbacts {
+    opacity: 0.92;
+    transform: translateY(0);
+  }
+}
+.un-forge-s-tact {
+  border: 0;
+  background: rgba(20, 20, 20, 0.82);
+  backdrop-filter: blur(6px);
+  color: #f0f0f0;
+  border-radius: 8px;
+  padding: 5px 9px;
+  font: 700 11px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+.un-forge-s-tact:hover {
+  background: var(--un-forge-accent-soft);
+  color: var(--un-forge-accent-text);
+  box-shadow: 0 0 0 1px var(--un-forge-accent-glow);
+}
+.un-forge-s-thumbwrap .un-forge-s-plwrap {
+  position: relative;
+  margin-left: auto;
+}
+.un-forge-s-thumbwrap .un-forge-s-plmenu {
+  bottom: calc(100% + 4px);
+  top: auto;
+}
+.un-forge-s-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: var(--un-yt-raised);
+}
+.un-forge-s-dur {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  background: rgba(0, 0, 0, 0.82);
+  color: var(--un-on-plate); /* fixed: the plate is dark in both themes (design-tokens.css) */
+  font: 600 11px Roboto, Arial, sans-serif;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 2;
+}
+.un-forge-s-grade {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  font: 700 12px/1 Roboto, Arial, sans-serif;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.78);
+  color: var(--un-on-plate); /* fixed: the plate is dark in both themes (design-tokens.css) */
+  z-index: 2;
+}
+.un-forge-s-grade.gA { color: var(--un-forge); }
+.un-forge-s-grade.gB { color: #8fd99a; }
+.un-forge-s-grade.gC { color: var(--un-forge-grade-c-text); }
+.un-forge-s-grade.gD { color: #e8a060; }
+.un-forge-s-grade.gF { color: var(--un-bad); }
+
+.un-forge-s-body {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8px 10px;
+}
+.un-forge-s-meta {
+  flex: 1;
+  min-width: 0;
+}
+.un-forge-s-title {
+  font: 600 13px/1.35 Roboto, Arial, sans-serif;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding-right: 22px;
+}
+.un-forge-s-sub {
+  font: 11px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.un-forge-s-verdict {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-top: 6px;
+}
+.un-forge-vmatch {
+  font: 10px Roboto, Arial, sans-serif;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.un-forge-vmatch.good {
+  background: rgba(110, 231, 135, 0.15);
+  color: var(--un-forge-good);
+}
+.un-forge-vmatch.weak {
+  background: rgba(232, 200, 120, 0.15);
+  color: var(--un-forge-accent-text);
+}
+.un-forge-vmatch.off {
+  background: rgba(255, 122, 122, 0.15);
+  color: var(--un-forge-bad);
+}
+.un-forge-vreason,
+.un-forge-vpending {
+  font: 10px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+.un-forge-s-rm {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.12s;
+}
+.un-forge-s-rm:hover {
+  color: var(--un-forge-bad);
+}
+
+.un-forge-skel-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #181818;
+}
+.un-forge-skel-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(90deg, var(--un-yt-panel) 25%, #252525 50%, var(--un-yt-panel) 75%);
+  background-size: 200% 100%;
+  animation: un-forge-shimmer 1.2s infinite;
+}
+.un-forge-skel-lines {
+  height: 56px;
+  margin: 0 10px 10px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--un-yt-panel) 25%, #252525 50%, var(--un-yt-panel) 75%);
+  background-size: 200% 100%;
+  animation: un-forge-shimmer 1.2s infinite;
+}
+@keyframes un-forge-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.un-forge-search-build {
+  position: sticky;
+  bottom: 0;
+  padding-top: 10px;
+  margin-top: 8px;
+  border-top: 1px solid var(--un-forge-line);
+  background: var(--un-forge-bg);
+}
+.un-forge-search-title {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--un-line);
+  background: var(--un-yt-bg);
+  color: var(--un-yt-text);
+  font: 13px Roboto, Arial, sans-serif;
+  margin-bottom: 10px;
+}
+.un-forge-search-title:focus {
+  outline: none;
+  border-color: var(--un-forge-accent);
+}
+
+.un-forge-s-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.un-forge-s-act {
+  border: 1px solid var(--un-line);
+  background: #1e1e1e;
+  color: var(--un-yt-text-dim);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font: 600 10px Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.un-forge-s-act:hover {
+  border-color: var(--un-forge-accent-glow);
+  color: var(--un-forge-accent-text);
+  background: var(--un-forge-accent-soft);
+}
+.un-forge-s-plwrap {
+  position: relative;
+}
+.un-forge-s-plmenu {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  z-index: 40;
+  min-width: 180px;
+  max-width: 260px;
+  max-height: 200px;
+  overflow-y: auto;
+  background: rgba(20, 20, 24, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
+  padding: 4px;
+  animation: un-pop-fadein 0.14s cubic-bezier(0.2, 0, 0, 1);
+}
+.un-forge-s-plmenu.on {
+  display: block;
+}
+.un-forge-s-plopt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--un-yt-text-dim);
+  padding: 7px 8px;
+  border-radius: 6px;
+  font: 12px/1.3 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.un-forge-s-plopt:hover:not(:disabled) {
+  background: var(--un-forge-accent-soft);
+  color: var(--un-forge-accent-text);
+}
+.un-forge-s-plopt:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.un-forge-s-plload {
+  display: block;
+  padding: 8px;
+  font: 11px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+
+.un-forge-search-queuebar {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 193, 77, 0.08);
+  border: 1px solid rgba(255, 193, 77, 0.2);
+  font: 12px Roboto, Arial, sans-serif;
+  position: sticky;
+  top: 0;
+  z-index: 12;
+}
+.un-forge-search-queuelbl {
+  font-weight: 700;
+  color: var(--un-forge-accent-text);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+.un-forge-search-queueinfo {
+  flex: 1;
+  color: var(--un-yt-text-dim);
+}
+
+.un-forge-sel-plwrap {
+  position: relative;
+  display: inline-block;
+}
+.un-forge-btn.ghost.disabled,
+.un-forge-btn.ghost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.un-forge-preview-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: var(--un-forge-w);
+  height: 100vh;
+  z-index: 2147483100;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(4px);
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12px;
+  overflow-y: auto;
+  pointer-events: auto;
+}
+html.un-dock-both-open .un-forge-preview-backdrop {
+  right: var(--un-dock-ai-w, 0px);
+  width: min(var(--un-forge-w), calc(100vw - var(--un-dock-ai-w, 0px)));
+}
+.un-forge-preview-backdrop.on {
+  display: flex;
+}
+.un-forge-preview-box {
+  width: 100%;
+  max-height: none;
+  overflow: visible;
+  background: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+  animation: un-drill-in 0.18s cubic-bezier(0.2, 0, 0, 1);
+}
+.un-forge-preview-x {
+  float: right;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color 0.12s;
+}
+.un-forge-preview-x:hover {
+  color: var(--un-yt-text);
+}
+.un-forge-preview-hero {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  background: #000;
+}
+.un-forge-preview-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.un-forge-preview-title {
+  margin: 0 28px 4px 0;
+  font: 600 15px/1.35 Roboto, Arial, sans-serif;
+  color: #f1f1f1;
+}
+.un-forge-preview-stats {
+  margin: 0 0 8px;
+  font: 12px/1.45 Roboto, Arial, sans-serif;
+  color: #9a9a9a;
+}
+.un-forge-preview-reason {
+  margin: 0 0 10px;
+  font: 11px/1.45 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid var(--un-forge-accent);
+}
+.un-forge-preview-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.un-forge-preview-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.un-forge-preview-open {
+  display: inline-block;
+  font: 13px Roboto, Arial, sans-serif;
+  color: var(--un-forge-accent-text);
+  text-decoration: none;
+}
+.un-forge-preview-open:hover {
+  text-decoration: underline;
+}
+
+.un-forge-taste-chip {
+  font: 11px/1.45 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+  padding: 6px 10px;
+  margin: 0 0 8px;
+  border-radius: 8px;
+  background: rgba(255, 193, 77, 0.08);
+  border: 1px solid rgba(255, 193, 77, 0.18);
+  cursor: default;
+}
+.un-forge-onboard {
+  padding: 10px 12px;
+  margin: 0 0 10px;
+  border-radius: 10px;
+  background: #181818;
+  border: 1px solid var(--un-forge-line);
+  font: 12px/1.45 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+.un-forge-onboard-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.un-forge-templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 0 0 10px;
+}
+.un-forge-tpl-lbl {
+  font: 10px Roboto, Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--un-forge-dim);
+  margin-right: 4px;
+}
+.un-forge-tpl {
+  border: 1px solid var(--un-line);
+  background: var(--un-yt-panel);
+  color: var(--un-yt-text-dim);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font: 600 11px Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.un-forge-tpl:hover {
+  border-color: var(--un-forge-accent-glow);
+  color: var(--un-forge-accent-text);
+  background: var(--un-forge-accent-soft);
+}
+
+/* ---- Forge Guide tab ---- */
+.un-forge-guide-hero {
+  text-align: center;
+  padding: 14px 12px 16px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(255, 193, 77, 0.12) 0%, rgba(255, 193, 77, 0.02) 55%, transparent 100%);
+  border: 1px solid rgba(255, 193, 77, 0.2);
+}
+.un-forge-guide-spark {
+  display: block;
+  font-size: 28px;
+  color: var(--un-forge-accent-text);
+  line-height: 1;
+  margin-bottom: 6px;
+  text-shadow: 0 0 18px var(--un-forge-accent-glow);
+}
+.un-forge-guide-title {
+  margin: 0 0 6px;
+  font: 700 18px/1.2 Roboto, Arial, sans-serif;
+  color: #f5f5f5;
+}
+.un-forge-guide-lead {
+  margin: 0;
+  font: 12px/1.5 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+.un-forge-guide-block {
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #161616;
+  border: 1px solid var(--un-line);
+}
+.un-forge-guide-h {
+  margin: 0 0 6px;
+  font: 700 12px Roboto, Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--un-forge-accent-text);
+}
+.un-forge-guide-sub {
+  margin: 0 0 10px;
+  font: 11px/1.45 Roboto, Arial, sans-serif;
+  color: #999;
+}
+.un-forge-grade-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.un-forge-grade-row {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  grid-template-rows: auto auto;
+  gap: 4px 10px;
+  align-items: center;
+}
+.un-forge-grade-badge {
+  grid-row: 1 / span 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font: 800 13px Roboto, Arial, sans-serif;
+  background: rgba(0, 0, 0, 0.45);
+}
+.un-forge-grade-badge.gA { color: var(--un-forge); box-shadow: inset 0 0 0 1px rgba(110, 231, 135, 0.35); }
+.un-forge-grade-badge.gB { color: #8fd99a; }
+.un-forge-grade-badge.gC { color: var(--un-forge-grade-c-text); }
+.un-forge-grade-badge.gD { color: #e8a060; }
+.un-forge-grade-badge.gF { color: var(--un-bad); }
+.un-forge-grade-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: #252525;
+  overflow: hidden;
+}
+.un-forge-grade-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+.un-forge-grade-fill.gA { background: linear-gradient(90deg, #3d9a5c, var(--un-forge)); }
+.un-forge-grade-fill.gB { background: linear-gradient(90deg, #5a9a68, #8fd99a); }
+.un-forge-grade-fill.gC { background: linear-gradient(90deg, #a88840, #e8c878); }
+.un-forge-grade-fill.gD { background: linear-gradient(90deg, #a86a38, #e8a060); }
+.un-forge-grade-fill.gF { background: linear-gradient(90deg, #a04040, var(--un-bad)); }
+.un-forge-grade-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: baseline;
+}
+.un-forge-grade-pts {
+  font: 700 10px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+.un-forge-grade-note {
+  font: 10px/1.35 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+.un-forge-score-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  align-items: center;
+}
+.un-forge-stack-lbl {
+  font: 600 10px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 4px;
+}
+.un-forge-stack-part {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font: 10px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+  background: var(--un-yt-raised);
+  border: 1px solid var(--un-line);
+}
+.un-forge-stack-part i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.un-forge-stack-part.rel i { background: var(--un-forge); }
+.un-forge-stack-part.qual i { background: #7eb8ff; }
+.un-forge-stack-part.eng i { background: #e8c878; }
+.un-forge-stack-part.gem i { background: var(--un-forge-accent); }
+.un-forge-verdict-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.un-forge-verdict-card {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #2e2e2e;
+  background: #121212;
+}
+.un-forge-verdict-card.good { border-color: rgba(110, 231, 135, 0.25); }
+.un-forge-verdict-card.weak { border-color: rgba(232, 200, 120, 0.25); }
+.un-forge-verdict-card.off { border-color: rgba(255, 122, 122, 0.25); }
+.un-forge-verdict-icon {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-weight: 700;
+  margin-right: 6px;
+  font-size: 12px;
+}
+.un-forge-verdict-card.good .un-forge-verdict-icon { background: rgba(110, 231, 135, 0.15); color: var(--un-forge); }
+.un-forge-verdict-card.weak .un-forge-verdict-icon { background: rgba(232, 200, 120, 0.15); color: var(--un-forge-grade-c-text); }
+.un-forge-verdict-card.off .un-forge-verdict-icon { background: rgba(255, 122, 122, 0.15); color: var(--un-bad); }
+.un-forge-verdict-card b {
+  font: 600 12px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text);
+}
+.un-forge-verdict-card p {
+  margin: 6px 0 0;
+  font: 11px/1.4 Roboto, Arial, sans-serif;
+  color: #999;
+}
+.un-forge-rank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.un-forge-rank-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #111;
+  border-left: 3px solid var(--un-forge-accent);
+}
+.un-forge-rank-name {
+  font: 600 12px Roboto, Arial, sans-serif;
+  color: var(--un-yt-text);
+}
+.un-forge-rank-desc {
+  font: 11px/1.4 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+.un-forge-guide-pick {
+  padding: 12px;
+  border-radius: 10px;
+  background: linear-gradient(160deg, rgba(110, 231, 135, 0.08) 0%, #161616 45%);
+  border: 1px solid rgba(110, 231, 135, 0.2);
+  margin-bottom: 12px;
+}
+.un-forge-pick-list {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  font: 11px/1.5 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim);
+}
+.un-forge-pick-list li {
+  margin-bottom: 6px;
+}
+.un-forge-thumb-tip {
+  border-style: dashed;
+}
+
+/* Keyboard focus rings across the Forge panel's interactive controls (a11y). */
+.un-forge-guide-item:focus-visible,
+.un-forge-tab:focus-visible,
+.un-forge-link:focus-visible,
+.un-forge-nav button:focus-visible,
+.un-forge-btn:focus-visible,
+.un-forge-search-adv summary:focus-visible,
+.un-forge-vchip:focus-visible,
+.un-forge-gb-seg:focus-visible,
+.un-forge-s-pick:focus-visible,
+.un-forge-s-tact:focus-visible,
+.un-forge-s-rm:focus-visible,
+.un-forge-s-act:focus-visible,
+.un-forge-s-plopt:focus-visible,
+.un-forge-preview-x:focus-visible,
+.un-forge-tpl:focus-visible,
+.un-forge-saved-pick:focus-visible,
+#un-forge-search-go:focus-visible,
+#un-forge-search-findmore:focus-visible,
+#un-forge-search-build:focus-visible,
+.un-forge-queue-row .un-forge-btn:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: 2px;
+}
+
+/* Advanced watch-queue panel (Queue tab, watch-queue-panel.js). */
+.un-forge-btn.sm {
+  padding: 5px 9px;
+  font-size: 11px;
+}
+.un-forge-queue-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.un-forge-queue-head .un-forge-h {
+  margin: 0;
+}
+.un-forge-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.un-forge-queue-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--un-line);
+}
+.un-forge-queue-thumb {
+  width: 72px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex: none;
+  background: var(--un-yt-panel);
+}
+.un-forge-queue-meta {
+  flex: 1;
+  min-width: 0;
+}
+.un-forge-queue-title {
+  font: 600 12.5px/1.35 Roboto, Arial, sans-serif;
+  color: #f1f1f1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.un-forge-queue-sub {
+  margin-top: 2px;
+  font: 400 11px/1.3 Roboto, Arial, sans-serif;
+  color: #9a9a9a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.un-forge-queue-acts {
+  display: flex;
+  gap: 4px;
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 120px;
+}
+
+/* ---- blocked state --------------------------------------------------------
+   The panel used ~390px of ~1050px and left the rest blank while showing two
+   differently-styled error messages, an empty progress track and four chips
+   that could not work yet. This owns the space instead: what is missing, in
+   the order to fix it, with the action attached to each step.
+
+   Everything downstream is suppressed while blocked — a quick-start chip that
+   leads back to a connect prompt is worse than no chip. */
+.un-forge-panel.is-blocked {
+  display: flex;
+  flex-direction: column;
+}
+/* The auth box is emptied while blocked — the blocked state says the same thing
+   properly — but an empty bordered box still paints a stray pill at the top of
+   the panel. Same for the status line and the stats line.
+   :empty, not a blanket hide. A failed playlist fetch is NOT one of the ranked
+   blockers, so with write access and an expired session the box keeps real text
+   ("YouTube session expired - reconnect to load playlists") while the panel is
+   blocked on history. Hiding it unconditionally hid the only message about the
+   actual error; hiding it only when it is empty still kills the stray pill. */
+.un-forge-panel.is-blocked .un-forge-auth:empty,
+.un-forge-panel.is-blocked .un-forge-stats-line,
+.un-forge-panel.is-blocked .un-forge-status,
+.un-forge-panel.is-blocked .un-forge-templates,
+.un-forge-panel.is-blocked .un-forge-progress,
+.un-forge-panel.is-blocked .un-forge-taste-chip,
+.un-forge-panel.is-blocked .un-forge-onboard,
+.un-forge-panel.is-blocked .un-forge-section {
+  display: none;
+}
+.un-forge-panel.is-blocked .un-forge-nav {
+  /* The tabs stay reachable — the panel still has a Search and an Options tab
+     that work without a connection — but they stop being the fifth thing after
+     two errors and an empty bar.
+     NO margin-top: auto here. Both this and the blocked block claimed an auto
+     margin, so the free space was split between them and the blocked content
+     landed high with a gap underneath. The blocked block owns the centring;
+     the nav is simply last. */
+  order: 2;
+  opacity: 0.6;
+}
+.un-forge-blocked {
+  order: 1;
+  /* flex: 1 makes this block take the free space and centre inside it, rather
+     than auto margins competing with the nav for the same space. */
+  flex: 1;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px 4px 24px;
+  margin: auto 0;
+}
+.un-forge-blocked-lead {
+  margin: 0;
+  font: 700 11px/1 Roboto, Arial, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--un-forge-dim);
+}
+.un-forge-blocked-step {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 0 12px;
+  align-items: start;
+}
+.un-forge-blocked-n {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 700 11px/1 Roboto, Arial, sans-serif;
+  color: var(--un-forge-accent-text);
+  border: 1px solid var(--un-forge-line);
+}
+.un-forge-blocked-t {
+  margin: 2px 0 4px;
+  font: 600 14px/1.3 Roboto, Arial, sans-serif;
+  color: var(--un-forge-txt);
+}
+.un-forge-blocked-d {
+  margin: 0 0 10px;
+  font: 400 12.5px/1.5 Roboto, Arial, sans-serif;
+  color: var(--un-forge-dim);
+  max-width: 38ch;
+}
+
+/* ---- Reduced motion (WCAG 2.3.3) ----
+   This sheet carried 29 animated properties and no guard at all. Two are
+   INFINITE — un-forge-spin on a loading button and un-forge-shimmer on the
+   skeleton placeholders — which is the disruptive kind: a 150ms fade is over
+   before it is noticed, a loop never stops.
+
+   The infinite ones are not simply switched off. A spinner frozen mid-rotation
+   is a static glyph that says "working" forever with no way to tell it from a
+   stalled panel, and a shimmer with no sweep is an empty grey box. Both keep a
+   non-moving signal: the spinner holds its ring, the skeletons hold a flat
+   fill. Motion goes, meaning stays.
+
+   Colour transitions are deliberately left alone — a 120ms background change on
+   hover is feedback, not motion, and removing it makes controls feel broken. */
+@media (prefers-reduced-motion: reduce) {
+  .un-forge-section.on,
+  .un-forge-s-plmenu,
+  .un-forge-preview-box {
+    animation: none;
+  }
+  .un-forge-btn.loading::after {
+    animation: none;
+    opacity: 0.85;
+  }
+  .un-forge-skel-thumb,
+  .un-forge-skel-lines {
+    animation: none;
+    background: var(--un-yt-raised);
+  }
+}
+
+/* Light theme: --un-line / --un-line-soft are the dashboard's dark-only
+   tokens (design-tokens.css :root). On a light YouTube page they drew
+   near-black rules through this panel. Re-mapped for this root only, keyed on
+   YouTube's [dark] attribute (2026-09-22; same fix as ai-assistant.css). */
+html:not([dark]) .un-forge-root {
+  --un-line: #d6d9e0;
+  --un-line-soft: #e6e8ed;
+}
+
+/* The Forge section in YouTube's guide speaks the guide's own section style
+   (2026-09-23): sentence case, 16px, the page's ink. It was an 11px red
+   uppercase label, the only red heading on the page, which read as a
+   warning rather than a section. */
+.un-forge-guide-head {
+  padding: 6px 0 4px;
+  color: var(--un-yt-text);
+  font: 500 16px/1.4 Roboto, Arial, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.un-forge-guide-hint { font-size: 12px; }

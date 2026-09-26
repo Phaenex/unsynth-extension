@@ -1,0 +1,662 @@
+/* Video stats on YouTube — watch page + feed tiles (RYD data) */
+
+/* ---- watch page: like/dislike counts on native buttons ---- */
+.un-ryd-count {
+  display: inline-block !important;
+  visibility: visible !important;
+  margin-left: 4px;
+  font: 500 13px/1 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text);
+  vertical-align: middle;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  overflow: visible;
+  opacity: 1;
+  pointer-events: none;
+}
+
+.un-ryd-has-count {
+  overflow: visible !important;
+}
+
+button.yt-spec-button-shape-next.un-ryd-has-count,
+.yt-spec-button-shape-next > button.un-ryd-has-count {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 4px;
+  width: auto !important;
+  max-width: none !important;
+  padding-inline-end: 14px !important;
+}
+
+like-button-view-model.un-ryd-has-count,
+dislike-button-view-model.un-ryd-has-count {
+  display: inline-flex;
+  align-items: center;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+segmented-like-dislike-button-view-model.un-ryd-segmented {
+  overflow: visible !important;
+  flex-shrink: 0;
+}
+
+ytd-segmented-like-dislike-button-renderer {
+  overflow: visible !important;
+  flex-shrink: 0;
+}
+
+/* ---- watch page: elegant stats strip below the action row ---- */
+.un-vid-stats {
+  display: none;
+  flex-direction: column;
+  gap: 0;
+  margin: 10px 0 12px;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  clear: both;
+  flex: 0 0 100%;
+  min-width: 0;
+  /* Inside the deck this chrome is stripped anyway; outside it, a flat fill
+     matches YouTube own description box instead of imitating a card. */
+  border-radius: 2px;
+  background: transparent;
+  font: 500 12px/1.4 Roboto, Arial, sans-serif;
+  overflow: hidden;
+}
+
+.un-vid-stats.on {
+  display: flex;
+}
+
+/* Force full-width row below YouTube action bar */
+ytd-watch-metadata #actions + .un-vid-stats,
+#actions + .un-vid-stats {
+  flex-basis: 100%;
+  align-self: stretch;
+}
+/* The row now mounts BEFORE the channel row instead of after #actions, so it
+   sits directly under the title. Same full-width treatment in that slot. */
+ytd-watch-metadata .un-vid-stats:has(+ ytd-video-owner-renderer),
+.un-vid-stats:has(+ ytd-video-owner-renderer) {
+  flex-basis: 100%;
+  align-self: stretch;
+  margin: 4px 0 14px;
+}
+
+/* YouTube's owner/action row (#top-row) is a non-wrapping flexbox. Our card is
+   inserted into it as a flex sibling, so its flex-basis:100% overflows sideways
+   into the sidebar instead of dropping below the buttons. Force whatever flex
+   parent the card lands in to wrap. Scoped to ytd-watch-metadata so the Shorts
+   overlay (a column flexbox) is untouched; flex-wrap is a no-op on non-flex
+   parents, so this is safe regardless of which container YouTube uses. */
+ytd-watch-metadata :has(> #un-vid-stats) {
+  flex-wrap: wrap;
+}
+
+.un-vid-stats-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 16px;
+  min-width: 0;
+}
+
+.un-vid-stats-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Like-vs-dislike proportion bar — the red track shows dislikes, the green fill likes */
+.un-ryd-ratio-bar {
+  display: block;
+  width: 100%;
+  max-width: 340px;
+  height: 6px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: rgba(232, 138, 138, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.un-ryd-ratio-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #5fcf78, #8be0a0);
+  min-width: 3px;
+  transition: width 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.un-vid-stats-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0;
+  /* Bumped from 12.5px and lifted off the dim secondary token: reported as
+     hard to see against the dark page, and it now sits directly under the
+     title where it is read rather than glanced at. */
+  font: 500 13.5px/1.35 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text);
+}
+
+/* Stats-strip colours, both themes.
+   These were six literals and one dark-only shared token, all authored and
+   reviewed on a dark page. In light theme the ratio and the date measured
+   1.12:1 (white on #f2f2f4), views 1.74:1, likes 1.41:1, dislikes 1.97:1 —
+   a row that reads perfectly in one theme and is close to blank in the other.
+   Light values are computed against the deck ground rather than eyeballed. */
+.un-vid-stats-summary {
+  --un-vs-like: #8fe0a0;
+  --un-vs-dislike: #e89a9a;
+  --un-vs-dim: var(--un-yt-text-dim);
+  /* A divider glyph, judged at the 3:1 WCAG non-text threshold rather than the
+     4.5:1 text one — it needs to be SEEN, not read. It used to be
+     rgba(255,255,255,0.18), which was defensible on the old recessed slab and
+     stopped being so when the deck went transparent: measured 1.52:1 on the
+     page ground, below even the glyph floor it was held to. 3.05:1 now. */
+  --un-vs-sep-c: #606060;
+}
+html:not([dark]) .un-vid-stats-summary {
+  /* 6.57:1 and 7.44:1 on #f2f2f4. The dark greens and pinks invert badly on a
+     light ground — these are the same hues at a legible lightness, not a
+     mechanical inversion. */
+  --un-vs-like: #17632c;
+  --un-vs-dislike: #96201f;
+  --un-vs-dim: #5c5c66;
+  --un-vs-sep-c: #8a8a94;
+}
+
+.un-vid-stats-summary .un-vs-sep {
+  margin: 0 9px;
+  /* Was rgba(255,255,255,0.18): a dot invisible on a light ground (1.12:1).
+     A separator is structure, so it takes the same theme-aware token as the
+     rules around it rather than a literal that only exists in one theme. */
+  color: var(--un-vs-sep-c);
+  user-select: none;
+}
+
+.un-vid-stats-summary .un-vs-likes {
+  color: var(--un-vs-like);
+  font-weight: 600;
+}
+
+.un-vid-stats-summary .un-vs-dislikes {
+  color: var(--un-vs-dislike);
+  font-weight: 600;
+}
+
+.un-vid-stats-summary .un-vs-ratio {
+  /* NOT var(--un-yt-text). --yt-spec-* does not resolve from the
+     extension context (core.css documents the measurement), so that fallback is
+     not a fallback — it is the value, and it is white in both themes. Measured
+     at 1.12:1 on the light deck. --un-yt-text is the theme-aware equivalent. */
+  color: var(--un-yt-text);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.un-vid-stats-summary .un-vs-views {
+  color: var(--un-vs-dim);
+}
+
+/* Upload date, moved here off its own line above the channel row. Sized with
+   the ratio rather than with views: the previous standalone chip was reported
+   as too small to read, and shrinking it again on the way over would have
+   reproduced that complaint in a new place. */
+.un-vid-stats-summary .un-vs-date {
+  /* Same dark-only fallback as .un-vs-ratio above. */
+  color: var(--un-yt-text);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.un-vid-stats-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Buttons, both themes. Every value here was a white alpha or a --yt-spec-*
+   with a light-text fallback, so on a light deck the border and fill vanished
+   and the label sat at 1.13:1. Alphas are the right tool for a tint that has to
+   work over an unknown surface — they just have to be the right COLOUR of
+   alpha, which is black on a light ground. */
+.un-vid-stats-btn {
+  --un-vsb-edge: rgba(255, 255, 255, 0.12);
+  --un-vsb-fill: rgba(255, 255, 255, 0.04);
+  --un-vsb-edge-hi: rgba(255, 255, 255, 0.3);
+  --un-vsb-fill-hi: rgba(255, 255, 255, 0.09);
+  --un-vsb-fill-ghost-hi: rgba(255, 255, 255, 0.06);
+  --un-vsb-text: var(--un-yt-text);
+  --un-vsb-text-dim: var(--un-yt-text-dim);
+  border: 1px solid var(--un-vsb-edge);
+  background: var(--un-vsb-fill);
+  color: var(--un-vsb-text);
+  border-radius: 2px;
+  padding: 6px 14px;
+  font: 600 11.5px/1.2 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+html:not([dark]) .un-vid-stats-btn {
+  --un-vsb-edge: rgba(0, 0, 0, 0.16);
+  --un-vsb-fill: rgba(0, 0, 0, 0.03);
+  --un-vsb-edge-hi: rgba(0, 0, 0, 0.36);
+  --un-vsb-fill-hi: rgba(0, 0, 0, 0.07);
+  --un-vsb-fill-ghost-hi: rgba(0, 0, 0, 0.05);
+}
+
+.un-vid-stats-btn:hover {
+  border-color: var(--un-vsb-edge-hi);
+  background: var(--un-vsb-fill-hi);
+}
+
+.un-vid-stats-btn:focus-visible {
+  outline: 2px solid var(--un-focus);
+  outline-offset: 2px;
+}
+
+/* THREE WEIGHTS, NOT ONE WEIGHT AND A 3% FILL.
+   Measured before this change: all four controls in this row rendered at
+   border rgba(0,0,0,0.16), weight 600, 11.5px — identical. The sole difference
+   was a 3%-opacity background, which nobody reads as hierarchy.
+
+   PRIMARY. One per row. The only control with a solid ground, so the eye
+   lands on it first without needing size or colour to shout. Borrowing the
+   accent rather than inventing a button colour keeps this inside Unsynth's
+   existing language instead of importing a generic SaaS call-to-action. */
+.un-vid-stats-btn.un-vsb-primary {
+  background: var(--un-accent, #ff5a5f);
+  border-color: transparent;
+  /* BLACK, NOT WHITE, AND THE NUMBERS DECIDED IT.
+     White on #ff5a5f measures 3.05:1 — below the 4.5:1 floor, and this repo
+     has a standing record of light-theme text that passed every mount
+     assertion while being unreadable. Black on the same ground measures
+     6.88:1. The accent is a light coral; a light-on-light button would have
+     been the same defect in a new place. */
+  color: #101014;
+}
+.un-vid-stats-btn.un-vsb-primary:hover {
+  /* Darkened from the token rather than hardcoding a second coral, so this
+     tracks --un-accent if it is ever retuned. There is no --un-accent-hi
+     token: checked before using one rather than shipping a var() that silently
+     falls back, which is the single most repeated bug in this codebase. */
+  background: color-mix(in srgb, var(--un-accent, #ff5a5f) 86%, #000);
+  border-color: transparent;
+  color: #101014;
+}
+
+/* UTILITY. No border at all: this is the real separation from the outlined
+   secondary above it. Previously .ghost kept its 1px edge and dropped only the
+   fill, which is why a disclosure looked exactly like an action. */
+.un-vid-stats-btn.ghost {
+  color: var(--un-vsb-text-dim);
+  background: transparent;
+  border-color: transparent;
+  font-weight: 600;
+}
+.un-vid-stats-btn.ghost:hover {
+  background: var(--un-vsb-fill-ghost-hi);
+  border-color: transparent;
+  color: var(--un-vsb-text);
+}
+
+.un-vid-stats-btn.ghost:hover {
+  color: var(--un-vsb-text);
+  background: var(--un-vsb-fill-ghost-hi);
+}
+
+.un-vid-stats-caret {
+  display: inline-block;
+  margin-left: 2px;
+  font-size: 9px;
+  opacity: 0.75;
+  transition: transform 0.2s ease;
+}
+
+.un-vid-stats.expanded .un-vid-stats-caret {
+  transform: rotate(180deg);
+}
+
+.un-vid-stats-panel {
+  border-top: 1px solid var(--un-yt-line);
+  padding: 12px 14px 14px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.un-vid-stats-panel[hidden] {
+  display: none !important;
+}
+
+/* Compare content inside stats strip */
+.un-vid-stats-panel .un-compare-title {
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 4px;
+  line-height: 1.35;
+  color: var(--un-yt-text);
+}
+
+.un-vid-stats-panel .un-compare-lead {
+  font-size: 11px;
+  color: var(--un-yt-text-dim);
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+
+.un-vid-stats-panel .un-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.un-vid-stats-panel .un-compare-table th,
+.un-vid-stats-panel .un-compare-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: left;
+}
+
+.un-vid-stats-panel .un-compare-table th {
+  color: var(--un-yt-text-dim);
+  font-weight: 600;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.un-vid-stats-panel .un-compare-val.current {
+  color: var(--un-yt-text);
+  font-weight: 600;
+}
+
+/* Themed pairs. These three were single dark-only literals on a panel that
+   paints rgba(0,0,0,0.12) over the page — compositing that over white gives a
+   ground of rgb(224,224,224), where the pale values measured 1.33:1, 1.70:1 and
+   2.16:1. All three passed on dark (11.10, 8.68, 6.82), which is the signature
+   of a block authored and reviewed in one theme.
+
+   The contrast audit never caught them because the compare panel does not
+   render on any audited page, so "0 failures" was silent about this surface
+   rather than clearing it.
+
+   Note the light green is #17632c and NOT the #1e7a34 used on the feed chip:
+   the 12% black tint moves the ground enough that #1e7a34 lands at 4.09:1 here.
+   A value that cleared on one surface is not automatically fine on another. */
+.un-vid-stats-panel .un-compare-val.up {
+  color: #17632c;
+}
+html[dark] .un-vid-stats-panel .un-compare-val.up,
+[dark] .un-vid-stats-panel .un-compare-val.up {
+  color: #7dd87d;
+}
+
+.un-vid-stats-panel .un-compare-val.down {
+  color: #a32b2b;
+}
+html[dark] .un-vid-stats-panel .un-compare-val.down,
+[dark] .un-vid-stats-panel .un-compare-val.down {
+  color: #e89898;
+}
+
+.un-vid-stats-panel .un-compare-val.flat {
+  color: #5c5c5c;
+}
+html[dark] .un-vid-stats-panel .un-compare-val.flat,
+[dark] .un-vid-stats-panel .un-compare-val.flat {
+  color: #999;
+}
+
+.un-vid-stats-panel .un-compare-note,
+.un-vid-stats-panel .un-compare-empty,
+.un-vid-stats-panel .un-compare-loading {
+  font-size: 11px;
+  color: var(--un-yt-text-dim);
+  margin: 8px 0 0;
+  line-height: 1.45;
+}
+
+.un-vid-stats-panel .un-compare-subhead {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--un-yt-text-dim);
+  margin: 12px 0 6px;
+  font-weight: 700;
+}
+
+.un-vid-stats-panel .un-compare-rel-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.un-vid-stats-panel .un-compare-rel-bar {
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.un-vid-stats-panel .un-compare-rel-fill {
+  height: 100%;
+  background: #666;
+  border-radius: 3px;
+}
+
+.un-vid-stats-panel .un-compare-rel-fill.current {
+  background: #ff5a5f;
+}
+
+.un-vid-stats-panel .un-compare-rel-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+
+.un-vid-stats-panel .un-compare-rel-title {
+  min-width: 0;
+  color: var(--un-yt-text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.un-vid-stats-panel .un-compare-rel-views {
+  color: var(--un-yt-text-dim);
+  flex-shrink: 0;
+}
+
+.un-ryd-bar {
+  display: none !important;
+}
+
+/* ---- feed / related / search tiles ---- */
+/* No background, no padding, no radius.
+   This row is RESTORED YouTube data, so it has to read as part of the tile's
+   metadata rather than as a strip an extension parked there. The chip fill was
+   measured at 230,247,251 against a card body of 228,247,251 — a 2-point lift
+   that is too small to be a deliberate surface and too large to be nothing, and
+   YouTube never tints a metadata row. Sitting it directly on the card ground is
+   what makes it read as native.
+
+   The colours below were originally computed against the chip. Recomputed on
+   the bare page ground they all IMPROVE (lowest is 5.40:1, was 5.40 on white
+   and the dark values rose from ~6 to 6.81-15.79), because the chip was a
+   mid-tone sitting between the text and the page. Nothing here needed
+   retuning, but it was measured rather than assumed. */
+.un-vid-stats-feed {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  max-width: 100%;
+  background: none;
+  /* Matches YouTube's own tile metadata weight rather than shouting over it. */
+  font: 500 12px/1.3 Roboto, Arial, sans-serif;
+}
+
+.un-vsf-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+/* Up / down triangle markers — cleaner than emoji, color-coded by sentiment */
+.un-vsf-like::before {
+  content: "▲";
+  font-size: 8px;
+  /* Inherit the parent's theme-correct colour rather than pinning a pale
+     dark-theme value that vanishes on light. */
+  color: inherit;
+}
+
+.un-vsf-dislike::before {
+  content: "▼";
+  font-size: 8px;
+  color: inherit;
+}
+
+/* Sentiment colours, light-first for the same reason as the text above. The
+   pale mint/rose pair reads well on the dark chip but measured 1.64:1 and
+   2.23:1 on the light one — effectively invisible for anyone on YouTube's
+   light theme. These darker variants clear 4.5:1 there (5.40 and 7.15) and
+   still read unmistakably as like/dislike. */
+.un-vsf-like {
+  color: #1e7a34;
+}
+
+.un-vsf-dislike {
+  color: #a32b2b;
+}
+
+html[dark] .un-vsf-like,
+[dark] .un-vsf-like {
+  color: #9fd89f;
+}
+
+html[dark] .un-vsf-dislike,
+[dark] .un-vsf-dislike {
+  color: #cfa3a3;
+}
+
+html[dark] .un-vsf-ratio,
+[dark] .un-vsf-ratio {
+  color: #e9e9e9;
+}
+
+/* NOT --yt-spec-text-secondary. YouTube resolves that token to #606060 on this
+   surface, and against the chip's own background (white at 6% over the page)
+   that measured 2.68:1 on dark — under the 4.5:1 floor for 11px text. The text
+   sits inside OUR chip rather than on YouTube's page background, so the token's
+   contrast assumptions do not hold here.
+
+   Written light-first, because YouTube's light theme is the state with NO
+   [dark] attribute: a single mid-grey cannot serve both (#9a9a9a measures
+   5.99:1 on the dark chip but only 2.81:1 on the light one). Each theme gets
+   the value that clears the floor on its own chip. */
+.un-vsf-views {
+  color: #5c5c5c;
+  font-weight: 500;
+}
+.un-vsf-ratio {
+  color: #0f0f0f;
+  font-weight: 700;
+}
+html[dark] .un-vsf-views,
+[dark] .un-vsf-views {
+  color: #9a9a9a;
+}
+
+
+.un-ryd-feed {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .un-vid-stats-main {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .un-vid-stats-tools {
+    justify-content: flex-end;
+  }
+
+  .un-ryd-ratio-bar {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .un-ryd-ratio-fill,
+  .un-vid-stats-caret {
+    transition: none !important;
+  }
+}
+
+/* ---- statsStyle: 'plain' ----
+   Drops the card chrome so the strip sits closer to native YouTube. The data
+   and its colours are unchanged; only the surface goes. */
+.un-vid-stats.un-vs-plain {
+  border: 0;
+  background: none;
+  border-radius: 0;
+}
+.un-vid-stats.un-vs-plain .un-vid-stats-main {
+  padding-left: 0;
+  padding-right: 0;
+}
+.un-vid-stats.un-vs-plain .un-vid-stats-panel {
+  background: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* ---- statsPosition: 'wide' ----
+   Mounted before #top-row, so it is a block child of #above-the-fold rather
+   than a flex sibling inside #owner. #owner and #top-row are what cap its
+   width on some layouts; this placement spans the whole content column. */
+#above-the-fold > .un-vid-stats,
+ytd-watch-metadata > .un-vid-stats {
+  flex-basis: auto;
+  width: 100%;
+  max-width: none;
+  margin: 2px 0 14px;
+}
+
+/* Fact-check's own Summarize is mirrored onto the stats panel, so showing both
+   renders that action twice on one page. Hide the original rather than
+   removing it: the stats button works by CLICKING this one, so it must stay in
+   the DOM. Details ▾ stays because it toggles the results panel in place.
+   Driven by a body class so turning the mirror off restores it.
+
+   CLAIM REVIEW IS NO LONGER MIRRORED, so it is no longer hidden.
+   It used to appear twice — once here as "✦ Claim review" with its own run
+   button, and again eighty pixels up in the stats row — which is two controls
+   for one action with nothing to tell them apart. The control now lives only
+   here, beside where its result lands, which is the whole reason this slot
+   exists. Removing it from this rule is what makes that single path real; if
+   it stayed hidden the feature would have no entry point at all. */
+body.un-vs-fc-mirrored .un-fc-actions .un-fc-btn[data-action="summarize"] {
+  display: none;
+}
+

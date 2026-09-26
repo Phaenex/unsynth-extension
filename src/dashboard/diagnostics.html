@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Unsynth — storage diagnostics</title>
+    <link rel="stylesheet" href="../shared/design-tokens.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        background: #0f0f10;
+        color: #e8e8e8;
+      }
+      h1 {
+        font-size: 15px;
+        margin: 0 0 4px;
+        letter-spacing: 0.2px;
+      }
+      p.lede {
+        margin: 0 0 16px;
+        color: #9a9a9a;
+        max-width: 70ch;
+      }
+      /* The report is written here AND mirrored to the document title + a
+         data-attribute, so an automated reader can pull it without OCR. */
+      #out {
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #161618;
+        border: 1px solid #2a2a2d;
+        border-radius: 8px;
+        padding: 14px;
+        max-height: 70vh;
+        overflow: auto;
+      }
+      .bar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      button {
+        font: inherit;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #3a3a3f;
+        background: #232327;
+        color: #e8e8e8;
+        cursor: pointer;
+      }
+      button:hover { background: #2c2c31; }
+      .warn { color: #ffb454; }
+      .bad { color: #ff7a7a; }
+      .ok { color: #7ee787; }
+    </style>
+  </head>
+  <body>
+    <h1>Unsynth — storage diagnostics</h1>
+    <p class="lede">
+      Read-only summary of what the extension has stored. Counts and shapes only —
+      no OAuth tokens, no API keys, no secret values are read or displayed. Use
+      this to check what an import actually produced instead of inferring it from
+      badges on a page.
+    </p>
+    <div class="bar">
+      <button id="copy">Copy report</button>
+      <button id="refresh">Refresh</button>
+    </div>
+    <pre id="out">Reading…</pre>
+    <script src="../shared/watch-stats.js"></script>
+    <script src="diagnostics.js"></script>
+  </body>
+</html>

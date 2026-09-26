@@ -1,0 +1,811 @@
+/* Unsynth SponsorBlock — the "skipped" notice over the player. */
+@keyframes un-sb-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.un-sb-notice {
+  position: absolute;
+  left: 16px;
+  bottom: 70px;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 10, 14, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--un-sb-cat-color, #4aa86e);
+  border-radius: 9px;
+  padding: 7px 12px 7px 10px;
+  font: 13px Roboto, Arial, sans-serif;
+  color: #e8e8e8;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  animation: un-sb-fadein 0.18s ease;
+}
+.un-sb-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  opacity: 0.85;
+  background: var(--un-sb-cat-color, #4aa86e);
+}
+/* Muted, recognisable category hues — not blinding neons */
+.un-sb-sponsor      { --un-sb-cat-color: #4aa86e; background: #4aa86e; }
+.un-sb-selfpromo    { --un-sb-cat-color: #c8a84b; background: #c8a84b; }
+.un-sb-interaction  { --un-sb-cat-color: #9b6fd4; background: #9b6fd4; }
+.un-sb-intro        { --un-sb-cat-color: #5ba8a8; background: #5ba8a8; }
+.un-sb-outro        { --un-sb-cat-color: #5b6ed4; background: #5b6ed4; }
+.un-sb-preview      { --un-sb-cat-color: #4889b8; background: #4889b8; }
+.un-sb-hook         { --un-sb-cat-color: #55b0c9; background: #55b0c9; }
+.un-sb-filler       { --un-sb-cat-color: #7b8a3a; background: #7b8a3a; }
+.un-sb-music_offtopic { --un-sb-cat-color: #c87c3a; background: #c87c3a; }
+.un-sb-poi_highlight { --un-sb-cat-color: #ff5f95; background: #ff5f95; }
+.un-sb-exclusive_access { --un-sb-cat-color: #7c5cc4; background: #7c5cc4; }
+.un-sb-chapter      { --un-sb-cat-color: #9aa0a6; background: #9aa0a6; }
+.un-sb-personal     { --un-sb-cat-color: #c45c5c; background: #c45c5c; }
+
+/* Manual-skip prompt: reuse the notice chrome but stay until the user acts. */
+.un-sb-manual { animation: un-sb-fadein 0.16s ease; }
+.un-sb-skipnow {
+  background: var(--un-sb-cat-color, #4aa86e);
+  border-color: transparent;
+  color: #06210f;
+  font-weight: 700;
+}
+.un-sb-skipnow:hover { filter: brightness(1.08); color: #06210f; }
+
+/* Full-video sponsor label chip */
+.un-sb-full-label {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 10, 14, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--un-sb-cat-color, #7c5cc4);
+  border-radius: 9px;
+  padding: 6px 12px;
+  font: 12.5px Roboto, Arial, sans-serif;
+  color: #e8e8e8;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  animation: un-sb-fadein 0.18s ease;
+}
+.un-sb-poi-btn {
+  font: 700 15px/1 Roboto, Arial, sans-serif !important;
+  color: #ff8fb4;
+  opacity: 0.9;
+  width: auto !important;
+  padding: 0 6px !important;
+  vertical-align: top;
+}
+.un-sb-poi-btn:hover { opacity: 1; color: #ff5f95; }
+
+/* colored segment markers on the player progress bar */
+.un-sb-markers {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 30;
+}
+.un-sb-mark {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  min-width: 2px;
+  opacity: 0.75;
+  border-radius: 1px;
+}
+
+/* community chapter boundaries: thin full-height ticks on the progress bar */
+.un-sb-chapters {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 31;
+}
+.un-sb-chap-tick {
+  position: absolute;
+  top: -2px;
+  height: calc(100% + 4px);
+  width: 2px;
+  margin-left: -1px;
+  background: #e8eaed;
+  opacity: 0.72;
+  border-radius: 1px;
+  pointer-events: auto;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+}
+.un-sb-chap-tick:hover { opacity: 1; }
+/* current community chapter caption over the player */
+.un-sb-chap-title {
+  position: absolute;
+  left: 16px;
+  bottom: 104px;
+  z-index: 290;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 44%;
+  background: rgba(10, 10, 14, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--un-sb-cat-color, #9aa0a6);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font: 12px Roboto, Arial, sans-serif;
+  color: #e8e8e8;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  animation: un-sb-fadein 0.18s ease;
+}
+.un-sb-chap-title-txt {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.un-sb-txt {
+  margin-right: 4px;
+  font-size: 12.5px;
+}
+.un-sb-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ccc;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1.3;
+  transition: background 0.12s, border-color 0.12s;
+}
+.un-sb-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+.un-sb-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.un-sb-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 2px;
+}
+.un-sb-undo {
+  color: #8ab4f8;
+}
+
+/* ---- submit-to-community: player control button + marking panel ---- */
+.un-sb-submit-btn {
+  font: 700 13px/1 Roboto, Arial, sans-serif !important;
+  color: #fff;
+  opacity: 0.85;
+  width: auto !important;
+  padding: 0 8px !important;
+  vertical-align: top;
+}
+.un-sb-submit-btn:hover {
+  opacity: 1;
+  color: #6ee787;
+}
+.un-sb-submit-panel {
+  position: absolute;
+  right: 12px;
+  bottom: 64px;
+  z-index: 320;
+  width: 260px;
+  background: rgba(12, 12, 16, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+  font: 13px Roboto, Arial, sans-serif;
+  color: #e8e8e8;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.66);
+  backdrop-filter: blur(10px);
+  animation: un-sb-fadein 0.16s ease;
+}
+.un-sb-sp-title {
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.un-sb-sp-hint {
+  font-size: 11px;
+  color: #9a9aa2;
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+.un-sb-sp-times {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.un-sb-sp-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.un-sb-sp-mark {
+  flex: none;
+  background: #272727;
+  color: #f1f1f1;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font: 600 12.5px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  min-width: 92px;
+}
+.un-sb-sp-mark:hover {
+  background: #383838;
+}
+.un-sb-sp-val {
+  font-variant-numeric: tabular-nums;
+  color: #6ee787;
+  font-weight: 600;
+}
+.un-sb-sp-cat {
+  width: 100%;
+  box-sizing: border-box;
+  background: #0a0a0a;
+  color: #eee;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  padding: 7px 9px;
+  font: 13px Roboto, Arial, sans-serif;
+  margin-bottom: 10px;
+}
+.un-sb-sp-status {
+  min-height: 16px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  color: #9a9aa2;
+}
+.un-sb-sp-status.ok {
+  color: #6ee787;
+}
+.un-sb-sp-status.err {
+  color: #ff8a80;
+}
+.un-sb-sp-actions {
+  display: flex;
+  gap: 8px;
+}
+.un-sb-sp-submit {
+  flex: 1;
+  background: #4aa86e;
+  color: #06210f;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px;
+  font: 700 13px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+}
+.un-sb-sp-submit:hover:not(:disabled) {
+  background: #57c281;
+}
+.un-sb-sp-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.un-sb-sp-cancel {
+  background: none;
+  border: 0;
+  color: #aab1bd;
+  padding: 9px 12px;
+  font: 13px Roboto, Arial, sans-serif;
+  cursor: pointer;
+}
+.un-sb-sp-cancel:hover {
+  color: #ff5a5f;
+}
+.un-sb-submit-btn:focus-visible,
+.un-sb-sp-mark:focus-visible,
+.un-sb-sp-submit:focus-visible,
+.un-sb-sp-cancel:focus-visible,
+.un-sb-sp-cat:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: 2px;
+}
+
+/* ---- Docked mini-player ----
+   The notice sits at bottom:70px and the chapter caption at bottom:104px,
+   both measured against a full-size player. The scroll dock pins #movie_player
+   to 320x180 (see scroll-miniplayer.css .un-mini-docked-player), so those
+   offsets land both elements in the upper half of the box, on top of the video
+   rather than below it, and the caption's max-width:44% comes out at ~140px,
+   which clips its text mid-word. Volume Master's overlay already got a scoped
+   fix for exactly this; SponsorBlock never did.
+
+   The two are treated differently on purpose. The skip notice is interactive —
+   it carries the 👍/👎 vote buttons and Undo, which is the only way to get a
+   wrongly-skipped segment back — so it is repositioned to stay usable rather
+   than hidden. The chapter caption is passive text with no control on it, and
+   there is no room for it over a 320px-wide video, so it is hidden while
+   docked and returns on undock. */
+.un-mini-docked-player .un-sb-notice {
+  left: 6px !important;
+  right: 6px !important;
+  bottom: 6px !important;
+  gap: 6px;
+  padding: 5px 8px 5px 7px;
+  font-size: 11px;
+  border-radius: 7px;
+  justify-content: flex-start;
+}
+/* The label is the only part that can give up room; the dot and the buttons
+   are already at their minimum. Without this the buttons are pushed out of
+   the box on a long category name instead of the text ellipsising. */
+.un-mini-docked-player .un-sb-notice .un-sb-txt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.un-mini-docked-player .un-sb-notice .un-sb-btn {
+  flex: none;
+}
+.un-mini-docked-player .un-sb-chap-title {
+  display: none !important;
+}
+
+/* ===== Runtime strip (TAPE) =========================================
+   The composition of the video as a physical strip, in the deck's first slot.
+
+   WHY THIS DOES NOT LOOK LIKE THE REST OF THE EXTENSION'S OLD PANELS
+   A visual panel located the reason four rounds of design read as generic: the
+   triple of a 14px radius, a 10%-white hairline border, and a 2-5% white
+   gradient wash, which is the default dark card of every generated UI, and which
+   sits 2px off YouTube's own 12px radius so it reads as a botched clone. This
+   surface commits the other way instead: RECESSED, not floating. Darker than the
+   page, no border, no radius, one 2px accent rule as the only container edge.
+
+   CONTRAST IS MEASURED, NOT EYEBALLED
+   Every grey here was checked against the trough. YouTube's own tertiary grey
+   measures 4.10:1 on this background and fails AA — it fails on their own page
+   too, at 3.93:1 — so it is deliberately not reused. The label token below is
+   7.11:1. Nothing is under 11px.
+   =================================================================== */
+
+.un-sb-rt {
+  /* Recessed: darker than the YouTube page behind it, so it reads as cut into the
+     surface rather than floating on it. Tokens so the light theme overrides
+     values, not rules. */
+  /* --un-rt-bg is defined on .un-watch-deck; inherited here so the strip and
+     its container are the same material by construction, not by coincidence. */
+  --un-rt-tape: #2b2b2b;
+  --un-rt-hatch: #202027;
+  --un-rt-label: #9a9a9a;
+  --un-rt-val: #b4b4b4;
+  --un-rt-hero: #f1f1f1;
+  --un-rt-crowd: #8fe0a0;
+  --un-rt-unknown: #d9b45e;
+  --un-rt-head: #fff;
+  --un-rt-head-ring: #000;
+  /* No fill and no inset highlight. Both said "this is a separate surface" —
+     measured against the host, YouTube own description block is transparent
+     with no radius and no padding, so a recessed slab under the runtime was the
+     single strongest cue that Unsynth was an injected console. The tape still
+     carries its own ground (1.35:1 dark, 1.45:1 light against the page), which
+     is what the proportion readout actually needs.
+     --un-rt-bg stays defined: the tape hatch and the splice cuts read against
+     it, so the token is still the material behind the strip even when nothing
+     paints it. */
+  background: none;
+  padding: 4px 0 2px;
+}
+
+/* --- readout: ONE hero figure, everything else visibly smaller --- */
+.un-sb-rt-head {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 5px;
+}
+.un-sb-rt-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.un-sb-rt-lab {
+  font: 500 11px/1 Roboto, Arial, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--un-rt-label);
+}
+.un-sb-rt-val {
+  /* 13px, not 14. The deck reads on a three-role scale — 24 hero / 13 body /
+     11 label — and 14 was a fourth size doing the same job as 13 one row down. */
+  font: 500 13px/1 "Roboto Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--un-rt-val);
+}
+/* A 30px figure against 11px labels is a real ratio. Three sizes within 7px of
+   each other, which is what this had, is not a hierarchy. */
+.un-sb-rt-val.is-hero {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--un-rt-hero);
+}
+.un-sb-rt-val.is-crowd { color: var(--un-rt-crowd); }
+.un-sb-rt-val.is-unknown { color: var(--un-rt-unknown); }
+.un-sb-rt-prov {
+  font: 400 11px/1 Roboto, Arial, sans-serif;
+  color: var(--un-rt-label);
+}
+
+/* --- the strip --- */
+.un-sb-rt-wrap { position: relative; }
+.un-sb-rt-tape {
+  display: flex;
+  /* 8px, down from 22 then 14.
+     Measured on a real video: 88.1% of this tape is "unchecked" — nobody has
+     submitted segments — 7.4% is known content and 4.5% is skippable. So a
+     full-column band was spending almost all of its pixels rendering an
+     absence, while sitting directly under the one number that matters. The
+     readout above says it in words; the tape only has to show WHERE.
+     8px was tried and reverted. The density argument still holds — 88.1% of
+     this tape is "unchecked" — but it produced 8px-tall click targets, and two
+     attempts to grow the hit area without growing the band both failed: padding
+     with background-clip destroyed the inline duration label (it lost the
+     coloured fill behind it and measured rgba(0,0,0,0.8) on a transparent
+     ground), and a ::after overlay was clipped away by this element own
+     overflow: hidden — hit-tested, a point 8px above the band returned false.
+     14px is the height that was already measured as working. Being able to
+     click a control outranks eight pixels of density. */
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--un-rt-tape);
+}
+.un-sb-rt-seg {
+  position: relative;
+  height: 100%;
+  /* A 4-second segment in a 47-minute video is sub-pixel. Give it a floor so it
+     stays hittable, and accept that it then overstates its own width — the
+     alternative is an interactive region nobody can click. */
+  min-width: 4px;
+}
+.un-sb-rt-seg.is-content { background: var(--un-rt-tape); }
+/* Hatched, not grey: "nobody submitted segments" must not look like "no ads". */
+.un-sb-rt-seg.is-unchecked {
+  background: repeating-linear-gradient(135deg, var(--un-rt-tape) 0 5px, var(--un-rt-hatch) 5px 10px);
+}
+/* The splice: a 1px cut plus a cue marker in the segment's own colour above and
+   below, so the strip reads as assembled from pieces rather than painted. */
+.un-sb-rt-seg.is-skip { box-shadow: -1px 0 0 var(--un-rt-bg); }
+.un-sb-rt-seg.is-skip::before,
+.un-sb-rt-seg.is-skip::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 1px;
+  height: 4px;
+  background: inherit;
+}
+.un-sb-rt-seg.is-skip::before { top: -4px; }
+.un-sb-rt-seg.is-skip::after { bottom: -4px; }
+
+/* Each skip region is a real button, so it is tabbable and operable by keyboard.
+   Hover-only would exclude touch and keyboard users from the one interaction
+   this surface offers. */
+.un-sb-rt-skip {
+  /* The painted tape is 8px, which is right for its information density — 88%
+     of it means "unchecked" — but an 8px click target is not.
+     The hit area is extended with a ::after pseudo-element rather than padding
+     on the button itself. Padding + background-clip: content-box was tried and
+     broke the inline duration label, which is positioned against the button box
+     and lost the coloured fill behind it: measured rgba(0,0,0,0.8) on a
+     transparent ground, invisible. A pseudo-element grows only the hit area and
+     leaves every painted thing exactly where it was. */
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: inherit;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.un-sb-rt-skip:hover { filter: brightness(1.18); }
+.un-sb-rt-skip:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+  filter: brightness(1.18);
+}
+/* Durations print inside segments wide enough to hold them. This replaced a
+   five-entry legend that restated what the strip already encoded three ways. */
+/* A LABEL THAT DOES NOT FIT IS WORSE THAN NO LABEL.
+ *
+ * This is printed INSIDE a segment whose width is proportional to that
+ * segment's share of the video, so on a short segment there is simply no room.
+ * Measured on a real 18:40 video: "0:36" needs 23px of text in an 18px box and
+ * rendered as "0⋮3" — a clipped glyph that reads as a different value.
+ *
+ * It was also 10-11px, below the 13-14px floor the design rules set for
+ * everyday text, and shrinking it further to fit would break that rule to hide
+ * this one. The duration is already stated in full, at readable size, in the
+ * "Skippable 0:51" line directly above, and hovering or focusing a segment
+ * explains it — so nothing is lost by omitting it where it cannot be read.
+ *
+ * container-type on the segment lets each one decide independently: a long
+ * segment with room keeps its label, a short one drops it. The existing
+ * narrow-width rule below hides them all, which stays.
+ */
+.un-sb-rt-skip { container-type: inline-size; }
+
+.un-sb-rt-inl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font: 700 11px/1 "Roboto Mono", ui-monospace, monospace;
+  letter-spacing: 0.03em;
+  color: rgba(0, 0, 0, 0.85);
+  /* Never let a partial glyph through if a container query is unavailable. */
+  overflow: hidden;
+}
+
+/* 38px: "0:36" measured 23px of text, plus breathing room either side. Below
+   this the segment shows colour and position only, which is what it is for. */
+@container (max-width: 38px) {
+  .un-sb-rt-inl { display: none; }
+}
+
+/* 3px with a black ring and a shadow: at 2px plain white this vanished against
+   gold self-promo, and the playhead is the one mark that must never be lost. */
+.un-sb-rt-playhead {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 3px;
+  background: var(--un-rt-head);
+  box-shadow: 0 0 0 1px var(--un-rt-head-ring), 0 0 4px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
+/* Category fills. The .un-sb-* classes above already set --un-sb-cat-color,
+   so this is one rule instead of nine duplicated hex values. SponsorBlock own
+   palette, full saturation — the only chroma on this surface. */
+.un-sb-rt-seg.is-skip { background: var(--un-sb-cat-color); }
+
+/* Light theme: override the TOKENS, not the rules. The recess inverts to a flat
+   raised panel, because a darker-than-page trough has nowhere to go on white.
+   Fourteen duplicated rules collapsed to one block — which is what the hex
+   ratchet exists to force. */
+html:not([dark]) .un-sb-rt {
+  --un-rt-tape: #d6d6dc;
+  --un-rt-hatch: #c6c6ce;
+  --un-rt-label: #5c5c66;
+  --un-rt-val: #3c3c44;
+  --un-rt-hero: #14141a;
+  --un-rt-crowd: #176b3a;
+  --un-rt-unknown: #8a5c0d;
+  --un-rt-head: #14141a;
+  --un-rt-head-ring: #fff;
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+html:not([dark]) .un-sb-rt-prov { color: var(--un-rt-label); }
+html:not([dark]) .un-sb-rt-inl { color: rgba(0, 0, 0, 0.8); }
+html:not([dark]) .un-sb-rt-skip:focus-visible { outline-color: var(--un-rt-hero); }
+
+/* Narrow: the strip wants to be wide and degrades by shedding detail, not by
+   reflowing. At ~1000px the column is at its narrowest (656px measured) while
+   the deck is at its tallest, so this is the tightest real case. */
+@media (max-width: 1100px) {
+  .un-sb-rt { padding: 11px 13px 12px; }
+  .un-sb-rt-head { gap: 14px; margin-bottom: 10px; }
+  .un-sb-rt-val.is-hero { font-size: 24px; }
+  .un-sb-rt-prov { display: none; }
+  .un-sb-rt-inl { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .un-sb-rt-skip { transition: none; }
+}
+
+/* ===== Up next chips ================================================
+   A corner chip and a composition strip on each sidebar thumbnail.
+
+   WHY ZERO ADDED HEIGHT
+   The rail is 20 rows of 160px. A line of text under each title is 320px of
+   extra scroll to say what a chip on unused image space says for free — the
+   thumbnail is 284px wide and YouTube labels almost none of it. So everything
+   here is absolutely positioned inside the existing thumbnail box and the row
+   measures exactly what it measured before.
+   =================================================================== */
+.un-sb-rail {
+  /* Palette defined once here; the rules below carry no fallbacks, so the hex
+     ratchet counts each value a single time. */
+  /* Only the two values the runtime strip does not already define. The rest are
+     inherited: custom properties cascade, and restating them would cost the hex
+     ratchet three duplicates for no gain. */
+  --un-rail-fg: #a8e8b8;
+  --un-rail-warn: #e6c887;
+  --un-rail-plate: rgba(0, 0, 0, 0.86);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.un-sb-rail-chip {
+  position: absolute;
+  /* BOTTOM-LEFT. Every other corner is taken, and this one was chosen by
+     elimination rather than preference:
+       top-left     the welded head strip — watched eye, taste badge, select
+                    checkbox, each measuring the one before it for its offset.
+                    Screenshot-verified: the chip rendered UNDER the taste badge
+                    here and was invisible on every annotated row.
+       bottom-right YouTube own duration badge.
+       top-right    .un-plm-feedacts / .un-plm-rowacts, the hover action bar.
+     Top-right is where this chip used to sit, on the reasoning that the hover
+     actions "are not painted at rest". True at rest, false on hover — and hover
+     is a state the user spends real time in. The bar is z-index 81 and pins
+     top:0/right:0, so on hover it painted straight over the chip: a tile
+     reading "99% unchecked" showed a bare "9" with the rest underneath the bar.
+     The bar cannot yield the corner — select-btn-vs-duration.spec.js records
+     that every bottom-edge position for an interactive control was swept
+     (6/10/14/18/22/26/28/34px) and each one collided. So the readout moves and
+     the control stays.
+     6px clears the two 3px hairlines welded to the bottom edge (.un-sb-rail-strip
+     and .un-watched-host::after), which are pointer-events:none anyway. */
+  left: 6px;
+  bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  /* Squared, not pill: this is a readout, and a pill reads as a control. It also
+     sits against YouTube's own fully-rounded duration badge, which makes the
+     difference between "theirs" and "ours" legible at a glance. */
+  border-radius: 2px;
+  border-left: 2px solid var(--un-rt-crowd);
+  background: var(--un-rail-plate);
+  padding: 3px 6px;
+  font: 600 11px/1.2 "Roboto Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--un-rail-fg);
+  /* The thumbnail host is overflow:hidden (.un-plm-rowthumb), so anything that
+     outgrows the box is cut rather than pushed — the same trap the select
+     checkbox hit, which is why that control had to be re-parented onto the row
+     instead of nudged. A readout cannot be re-parented (it belongs to the
+     image), so it is bounded instead: never wider than the thumbnail minus its
+     own 6px inset and the duration badge gutter, and never wrapped. A clipped
+     "99% unchecked" that reads "99% unchec" is worse than an ellipsis, because
+     the ellipsis is honest about being short. */
+  max-width: calc(100% - 84px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Measured 11px minimum, same floor as the watch-page strip: the greys that
+     failed AA did so at 9.5px, and this sits on video rather than a known
+     background, so it gets an opaque plate instead of a contrast assumption. */
+}
+.un-sb-rail-chip.is-unknown,
+.un-sb-rail-chip.is-partial {
+  border-left-color: var(--un-rt-unknown);
+  color: var(--un-rail-warn);
+}
+
+/* The composition, welded along the bottom edge of the thumbnail, above
+   YouTube's own progress sliver. 3px so it reads as a property of the image
+   rather than a second progress bar. */
+.un-sb-rail-strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  display: flex;
+  background: var(--un-rt-tape);
+}
+.un-sb-rail-strip i {
+  display: block;
+  height: 100%;
+  /* A four-second break in a fourteen-minute video is sub-pixel. It still gets a
+     mark, and the mark overstates its width — the alternative is a strip that
+     silently omits the short breaks, which are the ones people forget about. */
+  min-width: 2px;
+  background: var(--un-sb-cat-color, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .un-sb-rail-chip { transition: none; }
+}
+
+/* ---- what a colour means, without waiting for a tooltip ----
+   Every segment already carries an aria-label and a title, so screen readers
+   and patient mouse users are covered. A sighted user scanning the strip is
+   not: the green cap on a real video is 15px wide, too narrow to hold its own
+   duration label, and nothing visible says "Sponsor".
+
+   The category name appears in the strip header on hover — in the space the
+   provenance tag already occupies — rather than as a static legend. A legend
+   was tried before and cut for spending a row on a key nobody reads twice;
+   this spends no space at rest and answers the question at the moment it is
+   asked. */
+.un-sb-rt-legend {
+  display: none;
+  font: 600 11px/1 "Roboto Mono", ui-monospace, monospace;
+  letter-spacing: 0.02em;
+  padding: 2px 7px;
+  border-radius: 2px;
+  border-left: 3px solid var(--un-sb-cat-color, var(--un-rt-crowd));
+  background: var(--un-yt-raised);
+  color: var(--un-rt-val);
+  white-space: nowrap;
+}
+.un-sb-rt.is-explaining .un-sb-rt-legend { display: inline-flex; align-items: center; }
+/* The provenance tag steps aside while the legend is showing — they occupy the
+   same slot on purpose, so the header height never changes. */
+.un-sb-rt.is-explaining .un-sb-rt-prov { display: none; }
+
+button.un-sb-rail-chip { pointer-events: auto; cursor: pointer; min-height: 28px; font-size: 13px; border: 1px solid currentColor; border-radius: 4px; }
+button.un-sb-rail-chip:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+button.un-sb-rail-chip:disabled { cursor: progress; }
+
+/* ---- rail chips, second pass (2026-09-22) --------------------------------
+   The readout keeps its corner (bottom-left is Unsynth's by protocol) and its
+   plate, but reads as a sibling of YouTube's duration badge two corners away:
+   same size class, proportional figures, a green dot as the one mark that
+   says "ours", instead of 11px monospace with a coloured bar and an outline.
+
+   "Check skips" / "Refresh skips" are calls to action about an absence, and
+   they were on roughly half the rail at rest in loud yellow (captured). They
+   stay present and reachable — hover the thumbnail or Tab to them — but at
+   rest they recede: a lighter plate and muted text, no colour. Contrast
+   COMPUTED (not yet probed) on the worst ground, the plate over pure white:
+   rgba(255,255,255,.82) on the .66 plate composites to about 5.5:1. */
+button.un-sb-rail-chip {
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font: 500 12px/1.2 Roboto, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+.un-sb-rail-chip.is-real::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #6fd58a;
+  flex: none;
+}
+button.un-sb-rail-chip.is-unknown,
+button.un-sb-rail-chip.is-partial {
+  background: rgba(0, 0, 0, 0.66);
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 400;
+}
+*:hover > .un-sb-rail button.un-sb-rail-chip.is-unknown,
+*:hover > .un-sb-rail button.un-sb-rail-chip.is-partial,
+button.un-sb-rail-chip.is-unknown:focus-visible,
+button.un-sb-rail-chip.is-partial:focus-visible {
+  background: rgba(0, 0, 0, 0.86);
+  color: #fff;
+}
+button.un-sb-rail-chip:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }

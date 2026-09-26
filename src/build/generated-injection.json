@@ -1,0 +1,1142 @@
+{
+  "schemaVersion": 1,
+  "youtubeJs": [
+    "src/shared/ai-keywords.js",
+    "src/defaults.js",
+    "src/shared/messages.js",
+    "src/shared/match.js",
+    "src/shared/ui-presets.js",
+    "src/shared/transcript.js",
+    "src/shared/desc-digest.js",
+    "src/shared/sub-groups.js",
+    "src/shared/yt-dom.js",
+    "src/shared/sub-feed.js",
+    "src/shared/sub-channel-thumbs.js",
+    "src/shared/playlist-folders.js",
+    "src/shared/playlist-index.js",
+    "src/shared/modules-normalize.js",
+    "src/shared/watch-deck.js",
+    "src/shared/side-panel.js",
+    "src/shared/watch-stats.js",
+    "src/shared/taste-profile.js",
+    "src/shared/sub-smart-rows.js",
+    "src/shared/catch-up.js",
+    "src/shared/catch-up-scrape.js",
+    "src/shared/forge-links.js",
+    "src/shared/forge-discover.js",
+    "src/shared/watch-queue.js",
+    "src/shared/search-filters.js",
+    "src/shared/native-queue.js",
+    "src/shared/side-dock.js",
+    "src/shared/ryd.js",
+    "src/shared/watched-display.js",
+    "src/shared/watched-state.js",
+    "src/shared/sponsorblock-segments.js",
+    "src/shared/segment-cache.js",
+    "src/shared/channel-completion.js",
+    "src/shared/playlist-budget.js",
+    "src/shared/playlist-grouping.js",
+    "src/shared/bulk-undo.js",
+    "src/shared/time-budget.js",
+    "src/shared/creator-studio.js",
+    "src/shared/video-stats-cache.js",
+    "src/shared/discover.js",
+    "src/shared/volume-level.js",
+    "src/shared/browser-env.js",
+    "src/content/core.js",
+    "src/content/modules/ai-filter.js",
+    "src/content/modules/ui-tune.js",
+    "src/content/modules/ai-assistant.js",
+    "src/content/modules/sub-manager.js",
+    "src/content/modules/pl-folder-manager.js",
+    "src/content/modules/sidebar-hub.js",
+    "src/content/modules/masthead-slot.js",
+    "src/content/modules/playlist-bulk.js",
+    "src/content/modules/forge-search-panel.js",
+    "src/content/modules/watch-queue-panel.js",
+    "src/content/modules/queue-advance.js",
+    "src/content/modules/taste-rank.js",
+    "src/content/modules/forge-link.js",
+    "src/content/modules/dislike-restore.js",
+    "src/content/modules/stats-compare-ui.js",
+    "src/content/modules/volume-master.js",
+    "src/content/modules/popout-player.js",
+    "src/content/modules/scroll-miniplayer.js",
+    "src/content/modules/fact-check.js",
+    "src/content/modules/desc-digest.js",
+    "src/content/modules/analytics.js",
+    "src/content/modules/sponsorblock.js",
+    "src/content/modules/discover-shelf.js",
+    "src/content/modules/watch-history.js",
+    "src/content/modules/cross-tab-playback.js",
+    "src/content/modules/quality-lock.js",
+    "src/content/modules/speed-chip.js",
+    "src/content/modules/screenshot.js",
+    "src/content/modules/title-cleaner.js",
+    "src/content/modules/ambient-mode.js",
+    "src/content/modules/ad-skip.js",
+    "src/content/modules/dearrow.js",
+    "src/content/modules/shortcuts.js",
+    "src/content/modules/transcript-export.js",
+    "src/content/modules/ab-loop.js",
+    "src/content/modules/tab-title.js",
+    "src/content/modules/chapters.js",
+    "src/content/modules/search-filters.js",
+    "src/content/modules/comment-filter.js",
+    "src/content/modules/playlist-debt.js",
+    "src/content/modules/channel-completion-header.js",
+    "src/content/modules/clip-capture.js",
+    "src/content/modules/skip-seconds.js",
+    "src/content/modules/live-now.js",
+    "src/content/modules/quick-switcher.js",
+    "src/content/boot.js"
+  ],
+  "youtubeCoreJs": [
+    "src/shared/ai-keywords.js",
+    "src/defaults.js",
+    "src/shared/messages.js",
+    "src/shared/match.js",
+    "src/shared/ui-presets.js",
+    "src/shared/transcript.js",
+    "src/shared/desc-digest.js",
+    "src/shared/sub-groups.js",
+    "src/shared/yt-dom.js",
+    "src/shared/sub-feed.js",
+    "src/shared/sub-channel-thumbs.js",
+    "src/shared/playlist-folders.js",
+    "src/shared/playlist-index.js",
+    "src/shared/modules-normalize.js",
+    "src/shared/watch-deck.js",
+    "src/shared/side-panel.js",
+    "src/shared/watch-stats.js",
+    "src/shared/taste-profile.js",
+    "src/shared/sub-smart-rows.js",
+    "src/shared/catch-up.js",
+    "src/shared/catch-up-scrape.js",
+    "src/shared/forge-links.js",
+    "src/shared/forge-discover.js",
+    "src/shared/watch-queue.js",
+    "src/shared/search-filters.js",
+    "src/shared/native-queue.js",
+    "src/shared/side-dock.js",
+    "src/shared/ryd.js",
+    "src/shared/watched-display.js",
+    "src/shared/watched-state.js",
+    "src/shared/sponsorblock-segments.js",
+    "src/shared/segment-cache.js",
+    "src/shared/channel-completion.js",
+    "src/shared/playlist-budget.js",
+    "src/shared/playlist-grouping.js",
+    "src/shared/bulk-undo.js",
+    "src/shared/time-budget.js",
+    "src/shared/creator-studio.js",
+    "src/shared/video-stats-cache.js",
+    "src/shared/discover.js",
+    "src/shared/volume-level.js",
+    "src/shared/browser-env.js",
+    "src/content/core.js",
+    "src/content/boot.js"
+  ],
+  "youtubeCss": [
+    "src/shared/design-tokens.css",
+    "src/content/core.css",
+    "src/content/side-dock.css",
+    "src/content/side-panel.css",
+    "src/content/media-tools.css",
+    "src/content/ui-tune.css",
+    "src/content/ai-assistant.css",
+    "src/content/sub-manager.css",
+    "src/content/pl-folder-manager.css",
+    "src/content/sidebar-hub.css",
+    "src/content/playlist-bulk.css",
+    "src/content/forge-link.css",
+    "src/content/dislike-restore.css",
+    "src/content/scroll-miniplayer.css",
+    "src/content/fact-check.css",
+    "src/content/desc-digest.css",
+    "src/content/analytics.css",
+    "src/content/sponsorblock.css",
+    "src/content/discover-shelf.css",
+    "src/content/ambient-mode.css",
+    "src/content/transcript-export.css",
+    "src/content/ab-loop.css",
+    "src/content/search-filters.css",
+    "src/content/comment-filter.css",
+    "src/content/playlist-debt.css",
+    "src/content/channel-completion.css",
+    "src/content/live-now.css",
+    "src/content/quick-switcher.css"
+  ],
+  "lazyModules": [
+    {
+      "id": "aiFilter",
+      "moduleKey": "aiFilter",
+      "entry": "src/content/modules/ai-filter.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "uiTune",
+      "moduleKey": "uiTune",
+      "entry": "src/content/modules/ui-tune.js",
+      "css": [
+        "src/content/ui-tune.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "aiAssistant",
+      "moduleKey": "aiAssistant",
+      "entry": "src/content/modules/ai-assistant.js",
+      "css": [
+        "src/content/ai-assistant.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "subManager",
+      "moduleKey": "subManager",
+      "entry": "src/content/modules/sub-manager.js",
+      "css": [
+        "src/content/sub-manager.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "playlistFolders",
+      "moduleKey": "playlistFolders",
+      "entry": "src/content/modules/pl-folder-manager.js",
+      "css": [
+        "src/content/pl-folder-manager.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "sidebarHub",
+      "moduleKey": "subManager",
+      "moduleKeys": [
+        "subManager",
+        "playlistFolders",
+        "forgeLink"
+      ],
+      "entry": "src/content/modules/sidebar-hub.js",
+      "css": [
+        "src/content/sidebar-hub.css"
+      ],
+      "alwaysLoad": true
+    },
+    {
+      "id": "mastheadSlot",
+      "moduleKey": "subManager",
+      "moduleKeys": [
+        "subManager",
+        "watchHistory",
+        "playlistBulk"
+      ],
+      "entry": "src/content/modules/masthead-slot.js",
+      "css": [],
+      "alwaysLoad": true
+    },
+    {
+      "id": "playlistBulk",
+      "moduleKey": "playlistBulk",
+      "entry": "src/content/modules/playlist-bulk.js",
+      "css": [
+        "src/content/playlist-bulk.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "forgeSearchPanel",
+      "moduleKey": "forgeLink",
+      "entry": "src/content/modules/forge-search-panel.js",
+      "css": [],
+      "alwaysLoad": true
+    },
+    {
+      "id": "watchQueuePanel",
+      "moduleKey": "forgeLink",
+      "entry": "src/content/modules/watch-queue-panel.js",
+      "css": [],
+      "alwaysLoad": true
+    },
+    {
+      "id": "queueAdvance",
+      "moduleKey": "queueAdvance",
+      "entry": "src/content/modules/queue-advance.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "tasteRank",
+      "moduleKey": "tasteRank",
+      "entry": "src/content/modules/taste-rank.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "forgeLink",
+      "moduleKey": "forgeLink",
+      "entry": "src/content/modules/forge-link.js",
+      "css": [
+        "src/content/forge-link.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "dislikeRestore",
+      "moduleKey": "dislikeRestore",
+      "entry": "src/content/modules/dislike-restore.js",
+      "css": [
+        "src/content/dislike-restore.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "statsCompareUi",
+      "moduleKey": "dislikeRestore",
+      "entry": "src/content/modules/stats-compare-ui.js",
+      "css": [],
+      "alwaysLoad": true
+    },
+    {
+      "id": "volumeMaster",
+      "moduleKey": "volumeMaster",
+      "entry": "src/content/modules/volume-master.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "popoutPlayer",
+      "moduleKey": "popoutPlayer",
+      "entry": "src/content/modules/popout-player.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "scrollMiniplayer",
+      "moduleKey": "scrollMiniplayer",
+      "entry": "src/content/modules/scroll-miniplayer.js",
+      "css": [
+        "src/content/scroll-miniplayer.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "factCheck",
+      "moduleKey": "factCheck",
+      "entry": "src/content/modules/fact-check.js",
+      "css": [
+        "src/content/fact-check.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "descDigest",
+      "moduleKey": "descDigest",
+      "entry": "src/content/modules/desc-digest.js",
+      "css": [
+        "src/content/desc-digest.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "analytics",
+      "moduleKey": "analytics",
+      "entry": "src/content/modules/analytics.js",
+      "css": [
+        "src/content/analytics.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "sponsorBlock",
+      "moduleKey": "sponsorBlock",
+      "entry": "src/content/modules/sponsorblock.js",
+      "css": [
+        "src/content/sponsorblock.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "discoverShelf",
+      "moduleKey": "discoverShelf",
+      "entry": "src/content/modules/discover-shelf.js",
+      "css": [
+        "src/content/discover-shelf.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "watchHistory",
+      "moduleKey": "watchHistory",
+      "entry": "src/content/modules/watch-history.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "crossTabPlayback",
+      "moduleKey": "crossTabPlayback",
+      "entry": "src/content/modules/cross-tab-playback.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "qualityLock",
+      "moduleKey": "qualityLock",
+      "entry": "src/content/modules/quality-lock.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "speedChip",
+      "moduleKey": "speedChip",
+      "entry": "src/content/modules/speed-chip.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "screenshot",
+      "moduleKey": "screenshot",
+      "entry": "src/content/modules/screenshot.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "titleCleaner",
+      "moduleKey": "titleCleaner",
+      "entry": "src/content/modules/title-cleaner.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "ambientMode",
+      "moduleKey": "ambientMode",
+      "entry": "src/content/modules/ambient-mode.js",
+      "css": [
+        "src/content/ambient-mode.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "adSkip",
+      "moduleKey": "adSkip",
+      "entry": "src/content/modules/ad-skip.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "deArrow",
+      "moduleKey": "deArrow",
+      "entry": "src/content/modules/dearrow.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "shortcuts",
+      "moduleKey": "shortcuts",
+      "entry": "src/content/modules/shortcuts.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "transcriptExport",
+      "moduleKey": "transcriptExport",
+      "entry": "src/content/modules/transcript-export.js",
+      "css": [
+        "src/content/transcript-export.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "abLoop",
+      "moduleKey": "abLoop",
+      "entry": "src/content/modules/ab-loop.js",
+      "css": [
+        "src/content/ab-loop.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "tabTitle",
+      "moduleKey": "tabTitle",
+      "entry": "src/content/modules/tab-title.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "chapters",
+      "moduleKey": "chapters",
+      "entry": "src/content/modules/chapters.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "searchFilters",
+      "moduleKey": "searchFilters",
+      "entry": "src/content/modules/search-filters.js",
+      "css": [
+        "src/content/search-filters.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "commentFilter",
+      "moduleKey": "commentFilter",
+      "entry": "src/content/modules/comment-filter.js",
+      "css": [
+        "src/content/comment-filter.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "playlistDebt",
+      "moduleKey": "playlistDebt",
+      "entry": "src/content/modules/playlist-debt.js",
+      "css": [
+        "src/content/playlist-debt.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "channelCompletionHeader",
+      "moduleKey": "channelCompletion",
+      "entry": "src/content/modules/channel-completion-header.js",
+      "css": [
+        "src/content/channel-completion.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "clipCapture",
+      "moduleKey": "clipCapture",
+      "entry": "src/content/modules/clip-capture.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "skipSeconds",
+      "moduleKey": "skipSeconds",
+      "entry": "src/content/modules/skip-seconds.js",
+      "css": [],
+      "alwaysLoad": false
+    },
+    {
+      "id": "liveNow",
+      "moduleKey": "liveNow",
+      "entry": "src/content/modules/live-now.js",
+      "css": [
+        "src/content/live-now.css"
+      ],
+      "alwaysLoad": false
+    },
+    {
+      "id": "quickSwitcher",
+      "moduleKey": "quickSwitcher",
+      "entry": "src/content/modules/quick-switcher.js",
+      "css": [
+        "src/content/quick-switcher.css"
+      ],
+      "alwaysLoad": false
+    }
+  ],
+  "defaultModules": {
+    "playlistManager": true,
+    "aiFilter": true,
+    "uiTune": true,
+    "aiAssistant": false,
+    "subManager": false,
+    "playlistFolders": false,
+    "playlistBulk": false,
+    "tasteRank": false,
+    "queueAdvance": false,
+    "forgeLink": false,
+    "dislikeRestore": true,
+    "volumeMaster": false,
+    "popoutPlayer": false,
+    "scrollMiniplayer": false,
+    "factCheck": false,
+    "descDigest": false,
+    "analytics": false,
+    "sponsorBlock": true,
+    "discoverShelf": false,
+    "watchHistory": true,
+    "crossTabPlayback": false,
+    "qualityLock": true,
+    "speedChip": false,
+    "screenshot": false,
+    "titleCleaner": false,
+    "ambientMode": false,
+    "adSkip": true,
+    "deArrow": false,
+    "shortcuts": false,
+    "transcriptExport": false,
+    "abLoop": false,
+    "tabTitle": false,
+    "chapters": false,
+    "searchFilters": false,
+    "commentFilter": false,
+    "playlistDebt": false,
+    "channelCompletion": false,
+    "clipCapture": false,
+    "skipSeconds": false,
+    "liveNow": false,
+    "quickSwitcher": false
+  },
+  "popupMods": [
+    [
+      "subManager",
+      "Subscription manager",
+      {
+        "group": "feed",
+        "desc": "groups, feed filter, PocketTube import"
+      }
+    ],
+    [
+      "playlistBulk",
+      "Playlist bulk tools",
+      {
+        "group": "feed",
+        "desc": "multi-select, dedupe, Forge links"
+      }
+    ],
+    [
+      "playlistFolders",
+      "Playlist groups (sidebar)",
+      {
+        "group": "feed",
+        "desc": "pin playlists in the sidebar; folders, ＋ Folder, Library filter"
+      }
+    ],
+    [
+      "forgeLink",
+      "Playlist Forge",
+      {
+        "group": "content",
+        "desc": "suggest & build playlists on YouTube"
+      }
+    ],
+    [
+      "dislikeRestore",
+      "Video stats (feeds + watch)",
+      {
+        "group": "content",
+        "desc": "RYD likes/dislikes on feeds, search & watch pages; compare vs channel"
+      }
+    ],
+    [
+      "popoutPlayer",
+      "Popout player",
+      {
+        "group": "player",
+        "desc": "floating resizable window for the current video"
+      }
+    ],
+    [
+      "scrollMiniplayer",
+      "Scroll miniplayer",
+      {
+        "group": "player",
+        "desc": "dock the player into a corner when you scroll past it — draggable, resizable, and never leaves the page"
+      }
+    ],
+    [
+      "queueAdvance",
+      "Queue auto-advance",
+      {
+        "group": "player",
+        "desc": "queue dock on the page; play-next is a separate dashboard setting"
+      }
+    ],
+    [
+      "tasteRank",
+      "Suggestions for your taste",
+      {
+        "group": "feed",
+        "desc": "score the suggestion rail against what you actually watch, and float the best matches to the top"
+      }
+    ],
+    [
+      "volumeMaster",
+      "Volume master",
+      {
+        "group": "player",
+        "desc": "per-tab boost up to 600% on player controls"
+      }
+    ],
+    [
+      "factCheck",
+      "AI fact-check",
+      {
+        "group": "content",
+        "desc": "check video claims & comments (BYOK)"
+      }
+    ],
+    [
+      "descDigest",
+      "Watch description",
+      {
+        "group": "content",
+        "desc": "compact blurb, links, and timestamps for the video you are watching"
+      }
+    ],
+    [
+      "aiAssistant",
+      "AI assistant",
+      {
+        "group": "content",
+        "desc": "transcript summary & Q&A (BYOK)"
+      }
+    ],
+    [
+      "analytics",
+      "Stats overlay",
+      {
+        "group": "content",
+        "desc": "watch-page stats card, SEO, engagement, compare"
+      }
+    ],
+    [
+      "sponsorBlock",
+      "SponsorBlock skip (community + personal)",
+      {
+        "group": "player",
+        "desc": "skip sponsor segments + markers"
+      }
+    ],
+    [
+      "discoverShelf",
+      "Hidden gems (home shelf)",
+      {
+        "group": "tools",
+        "desc": "overlooked videos above the home feed"
+      }
+    ],
+    [
+      "uiTune",
+      "Tune (layout)",
+      {
+        "group": "feed",
+        "desc": "hide Shorts/recs, presets, player"
+      }
+    ],
+    [
+      "watchHistory",
+      "Watch history",
+      {
+        "group": "feed",
+        "desc": "track, mark, dim watched videos"
+      }
+    ],
+    [
+      "crossTabPlayback",
+      "Cross-tab playback",
+      {
+        "group": "player",
+        "desc": "pause older YouTube playback when a new tab starts"
+      }
+    ],
+    [
+      "qualityLock",
+      "Quality lock (force HD)",
+      {
+        "group": "player",
+        "desc": "force a minimum resolution (e.g. 1080p)"
+      }
+    ],
+    [
+      "speedChip",
+      "Speed chip (player control)",
+      {
+        "group": "player",
+        "desc": "shows the current playback speed on the player and opens a picker to change it"
+      }
+    ],
+    [
+      "screenshot",
+      "Screenshot frame",
+      {
+        "group": "tools",
+        "desc": "camera button to save the current frame as PNG"
+      }
+    ],
+    [
+      "titleCleaner",
+      "Calm clickbait titles",
+      {
+        "group": "feed",
+        "desc": "calm ALL-CAPS clickbait & emoji spam in titles"
+      }
+    ],
+    [
+      "ambientMode",
+      "Ambient glow mode",
+      {
+        "group": "player",
+        "desc": "soft glow around the player from on-screen colors"
+      }
+    ],
+    [
+      "adSkip",
+      "Ad skip",
+      {
+        "group": "player",
+        "desc": "auto-click Skip Ad, mute non-skippable ads, hide banner/overlay ads"
+      }
+    ],
+    [
+      "deArrow",
+      "DeArrow titles",
+      {
+        "group": "feed",
+        "desc": "crowd-sourced titles and thumbnails; pick which on the dashboard"
+      }
+    ],
+    [
+      "shortcuts",
+      "Keyboard shortcuts",
+      {
+        "group": "tools",
+        "desc": "in-page hotkeys for ambient mode, screenshot, quality lock, speed, volume boost, and the dashboard"
+      }
+    ],
+    [
+      "transcriptExport",
+      "Transcript export",
+      {
+        "group": "content",
+        "desc": "copy or download the video transcript as plain text"
+      }
+    ],
+    [
+      "abLoop",
+      "A-B loop",
+      {
+        "group": "player",
+        "desc": "mark two points and repeat playback between them"
+      }
+    ],
+    [
+      "tabTitle",
+      "Playback tab title",
+      {
+        "group": "player",
+        "desc": "show play/pause state in the browser tab title"
+      }
+    ],
+    [
+      "chapters",
+      "Chapter navigation",
+      {
+        "group": "player",
+        "desc": "jump to the next/previous creator-defined chapter"
+      }
+    ],
+    [
+      "searchFilters",
+      "Search filters",
+      {
+        "group": "feed",
+        "desc": "exact date range, view and duration bounds, and keyword/channel exclusions on the search page"
+      }
+    ],
+    [
+      "commentFilter",
+      "Comment filter",
+      {
+        "group": "feed",
+        "desc": "hide comments matching keywords"
+      }
+    ],
+    [
+      "channelCompletion",
+      "Channel completion",
+      {
+        "group": "feed",
+        "desc": "on a channel page, what share of the videos you start there you actually finish"
+      }
+    ],
+    [
+      "playlistDebt",
+      "Playlist debt line",
+      {
+        "group": "feed",
+        "desc": "under a playlist title: how many hours it holds, how many are unfinished, and how much of it you actually finish"
+      }
+    ],
+    [
+      "clipCapture",
+      "Clip capture",
+      {
+        "group": "tools",
+        "desc": "record a short WebM clip (video + audio) of the current playback"
+      }
+    ],
+    [
+      "skipSeconds",
+      "Skip seconds",
+      {
+        "group": "player",
+        "desc": "back/forward player buttons that seek by a configurable number of seconds"
+      }
+    ],
+    [
+      "liveNow",
+      "Live now shelf",
+      {
+        "group": "feed",
+        "desc": "pins any live stream already loaded in your home feed to the top"
+      }
+    ],
+    [
+      "quickSwitcher",
+      "Quick switcher",
+      {
+        "group": "tools",
+        "desc": "Shift+P anywhere on YouTube to jump to any playlist or subscribed channel by name, folder or group"
+      }
+    ]
+  ],
+  "dashboardRows": [
+    {
+      "moduleKey": "aiFilter",
+      "label": "AI content filter",
+      "description": "hide AI videos/music/summaries",
+      "dashTier": "essential"
+    },
+    {
+      "moduleKey": "subManager",
+      "label": "Subscription manager",
+      "description": "groups, feed filter, PocketTube import",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "playlistFolders",
+      "label": "Playlist groups",
+      "description": "pin playlists in the sidebar; folders, ＋ Folder, Library filter",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "playlistBulk",
+      "label": "Playlist bulk tools",
+      "description": "multi-select, dedupe, Forge links",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "forgeLink",
+      "label": "Playlist Forge",
+      "description": "suggest & build playlists on YouTube",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "dislikeRestore",
+      "label": "Video stats on YouTube",
+      "description": "RYD likes/dislikes on feeds, search & watch pages; compare vs channel",
+      "dashTier": "essential"
+    },
+    {
+      "moduleKey": "popoutPlayer",
+      "label": "Popout player",
+      "description": "floating resizable window for the current video",
+      "dashTier": "player"
+    },
+    {
+      "moduleKey": "scrollMiniplayer",
+      "label": "Scroll miniplayer",
+      "description": "dock the player into a corner when you scroll past it — draggable, resizable, and never leaves the page",
+      "dashTier": "player"
+    },
+    {
+      "moduleKey": "queueAdvance",
+      "label": "Queue auto-advance",
+      "description": "queue dock on the page; play-next is a separate dashboard setting",
+      "dashTier": "player"
+    },
+    {
+      "moduleKey": "tasteRank",
+      "label": "Suggestions for your taste",
+      "description": "score the suggestion rail against what you actually watch, and float the best matches to the top",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "volumeMaster",
+      "label": "Volume master",
+      "description": "per-tab boost up to 600% on player controls",
+      "dashTier": "player"
+    },
+    {
+      "moduleKey": "factCheck",
+      "label": "AI fact-check",
+      "description": "check video claims & comments (BYOK)",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "descDigest",
+      "label": "Watch description",
+      "description": "compact blurb, links, and timestamps for the video you are watching",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "aiAssistant",
+      "label": "AI assistant",
+      "description": "transcript summary & Q&A (BYOK)",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "analytics",
+      "label": "Analytics overlay",
+      "description": "watch-page stats card, SEO, engagement, compare",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "sponsorBlock",
+      "label": "SponsorBlock",
+      "description": "skip sponsor segments + markers",
+      "dashTier": "essential"
+    },
+    {
+      "moduleKey": "discoverShelf",
+      "label": "Hidden gems shelf",
+      "description": "overlooked videos above the home feed",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "uiTune",
+      "label": "Tune (layout)",
+      "description": "hide Shorts/recs, presets, player",
+      "dashTier": "essential"
+    },
+    {
+      "moduleKey": "watchHistory",
+      "label": "Watch history",
+      "description": "track, mark, dim watched videos",
+      "dashTier": "essential"
+    },
+    {
+      "moduleKey": "crossTabPlayback",
+      "label": "Cross-tab playback",
+      "description": "pause older YouTube playback when a new tab starts",
+      "dashTier": "player"
+    },
+    {
+      "moduleKey": "qualityLock",
+      "label": "Quality lock",
+      "description": "force a minimum resolution (e.g. 1080p)",
+      "dashTier": "essential"
+    },
+    {
+      "moduleKey": "speedChip",
+      "label": "Speed chip",
+      "description": "shows the current playback speed on the player and opens a picker to change it",
+      "dashTier": "player"
+    },
+    {
+      "moduleKey": "screenshot",
+      "label": "Screenshot frame",
+      "description": "camera button to save the current frame as PNG",
+      "dashTier": "player"
+    },
+    {
+      "moduleKey": "titleCleaner",
+      "label": "Title cleaner",
+      "description": "calm ALL-CAPS clickbait & emoji spam in titles",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "ambientMode",
+      "label": "Ambient mode",
+      "description": "soft glow around the player from on-screen colors",
+      "dashTier": "player"
+    },
+    {
+      "moduleKey": "adSkip",
+      "label": "Ad skip",
+      "description": "auto-click Skip Ad, mute non-skippable ads, hide banner/overlay ads",
+      "dashTier": "essential"
+    },
+    {
+      "moduleKey": "deArrow",
+      "label": "DeArrow titles",
+      "description": "crowd-sourced titles and thumbnails; pick which on the dashboard",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "shortcuts",
+      "label": "Keyboard shortcuts",
+      "description": "in-page hotkeys for ambient mode, screenshot, quality lock, speed, volume boost, and the dashboard",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "transcriptExport",
+      "label": "Transcript export",
+      "description": "copy or download the video transcript as plain text",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "abLoop",
+      "label": "A-B loop",
+      "description": "mark two points and repeat playback between them",
+      "dashTier": "player"
+    },
+    {
+      "moduleKey": "tabTitle",
+      "label": "Playback tab title",
+      "description": "show play/pause state in the browser tab title",
+      "dashTier": "player"
+    },
+    {
+      "moduleKey": "chapters",
+      "label": "Chapter navigation",
+      "description": "jump to the next/previous creator-defined chapter",
+      "dashTier": "player"
+    },
+    {
+      "moduleKey": "searchFilters",
+      "label": "Search filters",
+      "description": "exact date range, view and duration bounds, and keyword/channel exclusions on the search page",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "commentFilter",
+      "label": "Comment filter",
+      "description": "hide comments matching keywords",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "channelCompletion",
+      "label": "Channel completion",
+      "description": "on a channel page, what share of the videos you start there you actually finish",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "playlistDebt",
+      "label": "Playlist debt line",
+      "description": "under a playlist title: how many hours it holds, how many are unfinished, and how much of it you actually finish",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "clipCapture",
+      "label": "Clip capture",
+      "description": "record a short WebM clip (video + audio) of the current playback",
+      "dashTier": "player"
+    },
+    {
+      "moduleKey": "skipSeconds",
+      "label": "Skip seconds",
+      "description": "back/forward player buttons that seek by a configurable number of seconds",
+      "dashTier": "player"
+    },
+    {
+      "moduleKey": "liveNow",
+      "label": "Live now shelf",
+      "description": "pins any live stream already loaded in your home feed to the top",
+      "dashTier": "power"
+    },
+    {
+      "moduleKey": "quickSwitcher",
+      "label": "Quick switcher",
+      "description": "Shift+P anywhere on YouTube to jump to any playlist or subscribed channel by name, folder or group",
+      "dashTier": "power"
+    }
+  ]
+}

@@ -1,0 +1,521 @@
+/* Subscription manager — injected sidebar switcher, channel button, feed filter. */
+.un-sub-hidden {
+  display: none !important;
+}
+
+/* While a group filter is active, hide feed tiles that haven't been classified
+   yet (no data-unsub / data-unhome). YouTube infinite-loads more tiles as we hide
+   them; without this they'd paint visible for one frame before we hide the
+   non-group ones — the "videos flash in then vanish" loop. Default-hiding the
+   unclassified ones means only group videos ever appear. */
+body.un-sub-filter-on ytd-rich-item-renderer:not([data-unsub]),
+body.un-sub-filter-on ytd-video-renderer:not([data-unsub]),
+body.un-sub-filter-on ytd-grid-video-renderer:not([data-unsub]),
+body.un-sub-filter-on ytd-playlist-video-renderer:not([data-unsub]),
+body.un-sub-filter-on ytd-rich-grid-media:not([data-unsub]) {
+  display: none !important;
+}
+body.un-home-filter-on ytd-rich-grid-renderer ytd-rich-item-renderer:not([data-unhome]) {
+  display: none !important;
+}
+/* The huge empty gap under a filtered sub-group.
+   Reported from a screenshot: one surviving video followed by most of a blank
+   screen. The tiles were never the problem — #contents is flex-wrap, so
+   display:none tiles leave the flow entirely and survivors repack on their own
+   (measured: survivor 1 at x=299, survivor 2 at x=626, same row, no hole).
+   The gap is YouTube reserving a viewport-sized slab regardless of content:
+   ytd-two-column-browse-results-renderer carries min-height:880px. Measured
+   with a single survivor — real content 335px, container held at 880px, so
+   545px of nothing. Releasing it collapsed the container to 383px.
+   Scoped to an ACTIVE group filter, so YouTube's own unfiltered feed keeps the
+   reservation it wants (it stops the page jumping while tiles stream in). */
+body.un-home-filter-on ytd-two-column-browse-results-renderer {
+  min-height: 0 !important;
+}
+/* Runaway guard: once a filtered feed has loaded plenty, hide YouTube's
+   infinite-scroll loader so a sparse group can't make it fetch forever. */
+body.un-sub-feed-capped ytd-continuation-item-renderer {
+  display: none !important;
+}
+.un-sub-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 6px;
+  padding: 6px 12px;
+  border-radius: var(--un-radius-sm, 8px);
+  border: 1px solid var(--un-mb-line, #d9d9d9);
+  background: transparent;
+  color: var(--un-mb-text-strong, #0f0f0f);
+  font: 500 13px/1.2 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.un-sub-filter-chip:focus-visible {
+  outline: 2px solid var(--un-accent, #ff5a5f);
+  outline-offset: 2px;
+}
+/* This chip had NO active state at all: zero .on rules existed, so the control
+   that decides which channels you are looking at was the one control in the bar
+   that never showed it was doing anything. It is a scope, not a filter, so it
+   gets its own fill rather than borrowing either of the other two. */
+.un-sub-filter-chip.on {
+  background: var(--un-mb-scope-bg, rgba(0, 0, 0, 0.08));
+  border-color: var(--un-mb-text, #606060);
+  color: var(--un-mb-text-strong, #0f0f0f);
+  font-weight: 600;
+}
+/* Match count inside the group chip: "42… of 380" while loading, "42 of 380"
+   once settled. Without it a still-loading filtered feed is indistinguishable
+   from an empty group. */
+.un-sub-filter-progress {
+  margin-left: 4px;
+  padding-left: 4px;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9em;
+}
+/* Was a hardcoded rgba(255,255,255,0.16): invisible on YouTube's light
+   masthead, and the one chip in the row that missed the light-theme token fix
+   its siblings got. --un-mb-hover flips with the theme. */
+.un-sub-filter-chip:hover {
+  background: var(--un-mb-hover, rgba(0, 0, 0, 0.06));
+}
+/* The axis name is quieter than its value, so the chip reads "Channels: Night"
+   with the answer carrying the weight. */
+.un-sub-chip-axis {
+  opacity: 0.65;
+  font-weight: 500;
+}
+.un-sub-filter-chip b {
+  font-weight: 600;
+}
+
+.un-sub-quick-sorts {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 6px;
+}
+.un-sub-sort-btn {
+  border: 1px solid var(--un-mb-line, #d9d9d9);
+  background: transparent;
+  color: var(--un-mb-text, #606060);
+  font: 500 12.5px/1 Roboto, Arial, sans-serif;
+  padding: 6px 11px;
+  border-radius: var(--un-radius-sm, 8px);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.un-sub-sort-btn:focus-visible {
+  outline: 2px solid var(--un-accent, #ff5a5f);
+  outline-offset: 2px;
+}
+.un-sub-sort-btn:hover {
+  background: var(--un-mb-hover, rgba(0, 0, 0, 0.06));
+  color: var(--un-mb-text-strong, #0f0f0f);
+  border-color: var(--un-mb-text, #606060);
+}
+/* Content type is a SESSION facet and multi-select, so it is tinted with the
+   product accent rather than the neutral fill watch status uses. Two lit chips
+   from different dimensions now look different, which they did not before:
+   both were #f1f1f1 on #0f0f0f, in two different files. The check mark carries
+   the state for anyone who cannot separate the two fills. */
+.un-sub-sort-btn.on {
+  background: color-mix(in srgb, var(--un-accent, #ff5a5f) 22%, transparent);
+  border-color: color-mix(in srgb, var(--un-accent, #ff5a5f) 55%, transparent);
+  color: var(--un-accent-text, #ffb4b7);
+  font-weight: 600;
+}
+.un-sub-sort-btn.on::before {
+  content: '✓ ';
+  font-weight: 700;
+}
+
+/* ── Live streams bar ── */
+.un-sub-live-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 24px;
+  background: rgba(204, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(204, 0, 0, 0.15);
+}
+.un-sub-live-bar-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 11px/1 Roboto, Arial, sans-serif;
+  /* 3.41:1 on white — over the 3:1 non-text floor but under the 4.5:1 a read
+     label is held to. 7.15:1 now; dark keeps the bright red below. */
+  color: #a32b2b;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  flex: none;
+}
+.un-sub-live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4444;
+  animation: un-live-pulse 1.5s infinite ease-in-out;
+}
+@keyframes un-live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+.un-sub-live-bar-scroll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.un-sub-live-bar-scroll::-webkit-scrollbar { display: none; }
+.un-sub-live-bar-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 14px;
+  background: rgba(255, 68, 68, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  font: 500 12px/1.2 Roboto, Arial, sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.un-sub-live-bar-chip:hover {
+  background: rgba(255, 68, 68, 0.22);
+  /* The tint composites to rgb(255,214,214) over a white page, so #fff here is
+     1.33:1 — an invisible hover. 5.39:1 now. */
+  color: #a32b2b;
+}
+
+#un-sub-guide {
+  padding: 8px 12px 12px;
+  border-top: 1px solid var(--un-yt-line, #272727);
+  margin-top: 8px;
+}
+.un-sub-guide-head {
+  font-size: var(--un-text-label, 11px);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--un-accent, #ff5a5f);
+  font-weight: 700;
+  padding: 6px 0;
+}
+.un-sub-guide-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: var(--un-yt-text, #f1f1f1);
+  font: var(--un-text-body, 13px)/1.4 var(--un-font, Roboto, Arial, sans-serif);
+  padding: 8px 10px;
+  border-radius: var(--un-radius-sm, 8px);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.un-sub-guide-item:hover {
+  background: var(--un-hover, rgba(255, 255, 255, 0.06));
+}
+.un-sub-guide-item.on {
+  background: var(--un-accent-soft, rgba(255, 90, 95, 0.16));
+  color: var(--un-accent-light, #ff8a8e);
+}
+
+.un-sub-addbtn {
+  margin-left: 8px;
+  background: var(--un-yt-line, #272727);
+  color: var(--un-yt-text, #fff);
+  border: 1px solid transparent;
+  border-radius: var(--un-radius-pill, 18px);
+  padding: 0 14px;
+  height: 36px;
+  font: 600 14px/1 var(--un-font, Roboto, Arial, sans-serif);
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.un-sub-addbtn:hover {
+  background: var(--un-hover-strong, #3a3a3a);
+  border-color: color-mix(in srgb, var(--un-accent) 25%, transparent);
+}
+.un-sub-blockbtn {
+  margin-left: 6px;
+  color: var(--un-accent-light, #ff8a8e);
+}
+#un-sub-menu {
+  position: absolute;
+  z-index: 2147483000;
+  margin-top: 6px;
+  background: var(--un-yt-panel, #181818);
+  border: 1px solid var(--un-yt-line, #303030);
+  border-radius: var(--un-radius, 10px);
+  padding: 8px;
+  min-width: 200px;
+  box-shadow: var(--un-shadow-md, 0 8px 28px rgba(0, 0, 0, 0.5));
+  backdrop-filter: blur(12px);
+  animation: un-pop-fadein 0.16s cubic-bezier(0.2, 0, 0, 1);
+}
+.un-sub-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  font: var(--un-text-body, 13px) var(--un-font, Roboto, Arial, sans-serif);
+  color: var(--un-yt-text, #eee);
+  cursor: pointer;
+  border-radius: var(--un-radius-sm, 6px);
+  transition: background 0.12s ease;
+}
+.un-sub-menu-row:hover {
+  background: var(--un-hover, rgba(255, 255, 255, 0.06));
+}
+.un-sub-menu-row:focus-within,
+.un-sub-menu-newgroup input:focus-visible,
+.un-sub-menu-newgroup button:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: 2px;
+}
+.un-sub-menu-row { min-height: 36px; }
+.un-sub-menu-row input {
+  accent-color: var(--un-accent, #ff5a5f);
+}
+.un-sub-menu-hint {
+  font-size: 12px;
+  color: var(--un-yt-text-dim, #999);
+  padding: 8px;
+}
+.un-sub-menu-rows {
+  max-height: 240px;
+  overflow-y: auto;
+}
+.un-sub-menu-newgroup {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--un-yt-line, #303030);
+}
+.un-sub-menu-newgroup input {
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  background: var(--un-yt-raised);
+  border: 1px solid var(--un-yt-line, #303030);
+  border-radius: var(--un-radius-sm, 6px);
+  color: var(--un-yt-text, #eee);
+  padding: 6px 8px;
+  font: var(--un-text-body, 13px) var(--un-font, Roboto, Arial, sans-serif);
+}
+.un-sub-menu-newgroup input:focus {
+  outline: none;
+  border-color: var(--un-accent, #ff5a5f);
+}
+.un-sub-menu-newgroup button {
+  flex: none;
+  border: 0;
+  border-radius: var(--un-radius-sm, 6px);
+  padding: 6px 10px;
+  font: 600 12.5px var(--un-font, Roboto, Arial, sans-serif);
+  background: var(--un-accent, #ff5a5f);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.12s ease, opacity 0.12s ease;
+}
+.un-sub-menu-newgroup button:hover:not(:disabled) {
+  background: var(--un-accent-light, #ff6b70);
+}
+.un-sub-menu-newgroup button:disabled {
+  background: var(--un-yt-line, #3a3a3a);
+  color: var(--un-yt-text-dim, #999);
+  cursor: default;
+}
+
+/* ===== home-page group shelf ===== */
+.un-home-shelf {
+  margin: 0 0 28px;
+  padding: 16px 0 20px;
+  background: transparent;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.un-home-shelf-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+.un-home-shelf-head-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.un-home-shelf-ico {
+  font-size: 16px;
+  opacity: 0.85;
+}
+.un-home-shelf-label {
+  font: 600 18px/1.3 'YouTube Sans', Roboto, Arial, sans-serif;
+  color: var(--un-yt-text, #f1f1f1);
+  letter-spacing: -0.01em;
+}
+.un-home-shelf-count {
+  font: 500 12px/1 Roboto, Arial, sans-serif;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+.un-home-shelf-more {
+  border: 0;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--un-yt-text, #f1f1f1);
+  border-radius: 16px;
+  padding: 6px 14px;
+  font: 500 13px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  flex: none;
+}
+.un-home-shelf-more:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+}
+.un-home-shelf-more:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.un-home-shelf-more:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: 2px;
+}
+.un-home-shelf-strip {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 4px 6px;
+}
+.un-home-shelf-strip::-webkit-scrollbar {
+  display: none;
+}
+.un-home-card {
+  flex: 0 0 220px;
+  width: 220px;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.un-home-card-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+.un-home-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.un-home-card-body {
+  padding-top: 8px;
+}
+.un-home-card-title {
+  font: 500 13.5px/1.35 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text, #f1f1f1);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.un-home-card-sub {
+  margin-top: 4px;
+  font: 400 12px/1.3 Roboto, Arial, sans-serif;
+  color: rgba(255, 255, 255, 0.55);
+}
+.un-home-card-meta {
+  font: 400 12px/1.3 Roboto, Arial, sans-serif;
+  color: rgba(255, 255, 255, 0.55);
+}
+.un-home-card:hover .un-home-card-title {
+  color: #fff;
+}
+.un-home-shelf-empty {
+  color: rgba(255, 255, 255, 0.5);
+  font: 13px/1.4 Roboto, Arial, sans-serif;
+  padding: 8px 4px;
+}
+
+/* home group picker menu (off the masthead chip) */
+.un-home-menu {
+  position: absolute;
+  z-index: 2147483000;
+  margin-top: 6px;
+  right: 0;
+  background: var(--un-yt-panel, #181818);
+  border: 1px solid var(--un-yt-line, #303030);
+  border-radius: var(--un-radius, 10px);
+  padding: 8px;
+  min-width: 230px;
+  box-shadow: var(--un-shadow-md, 0 8px 28px rgba(0, 0, 0, 0.5));
+  backdrop-filter: blur(12px);
+  animation: un-pop-fadein 0.16s cubic-bezier(0.2, 0, 0, 1);
+}
+.un-home-menu-head {
+  font: 700 11px/1 var(--un-font, Roboto, Arial, sans-serif);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--un-yt-text-dim, #8a8a92);
+  padding: 8px 8px 6px;
+}
+
+/* Keyboard focus rings — shared call-to-action outline used across the suite. */
+.un-sub-filter-chip:focus-visible,
+.un-sub-guide-item:focus-visible,
+.un-sub-addbtn:focus-visible,
+.un-sub-menu-row:focus-visible,
+.un-home-card:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: 2px;
+}
+
+/* ---- Reduced motion (WCAG 2.3.3) ----
+   un-live-pulse is INFINITE, and it is the one that matters here: a dot
+   pulsing forever beside a channel name is exactly the kind of persistent
+   motion 2.3.3 exists for. It is not switched off, because the pulse IS the
+   "live now" signal — a dot with no animation and no other change would be
+   indistinguishable from an offline one. It holds the lit state instead, so
+   live still reads without anything moving. */
+@media (prefers-reduced-motion: reduce) {
+  .un-sub-live-dot {
+    animation: none;
+    opacity: 1;
+  }
+  #un-sub-menu,
+  .un-home-menu {
+    animation: none;
+  }
+}
+
+/* Dark keeps the bright red: it reads correctly on a dark page, and the light
+   values above would be muddy there. */
+html[dark] .un-sub-live-bar-label,
+[dark] .un-sub-live-bar-label {
+  color: #ff4444;
+}
+html[dark] .un-sub-live-bar-chip:hover,
+[dark] .un-sub-live-bar-chip:hover {
+  color: #fff;
+}

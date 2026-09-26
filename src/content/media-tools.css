@@ -1,0 +1,592 @@
+/* Popout player + Volume Master — player chrome controls */
+
+.un-popout-btn {
+  opacity: 0.9;
+}
+
+.un-popout-btn:hover {
+  opacity: 1;
+}
+
+/* Keyboard focus rings (YouTube resets outline:0 on .ytp-button) */
+.un-vol-btn:focus-visible,
+.un-popout-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Playback speed chip in player controls. This file (media-tools.css) is
+   part of CORE_CSS — always loaded, unlike a module's own optional CSS —
+   which matters here because the chip is on by default; it must render
+   styled from the first watch page, not only once some other module happens
+   to be enabled. Quiet at 1x on purpose: the whole point of the chip is that
+   an accidental 1.5x or 2x stands out at a glance, so 1x must NOT compete
+   for attention with the rest of the control bar. */
+.un-sp-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 100%;
+  padding: 0 6px;
+  font: 600 11px/1 Roboto, Arial, sans-serif;
+  color: rgba(255, 255, 255, 0.85);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: color 0.12s, opacity 0.12s;
+}
+.un-sp-chip:hover {
+  color: #fff;
+}
+/* Non-default rate: the accent color makes an accidental 1.5x/2x impossible
+   to miss, instead of blending in with every other muted control-bar icon. */
+.un-sp-chip.un-sp-nondefault {
+  color: var(--un-accent-light, #ff8a8e);
+  font-weight: 700;
+}
+.un-sp-chip.un-sp-nondefault:hover {
+  color: var(--un-accent-text, #ffb4b7);
+}
+.un-sp-chip:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: -2px;
+}
+
+/* ---- Volume Master: inline bar baked into the watch page ---- */
+.un-vol-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 12px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  /* The base chip mounts into #above-the-fold / ytd-watch-metadata when the
+     player is not up yet (volume-master.js: `anchor = player || #above-the-fold
+     || ytd-watch-metadata`), so it lands on YouTube's THEMED page ground with no
+     background of its own. --yt-spec-* does not resolve from the extension
+     context, which made every value here its dark-only fallback in both themes:
+     measured #f1f1f1 at 1.05:1 on the light chip. Not dim — invisible.
+     The --overlay variant below is a different case and keeps its dark values,
+     because it paints an opaque fill over the video. */
+  background: var(--un-yt-chip);
+  border: 1px solid var(--un-yt-chip-border);
+  color: var(--un-yt-text);
+  font: 500 12px/1 Roboto, Arial, sans-serif;
+}
+/* Overlay variant: pinned to the top-center of the player, auto-hides like
+   native chrome. Sits in the clear gap between YouTube's title (top-left) and
+   the share/more buttons (top-right). */
+.un-vol-inline--overlay {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 62;
+  width: min(560px, 86%);
+  margin: 0;
+  /* Visible by default and tracks YouTube's own chrome: shown whenever the
+     player controls are up (hover / paused / mouse active), hidden only while
+     controls auto-hide during idle playback. */
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+  background: rgba(15, 15, 18, 0.82);
+  border-color: rgba(255, 255, 255, 0.14);
+  /* Must be explicit. The base rule now uses the themed --un-yt-text, which is
+     #0f0f0f on light — and this variant overrides the BACKGROUND to an opaque
+     dark fill without overriding the colour, so it would inherit dark-on-dark.
+     This chip sits over video, which is dark in both themes. */
+  color: #f1f1f1;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(14px) saturate(160%);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+#movie_player.ytp-autohide .un-vol-inline--overlay {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(-6px);
+}
+/* Never float the volume bar over the "Hidden by Unsynth" block screen
+   (#unsynth-overlay, z-index 60) — its z-index sits above the overlay. */
+#movie_player:has(#unsynth-overlay) .un-vol-inline--overlay {
+  display: none !important;
+}
+/* Don't fight fullscreen scrubbing UI — keep it discreet there too. */
+.un-vol-inline--overlay .un-vol-inline-presets { flex-wrap: nowrap; }
+/* Overlay paints its own dark fill over video, so its controls keep dark-theme
+   values rather than following YouTube's page theme. */
+.un-vol-inline--overlay .un-vol-inline-eq {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #c4c4c4;
+}
+@media (prefers-reduced-motion: reduce) {
+  .un-vol-inline--overlay { transition: opacity 0.18s ease; }
+}
+.un-vol-inline-ico {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+.un-vol-inline-slider {
+  flex: 1 1 auto;
+  min-width: 80px;
+  accent-color: var(--un-accent);
+  cursor: pointer;
+}
+.un-vol-inline-val {
+  flex: 0 0 auto;
+  min-width: 42px;
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* Missed on the first pass through this block, and the same defect as every
+   other rule in it: a pale green authored for a dark chip. 1.47:1 on the light
+   base chip, measured. The overlay keeps the pale value because it paints its
+   own dark fill; the base follows the page. */
+.un-vol-inline.boosted .un-vol-inline-val { color: #17632c; }
+.un-vol-inline--overlay.boosted .un-vol-inline-val { color: #9fd89f; }
+html[dark] .un-vol-inline.boosted .un-vol-inline-val,
+[dark] .un-vol-inline.boosted .un-vol-inline-val { color: #9fd89f; }
+/* Themed for the base chip (page ground), pinned dark for the overlay variant
+   (opaque fill over video). One value cannot serve both: #888 measured 3.31:1
+   on the light chip, under the 4.5:1 floor. */
+.un-vol-inline.muted .un-vol-inline-val { color: var(--un-yt-text-dim); }
+.un-vol-inline--overlay.muted .un-vol-inline-val { color: #a8a8a8; }
+
+@keyframes un-vol-flash {
+  0% { scale: 1; filter: brightness(1); }
+  30% { scale: 1.02; filter: brightness(1.4); }
+  100% { scale: 1; filter: brightness(1); }
+}
+.un-vol-inline.un-vol-flash {
+  animation: un-vol-flash 0.35s ease-out;
+}
+.un-vol-inline-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+.un-vol-inline-eq {
+  border: 1px solid var(--un-yt-chip-border);
+  background: transparent;
+  /* #bbb measured 1.79:1 on the light chip. Themed for the base, overridden
+     below for the always-dark overlay variant. */
+  color: var(--un-yt-text-dim);
+  border-radius: 7px;
+  padding: 4px 9px;
+  font: 600 11px/1.2 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+/* Hover and active were authored dark-only like the rest of this block.
+   `color: #fff` on hover and `#ff9a9d` on active both vanish on a light page —
+   the active pair measured 1.53:1 live once the base chip was forced to mount
+   outside the player. A white-alpha border is also invisible over a light
+   ground, so the edge goes to the themed line token.
+   Accent values are split by theme rather than picked once: the same hue has to
+   clear 4.5:1 against #f2f2f2 and against #252530, which no single lightness
+   does. */
+.un-vol-inline-eq:hover {
+  border-color: var(--un-yt-line);
+  color: var(--un-yt-text);
+}
+.un-vol-inline-eq.active {
+  border-color: rgba(190, 44, 43, 0.55);
+  background: rgba(190, 44, 43, 0.12);
+  /* Not --un-accent-light. The active state paints its OWN tint, which lifts the
+     ground from #f2f2f2 to 236,218,218 (measured live), and the shared accent
+     lands at 4.35:1 there — under the floor by a hair. A local value one step
+     darker clears at 5.36:1. Changing the shared token instead would move every
+     other surface that has already been measured against it. */
+  color: #a62524;
+}
+html[dark] .un-vol-inline-eq.active,
+[dark] .un-vol-inline-eq.active {
+  border-color: rgba(255, 90, 95, 0.55);
+  background: rgba(255, 90, 95, 0.16);
+  /* Must include the colour. Overriding only the background here left dark
+     inheriting the light accent above and measured 1.7:1 live — an incomplete
+     override reads as a working rule right up until the theme it forgot. */
+  color: #ff8a8e;
+}
+/* Overlay sits on its own dark fill in both themes, so it keeps the dark pair. */
+.un-vol-inline--overlay .un-vol-inline-eq:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+.un-vol-inline--overlay .un-vol-inline-eq.active {
+  border-color: rgba(255, 90, 95, 0.55);
+  background: rgba(255, 90, 95, 0.16);
+  color: #ff9a9d;
+}
+.un-vol-inline-ico:focus-visible,
+.un-vol-inline-slider:focus-visible,
+.un-vol-inline-eq:focus-visible {
+  outline: 2px solid var(--un-focus);
+  outline-offset: 2px;
+}
+@media (max-width: 1000px) {
+  .un-vol-inline-presets { width: 100%; order: 3; }
+  .un-vol-inline { flex-wrap: wrap; }
+}
+
+/* ---- Volume Master ---- */
+.un-vol-ctrl {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  /* Match the full height of YouTube's control bar so the control sits centered
+     in line with the native ytp-button siblings instead of dropping to the
+     text baseline. */
+  height: 100%;
+  vertical-align: top;
+}
+
+.un-vol-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 6px;
+  font: 600 11px/1 Roboto, Arial, sans-serif;
+  opacity: 0.92;
+}
+
+.un-vol-btn:hover {
+  opacity: 1;
+}
+
+/* The button is icon-only — the percentage that used to sit beside the icon
+   made a 48px slot into a wide text chip, and Unsynth was already occupying
+   480px of the control bar against YouTube's own 240px. Boost and mute now
+   read off the icon itself; the exact level is in the tooltip. */
+.un-vol-ctrl.boosted .un-vol-btn {
+  color: #9fd89f;
+}
+
+.un-vol-ctrl.muted .un-vol-btn {
+  opacity: 0.5;
+}
+
+@keyframes un-vol-pop-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.un-vol-pop {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  z-index: 200;
+  width: 200px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(16, 16, 20, 0.95);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
+  animation: un-vol-pop-in 0.16s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.un-vol-pop[hidden] {
+  display: none !important;
+}
+
+.un-vol-slider {
+  width: 100%;
+  margin: 0 0 8px;
+  accent-color: var(--un-accent);
+}
+
+.un-vol-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.un-vol-preset {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: #ccc;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font: 500 10px/1.2 Roboto, Arial, sans-serif;
+  cursor: pointer;
+}
+
+.un-vol-preset:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.un-vol-eq-label {
+  margin: 10px 0 5px;
+  font: 600 9px/1 Roboto, Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8a8a92;
+}
+
+.un-vol-eq {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.un-vol-eqbtn {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: #ccc;
+  border-radius: 6px;
+  padding: 2px 7px;
+  font: 500 10px/1.2 Roboto, Arial, sans-serif;
+  cursor: pointer;
+}
+
+.un-vol-eqbtn:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.un-vol-preset.active,
+.un-vol-eqbtn.active {
+  border-color: rgba(255, 90, 95, 0.5);
+  background: rgba(255, 90, 95, 0.14);
+  color: #ff9a9d;
+}
+
+.un-vol-preset:focus-visible,
+.un-vol-eqbtn:focus-visible,
+.un-vol-slider:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 2px;
+}
+
+/* ---- Keep YouTube's miniplayer controls reachable ----
+   When the queue/player docks into the native miniplayer (after navigating off a
+   video), YouTube's controls — including the close ✕ — auto-hide on mouse-idle
+   too fast to click. While the miniplayer is active, keep its control chrome and
+   close/expand buttons visible and clickable. Opacity/visibility/pointer-events
+   only, scoped to ytd-miniplayer[active], so a selector miss is a harmless no-op. */
+ytd-miniplayer[active] #movie_player.ytp-autohide .ytp-chrome-bottom,
+ytd-miniplayer[active] #movie_player.ytp-autohide .ytp-chrome-top,
+ytd-miniplayer[active] .ytp-miniplayer-ui,
+ytd-miniplayer[active] .ytp-miniplayer-controls,
+ytd-miniplayer[active] .ytp-miniplayer-close-button,
+ytd-miniplayer[active] .ytp-miniplayer-expand-watch-page-button,
+ytd-miniplayer[active] button[aria-label*="Close" i],
+ytd-miniplayer[active] button[aria-label*="Expand" i],
+ytd-miniplayer[active] [class*="miniplayer"][class*="button"] {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+/* ---- Clip capture: pulsing red dot while a recording is in progress ---- */
+.un-clip-btn {
+  position: relative;
+  opacity: 0.9;
+}
+.un-clip-btn:hover {
+  opacity: 1;
+}
+.un-clip-recording {
+  color: #ff4d4f;
+}
+.un-clip-recording::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff4d4f;
+  animation: un-clip-pulse 1.2s ease-in-out infinite;
+}
+@keyframes un-clip-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(1.3); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .un-clip-recording::after { animation: none; }
+}
+
+/* ---- Unsynth tools overflow menu — consolidates the less-frequently-used
+   player actions behind one button instead of each module claiming its own
+   permanent icon in the player bar. ---- */
+.un-menu-btn {
+  opacity: 0.9;
+}
+.un-menu-btn:hover {
+  opacity: 1;
+}
+.un-menu-dropdown {
+  z-index: 2147483000;
+  min-width: 200px;
+  max-width: 280px;
+  padding: 6px;
+  border-radius: var(--un-radius, 10px);
+  background: var(--un-bg-elevated, #101014);
+  border: 1px solid var(--un-line, #2a2a32);
+  box-shadow: var(--un-shadow-md, 0 10px 28px rgba(0, 0, 0, 0.42));
+  font: 500 13px/1.3 var(--un-font, "Segoe UI", Inter, Roboto, Arial, sans-serif);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.un-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--un-radius-sm, 8px);
+  background: transparent;
+  color: var(--un-txt, #ececf1);
+  text-align: left;
+  cursor: pointer;
+}
+.un-menu-item:hover,
+.un-menu-item:focus-visible {
+  background: var(--un-panel-hover, #1a1a20);
+}
+.un-menu-item:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: -2px;
+}
+.un-menu-item-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  color: var(--un-dim, #8b8b96);
+}
+.un-menu-item-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+
+
+/* The tools dropdown grows with however many buttons collapsed into it and
+   is positioned upward from the control bar, so on a short viewport it
+   could run off the top with no way to reach the hidden items. */
+.un-menu-dropdown {
+  max-height: min(60vh, 420px);
+  overflow-y: auto;
+}
+
+
+/* Quality picker menu (off the #un-ql-chip in the player control bar).
+   Reuses .un-home-menu / .un-sub-guide-item from sub-manager.css for its
+   visual language, but those rules only ship when the Subscriptions module
+   is enabled — this menu belongs to Quality lock, which can be on while that
+   is off, so the handful of properties it actually depends on are restated
+   here (media-tools.css is in the static manifest and is always present).
+   Scoped to .un-ql-menu so it cannot alter the masthead's own menus. */
+/* Doubled class (0,2,0) on purpose: sub-manager.css's own .un-home-menu is a
+   single class too, and it is injected AFTER this file, so an equal-specificity
+   rule here silently loses whenever the Subscriptions module is also on.
+   Measured live on a watch page: the menu computed z-index 2147483000 (that
+   file's value) and min-width 230px, not the values written below. */
+.un-ql-menu.un-ql-menu {
+  /* The control bar and YouTube's own player chrome sit high; --un-z-menu is
+     the shared scale's slot for anything a surface spawns. */
+  z-index: var(--un-z-menu, 2147483300);
+  /* Positioned from the anchor rect in JS; absolute (sub-manager's default)
+     would scroll away from the player. */
+  position: fixed;
+  right: auto;
+  margin-top: 0;
+  min-width: 168px;
+  padding: 6px;
+  border-radius: var(--un-radius, 10px);
+  background: var(--un-yt-panel, var(--un-bg-elevated, #101014));
+  border: 1px solid var(--un-yt-line, var(--un-line, #2a2a32));
+  box-shadow: var(--un-shadow-md, 0 10px 28px rgba(0, 0, 0, 0.5));
+  max-height: min(70vh, 420px);
+  overflow-y: auto;
+}
+.un-ql-menu.un-ql-menu .un-sub-guide-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: var(--un-yt-text, var(--un-txt, #f1f1f1));
+  font: 500 13px/1.4 var(--un-font, Roboto, Arial, sans-serif);
+  padding: 7px 10px;
+  border-radius: var(--un-radius-sm, 8px);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.un-ql-menu.un-ql-menu .un-sub-guide-item:hover {
+  background: var(--un-hover, rgba(255, 255, 255, 0.08));
+}
+.un-ql-menu.un-ql-menu .un-sub-guide-item.on {
+  background: var(--un-accent-soft, rgba(255, 90, 95, 0.16));
+  color: var(--un-accent-light, #ff8a8e);
+}
+.un-ql-menu.un-ql-menu .un-sub-guide-item:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: -2px;
+}
+
+/* Speed picker menu (off the #un-sp-chip in the player control bar). Same
+   reasoning as .un-ql-menu.un-ql-menu above: reuses .un-home-menu /
+   .un-sub-guide-item for its visual language but restates the properties
+   this menu depends on at doubled specificity, since sub-manager.css's own
+   .un-home-menu rule (equal specificity, loaded AFTER this file when the
+   Subscriptions module is on) would otherwise silently win. Scoped to
+   .un-sp-menu so it cannot alter the masthead's own menus. */
+.un-sp-menu.un-sp-menu {
+  z-index: var(--un-z-menu, 2147483300);
+  position: fixed;
+  right: auto;
+  margin-top: 0;
+  min-width: 120px;
+  padding: 6px;
+  border-radius: var(--un-radius, 10px);
+  background: var(--un-yt-panel, var(--un-bg-elevated, #101014));
+  border: 1px solid var(--un-yt-line, var(--un-line, #2a2a32));
+  box-shadow: var(--un-shadow-md, 0 10px 28px rgba(0, 0, 0, 0.5));
+  max-height: min(70vh, 420px);
+  overflow-y: auto;
+}
+.un-sp-menu.un-sp-menu .un-sub-guide-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: var(--un-yt-text, var(--un-txt, #f1f1f1));
+  font: 500 13px/1.4 var(--un-font, Roboto, Arial, sans-serif);
+  padding: 7px 10px;
+  border-radius: var(--un-radius-sm, 8px);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.un-sp-menu.un-sp-menu .un-sub-guide-item:hover {
+  background: var(--un-hover, rgba(255, 255, 255, 0.08));
+}
+.un-sp-menu.un-sp-menu .un-sub-guide-item.on {
+  background: var(--un-accent-soft, rgba(255, 90, 95, 0.16));
+  color: var(--un-accent-light, #ff8a8e);
+}
+.un-sp-menu.un-sp-menu .un-sub-guide-item:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: -2px;
+}

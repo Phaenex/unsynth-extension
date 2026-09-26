@@ -1,0 +1,199 @@
+/* Shared Unsynth design tokens — dashboard, popup, options, YouTube injection */
+:root {
+  color-scheme: dark;
+  --un-bg: #09090b;
+  --un-bg-elevated: #101014;
+  --un-panel: #141418;
+  --un-panel-hover: #1a1a20;
+  --un-surface-2: #1a1a20;
+  --un-surface-3: #232323;
+  --un-line: #2a2a32;
+  --un-line-mid: #242424;
+  --un-chip-bg: #252530;
+  --un-chip-border: #2f2f35;
+  --un-input-bg: #181818;
+  --un-input-border: #2c2c2c;
+  --un-on-accent: #0b0b0b;
+  --un-link: #8ab4f8;
+  --un-accent-hover: #ff7875;
+  --un-line-soft: #1e1e24;
+  --un-txt: #ececf1;
+  --un-dim: #8b8b96;
+  /* A brighter secondary for text that is read rather than glanced at.
+     --un-dim clears 5.7:1 on the YouTube ground, which was not enough for the
+     watch stats strip - reported as hard to see. This is 9.8:1. */
+  --un-dim-strong: #b9b9c2;
+  /* INK ON A PLATE THAT IS DARK IN BOTH THEMES — glass over video or over the
+     page (watched chip, bulk bar, picker, queue dock, thumbnail readouts).
+     A theme token is wrong there by construction: --un-yt-text flips to
+     #0f0f0f in light theme and the text lands on the same dark plate.
+     Measured 2026-09-22: ten such rules at 1.10-2.38:1 in light, 15-18:1 in
+     dark. Theme-independent on purpose; defined once, never overridden. */
+  --un-on-plate: #f1f1f1;
+
+  /* YouTube's OWN secondary metadata text, measured live 2026-09-14 on a channel
+     page in both themes. Not invented: anything sitting in a YouTube metadata row
+     should take the colour YouTube already paints there, and none of the
+     --yt-spec-* variables are defined on that page to read it from. */
+  --un-yt-meta-light: #606060;
+  --un-yt-meta-dark: #aaaaaa;
+  /* Match-level text colours for the thumbnail head strip. The badge shares
+     the strip glass, so the level lives in the text. */
+  --un-match-high: #7ee2a4;
+  --un-match-mid: #8fc4f2;
+  --un-match-low: #b6bcc8;
+  /* Destructive row actions (remove from queue, remove from playlist). */
+  --un-danger-text: #ff8f93;
+  /* The thumbnail corner our flush chips weld into. YouTube rounds feed
+     thumbnails at 12px; the square-thumbs setting flattens them to 0 and
+     overrides this, so the chips follow the shape actually on screen instead
+     of a hardcoded guess. */
+  --un-thumb-radius: 12px;
+  --un-accent: #ff5a5f;
+  --un-accent-text: #ffb4b7;
+  --un-accent-soft: rgba(255, 90, 95, 0.14);
+  --un-forge: #6ee787;
+  --un-forge-soft: rgba(110, 231, 135, 0.14);
+  --un-good: #6ee787;
+  --un-warn: #ffc15a;
+  --un-bad: #ff6a5f;
+  --un-focus: var(--yt-spec-call-to-action, #3ea6ff);
+
+  /* Link TEXT, which is not the same thing as a focus ring.
+     --un-focus exists to draw a 2px outline and does not need text contrast;
+     borrowing it for link text put #3ea6ff at 2.59:1 on white. Light default
+     here, flipped by the [dark] block below. Measured: 6.70:1 on white,
+     7.40:1 on #0f0f0f. */
+  --un-link-text: var(--yt-spec-call-to-action, #0b5cab);
+  /* Radius scale — xs: badges/chips · sm: inputs/buttons · md: cards/panels ·
+     lg: large containers (sheets, shelves, popouts) · pill: fully round. */
+  --un-radius-xs: 6px;
+  --un-radius-sm: 8px;
+  --un-radius: 10px;
+  --un-radius-md: 12px;
+  --un-radius-lg: 14px;
+  --un-radius-pill: 999px;
+  --un-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --un-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --un-shadow-md: 0 10px 28px rgba(0, 0, 0, 0.42);
+  --un-font: "Segoe UI", Inter, Roboto, Arial, sans-serif;
+  --un-mono: ui-monospace, "SF Mono", Consolas, monospace;
+  --un-text-body: 13px;
+  --un-text-label: 11px;
+  /* Off-state track for switches and sliders. The previous #3f3f46 sat at
+     1.76:1 against --un-panel, under the 3:1 WCAG floor for UI components,
+     which made an off toggle hard to see. #65656e is the lightest-weight
+     value that clears 3:1 against every surface it renders on. */
+  --un-track: #65656e;
+  --un-hover: rgba(255, 255, 255, 0.06);
+  --un-hover-strong: rgba(255, 255, 255, 0.08);
+
+  /* YouTube injection fallbacks.
+     LIGHT defaults; the [dark] block below flips them.
+
+     These used to carry dark-only fallbacks with a "light + dark" comment,
+     which held only while --yt-spec-* resolved. Measured on a live light page:
+     none of them resolve on an injected surface, so every value fell through to
+     its dark literal and painted #f1f1f1 on white — 1.13:1, invisible. Keyed on
+     YouTube's [dark] attribute rather than prefers-color-scheme, because the OS
+     preference says nothing about what theme the PAGE is in. */
+  --un-yt-bg: var(--yt-spec-base-background, #ffffff);
+  --un-yt-panel: var(--yt-spec-badge-chip-background, #f2f2f2);
+  --un-yt-line: var(--yt-spec-10-percent-layer, #e5e5e5);
+  --un-yt-text: var(--yt-spec-text-primary, #0f0f0f);
+  --un-yt-text-dim: var(--yt-spec-text-secondary, #606060);
+  --un-yt-cta: var(--yt-spec-call-to-action, #ff5a5f);
+
+  /* ---- INJECTED-SURFACE ADAPTER -----------------------------------------
+     The tokens at the top of this file (--un-bg, --un-panel, --un-surface-2,
+     --un-txt, --un-dim …) belong to Unsynth's OWN pages — dashboard, popup,
+     options — which set `color-scheme: dark` and are always dark on purpose.
+     They are correct there and wrong the moment they are used on a surface
+     injected into YouTube, because YouTube has two themes and they have one.
+
+     Measured: --un-dim on a light YouTube ground is 3.01:1, and the Forge
+     panel used it 28 times. These are the themed equivalents. Any injected
+     surface — anything under src/content/ — uses the --un-yt-* set. Nothing
+     under src/content/ should reference the always-dark set for colour.
+
+     One adapter, so a YouTube theme change is fixed here rather than in
+     thirty components. */
+  /* Accent tints that were LIGHT-ON-DARK with no light half. On a white page
+     they measured 2.26:1 and 1.28:1 — where 12 of the AI assistant 14 measured
+     contrast failures came from. Three tokens, not twelve independent colour
+     mistakes, and shared by six injected stylesheets. Light: 5.86, 7.68, 7.35. */
+  --un-accent-light: #be2c2b;
+  --un-forge-text: #146029;
+  --un-forge-light: #17632c;
+  --un-yt-raised: #f7f7f7;
+  --un-yt-raised-hover: #ececec;
+  --un-yt-chip: #f2f2f2;
+  --un-yt-chip-border: #d9d9d9;
+
+  /* ---- overlay layer scale ----------------------------------------------
+     Every injected overlay MUST mount on document.body and take its z-index
+     from this scale. Two rules, both learned the hard way:
+
+     1. Mount point matters more than the number. YouTube adds `lock-scrollbar`
+        to <body> whenever the guide or a dialog is open, which sets
+        `body { position: fixed }` and makes body a stacking context. Anything
+        inside body is then trapped under any positioned sibling of body, no
+        matter how large its z-index. Forge mounted on documentElement and so
+        painted over the hub panel and ate its clicks. The only element that
+        may mount outside body is #unsynth-stale-banner, which is *meant* to
+        outrank everything.
+     2. A surface and the menus it spawns move together. Raising a bar without
+        raising the picker it opens puts the picker underneath it (v2.0.0).
+        Anything a surface spawns uses --un-z-menu.
+     Values are duplicated as var() fallbacks at each use site, because module
+     CSS is registered dynamically and can mount before this file lands. */
+  --un-z-forge: 2147482900;
+  --un-z-miniplayer: 2147483000;
+  --un-z-hub-panel: 2147483000;
+  --un-z-queue-dock: 2147483100;
+  --un-z-queue-flyout: 2147483101;
+  --un-z-bulk-bar: 2147483200;
+  --un-z-menu: 2147483300;
+  --un-z-feedpage: 2147483500;
+  /* The feed page is the top surface on this scale, so a menu it spawns
+     cannot use the generic --un-z-menu (which sits below it) without landing
+     underneath the page that opened it. Rule 2 above, one layer up. */
+  --un-z-feedpage-menu: 2147483600;
+  /* Top of the scale. The toast is not a surface — it is the extension's only
+     confirm/undo channel, and ANY surface can raise one, so it must sit above
+     all of them. It sat at 2147483200 (below the feed page) and the bulk
+     queue fill's Undo button rendered underneath the digest that raised it:
+     visible, and unclickable. */
+  --un-z-toast: 2147483700;
+}
+
+/* Dark overrides for the YouTube injection fallbacks. Same values these tokens
+   used to carry unconditionally — correct now that they only apply when YouTube
+   itself says the page is dark. */
+html[dark],
+[dark] {
+  --un-yt-bg: var(--yt-spec-base-background, #0f0f0f);
+  --un-yt-panel: var(--yt-spec-badge-chip-background, #1a1a1a);
+  --un-yt-line: var(--yt-spec-10-percent-layer, #272727);
+  --un-yt-text: var(--yt-spec-text-primary, #f1f1f1);
+  --un-yt-text-dim: var(--yt-spec-text-secondary, #aaaaaa);
+  --un-link-text: var(--yt-spec-call-to-action, #3ea6ff);
+  /* Injected-surface adapter, dark half. These are the values the always-dark
+     set carried, which is why an injected surface using --un-surface-2 looked
+     correct until somebody opened YouTube in light. */
+  /* Injected-surface halves of the always-dark accent tokens. Measured on a
+     white page: 5.86:1, 7.68:1, 7.35:1. */
+  --un-accent-light: #ff8a8e;
+  --un-forge-text: #a8f5bc;
+  --un-forge-light: #8ee9a8;
+  --un-yt-raised: #1a1a20;
+  --un-yt-raised-hover: #232330;
+  --un-yt-chip: #252530;
+  --un-yt-chip-border: #2f2f35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --un-motion: 0s;
+  }
+}

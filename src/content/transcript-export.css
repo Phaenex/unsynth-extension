@@ -1,0 +1,43 @@
+.un-tx-export-panel {
+  position: absolute;
+  top: 48px;
+  right: 8px;
+  z-index: 60;
+  max-width: 280px;
+  background: rgba(20, 20, 20, 0.95);
+  color: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.un-tx-export-title {
+  margin-bottom: 8px;
+  opacity: 0.85;
+}
+
+.un-tx-export-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.un-tx-export-btn {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.un-tx-export-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.un-tx-export-close {
+  opacity: 0.7;
+}

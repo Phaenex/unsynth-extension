@@ -1,0 +1,63 @@
+/*
+ * The debt line under a playlist title.
+ *
+ * Sits in YouTube's own header metadata block beside "N videos", so it takes
+ * YouTube's own secondary-text colours rather than naming its own. Those two
+ * values were measured live on a real page in both themes (see
+ * design-tokens.css) because none of the --yt-spec-* variables resolve there —
+ * a lesson this codebase learned by shipping white-on-white text that passed
+ * every existence assertion.
+ */
+.un-pl-debt {
+  margin-top: 4px;
+  font-size: 1.3rem;
+  line-height: 1.8rem;
+  color: var(--un-yt-meta-light);
+  flex-basis: 100%;
+}
+
+/* Dark only. NOT html[darker-dark-theme] — that attribute is present on a LIGHT
+   page too, so it matches always and paints the dark colour over both themes. */
+html[dark] .un-pl-debt,
+[dark] .un-pl-debt {
+  color: var(--un-yt-meta-dark);
+}
+
+/*
+ * The "I have N minutes" fit control, inline at the end of the debt line.
+ *
+ * A number input rather than a set of preset buttons: the budget is the user's
+ * and the useful values are not guessable (a commute is not 30/60/90). Inherits
+ * the debt line's colour so it reads as part of the same sentence rather than
+ * as a widget bolted onto the header.
+ */
+.un-pl-fit {
+  margin-left: 10px;
+  white-space: nowrap;
+}
+.un-pl-fit-label {
+  cursor: text;
+}
+/*
+ * Transparent, not --un-input-bg. That token is a DARK surface, and measured
+ * live it put the inherited mid-grey text at 2.82:1 on a light page — under the
+ * 4.5:1 floor, on a control the user has to read a number out of. Sitting on
+ * the page's own background keeps the contrast the same as the line it is part
+ * of: 6.29:1 light, 8.25:1 dark.
+ */
+.un-pl-fit-input {
+  width: 4.2em;
+  margin: 0 2px;
+  padding: 1px 4px;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  opacity: 0.95;
+}
+/* The answer is the payload, so it carries slightly more weight than the
+   prompt that produced it. */
+.un-pl-fit-out {
+  font-weight: 500;
+}

@@ -1,0 +1,72 @@
+/* Unsynth Ambient Mode — glow around the video player */
+
+/* When ambient mode is active, the module sets --un-ambient-glow on #movie_player.
+   box-shadow paints outside the element's box regardless of its own overflow, so
+   no overflow override is needed here (forcing overflow:visible would let
+   YouTube's own player menus/captions bleed out of the frame). */
+#movie_player.un-ambient-active {
+  box-shadow: var(--un-ambient-glow, none);
+  transition: box-shadow 1.2s ease;
+  border-radius: 4px;
+}
+
+/* Quality lock chip in player controls */
+.un-ql-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 100%;
+  padding: 0 6px;
+  font: 600 11px/1 Roboto, Arial, sans-serif;
+  color: rgba(255, 255, 255, 0.85);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: color 0.12s, opacity 0.12s;
+}
+.un-ql-chip:hover {
+  color: #fff;
+}
+
+/* Screenshot button in player controls */
+.un-ss-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: color 0.12s;
+}
+.un-ss-btn:hover {
+  color: #fff;
+}
+
+/* Keyboard focus rings (YouTube resets outline:0 on .ytp-button) */
+.un-ql-chip:focus-visible,
+.un-ss-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: -2px;
+}
+.un-ss-btn svg {
+  pointer-events: none;
+}
+
+/* Screenshot/popout OSD now render through the shared UNSYNTH.showToast()
+   .un-toast component (core.css); the old .un-ss-osd class rule is retired. */
+
+
+/* The glow re-transitions on every sample tick while playing. Someone who
+   set reduced-motion specifically wants this class of continuous effect to
+   stop animating; the colour still applies, it just no longer eases. */
+@media (prefers-reduced-motion: reduce) {
+  #movie_player.un-ambient-active {
+    transition: none;
+  }
+}

@@ -1,0 +1,368 @@
+/* ============================================================================
+   UNSidePanel — one shell for everything with depth on a watch page.
+   See src/shared/side-panel.js for the rule and the placements.
+
+   Host surface first (DESIGN-STANDARD §1b C): the related column is the
+   page background with no card around it, so the docked host paints the
+   page colour, one hairline, no shadow — a region of the column, not a card
+   dropped into it. The drawer is the exception: it floats over the page and
+   needs an edge and a backdrop to read as a layer.
+   ========================================================================= */
+
+.un-sp {
+  display: none;
+  box-sizing: border-box;
+  color: var(--un-yt-text);
+  font-family: var(--un-font, Roboto, Arial, sans-serif);
+}
+.un-sp *,
+.un-sp *::before,
+.un-sp *::after { box-sizing: border-box; }
+.un-sp.is-open { display: flex; flex-direction: column; }
+
+/* ---- docked: in the related column, beside the video ---------------- */
+.un-sp--docked.is-open.is-popped,
+.un-sp--drawer.is-open.is-popped { display: none; }
+.un-sp--docked.is-open {
+  position: sticky;
+  top: calc(var(--ytd-masthead-height, 56px) + 12px);
+  /* The column's own width; never wider than it. */
+  width: 100%;
+  max-height: calc(100vh - var(--ytd-masthead-height, 56px) - 24px);
+  margin: 0 0 16px;
+  background: var(--un-yt-bg);
+  border: 1px solid var(--un-yt-line);
+  border-radius: var(--un-radius, 12px);
+  overflow: hidden;
+  z-index: 2;
+}
+
+/* ---- drawer: fixed right edge, everywhere that has no related column -- */
+.un-sp--drawer.is-open {
+  position: fixed;
+  /* Below the masthead, never over it: the chips that open and close the
+     drawer live there and must stay clickable while it is open. */
+  top: var(--ytd-masthead-height, 56px);
+  right: 0;
+  width: min(480px, 100vw);
+  height: calc(100vh - var(--ytd-masthead-height, 56px));
+  background: var(--un-yt-bg);
+  border-left: 1px solid var(--un-yt-line);
+  box-shadow: var(--un-shadow, -8px 0 32px rgba(0, 0, 0, 0.35));
+  z-index: var(--un-z-forge, 2147482900);
+}
+.un-sp-backdrop { display: none; }
+.un-sp--drawer.is-open .un-sp-backdrop {
+  display: block;
+  position: fixed;
+  top: var(--ytd-masthead-height, 56px);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: -1;
+}
+
+/* ---- tab bar ------------------------------------------------------------ */
+.un-sp-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px 6px 6px;
+  border-bottom: 1px solid var(--un-yt-line);
+  background: var(--un-yt-bg);
+}
+.un-sp-tabs {
+  display: flex;
+  gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.un-sp-tabs::-webkit-scrollbar { display: none; }
+.un-sp-tab {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--un-yt-text-dim);
+  font: 500 13.5px/1 var(--un-font, Roboto, Arial, sans-serif);
+  padding: 8px 11px;
+  border-radius: var(--un-radius-sm, 8px);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.un-sp-tab:hover { background: var(--un-yt-raised-hover); }
+/* The selected tab is the one thing the accent marks here — a selected state,
+   which DESIGN-STANDARD §4 allows brand colour to identify. */
+.un-sp-tab.is-on {
+  color: var(--un-yt-text);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--un-accent);
+  border-radius: var(--un-radius-sm, 8px) var(--un-radius-sm, 8px) 0 0;
+}
+.un-sp-tab:focus-visible,
+.un-sp-pop:focus-visible,
+.un-sp-close:focus-visible,
+.un-sp-float-dock:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: 2px;
+}
+.un-sp-acts {
+  flex: none;
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+.un-sp-pop,
+.un-sp-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--un-yt-text-dim);
+  font: 500 16px/1 var(--un-font, Roboto, Arial, sans-serif);
+  cursor: pointer;
+}
+.un-sp-close { font-size: 20px; }
+.un-sp-pop:hover,
+.un-sp-close:hover { background: var(--un-yt-raised-hover); color: var(--un-yt-text); }
+
+/* ---- bodies ------------------------------------------------------------- */
+.un-sp-bodies {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Paints its own ground. The drawer's backdrop is a z-index:-1 child of the
+     host, and a negative-z child paints ABOVE its parent's background — so
+     the drawer's lower half showed the grey backdrop through it (measured on
+     the home page 2026-09-21). A positioned, opaque bodies block fills the
+     host to the bottom. */
+  position: relative;
+  z-index: 0;
+  background: var(--un-yt-bg);
+}
+.un-sp-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.un-sp-body[hidden] { display: none; }
+
+/* ---- pop-out float ------------------------------------------------------ */
+.un-sp-float {
+  position: fixed;
+  top: 72px;
+  right: 24px;
+  width: min(440px, calc(100vw - 32px));
+  max-height: min(78vh, 880px);
+  display: flex;
+  flex-direction: column;
+  background: var(--un-yt-bg);
+  color: var(--un-yt-text);
+  border: 1px solid var(--un-yt-line);
+  border-radius: var(--un-radius, 12px);
+  box-shadow: var(--un-shadow, 0 12px 40px rgba(0, 0, 0, 0.35));
+  z-index: var(--un-z-forge, 2147482900);
+  font-family: var(--un-font, Roboto, Arial, sans-serif);
+}
+.un-sp-float-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 14px;
+  border-bottom: 1px solid var(--un-yt-line);
+  cursor: move;
+  user-select: none;
+}
+.un-sp-float-title { font: 600 13.5px/1 var(--un-font, Roboto, Arial, sans-serif); }
+.un-sp-float-dock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  border: 1px solid var(--un-yt-line);
+  background: transparent;
+  color: var(--un-yt-text);
+  font: 500 12.5px/1 var(--un-font, Roboto, Arial, sans-serif);
+  padding: 6px 10px;
+  border-radius: var(--un-radius-sm, 8px);
+  cursor: pointer;
+}
+.un-sp-float-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- hosted modules lose their own shells --------------------------------
+   Each module still renders its own header, content and controls; only the
+   chrome that made it a standalone card or slide-out is removed here, so a
+   tab reads as part of the panel rather than a panel inside a panel. */
+
+/* analytics: was a bordered card with its own collapse caret and pop-out */
+.un-sp-body .un-stats {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+/* Scoped by id: analytics.css sets these with three classes too and loads
+   later, so a class-only rule here tied and lost (the collapsed summary showed
+   inside the tab, truncated). */
+/* Scoped to the host AND the pop-out float (2026-09-22). Scoped to the host
+   alone, a popped-out Stats card lost every one of these and fell back to its
+   standalone collapsed state: the float showed one header row. */
+:is(#un-side-panel, #un-side-panel-float) .un-stats .un-stats-caret,
+:is(#un-side-panel, #un-side-panel-float) .un-stats .un-stats-pop,
+:is(#un-side-panel, #un-side-panel-float) .un-stats .un-stats-sum { display: none; }
+:is(#un-side-panel, #un-side-panel-float) .un-stats .un-stats-tag { display: inline-flex; }
+:is(#un-side-panel, #un-side-panel-float) .un-stats .un-stats-head { cursor: default; }
+:is(#un-side-panel, #un-side-panel-float) .un-stats.collapsed .un-stats-body { display: block; }
+/* "Summarize with AI" and "Find similar in Forge" are the AI and Forge tabs,
+   one click away in the same bar. Not repeated inside the Stats tab. */
+:is(#un-side-panel, #un-side-panel-float) .un-stats .un-stats-sumbtn,
+:is(#un-side-panel, #un-side-panel-float) .un-stats .un-stats-forge { display: none; }
+
+/* ONE NAME PER PANEL. The tab bar already says Stats / Fact check / AI /
+   Forge; each module also printed its own title under it — "✦ Stats",
+   "✦ Claim review", "● AI Assistant", "⚒ Playlist Forge" — in four different
+   accent treatments (captured 2026-09-22). A panel inside a panel. Inside the
+   host the module header keeps only its controls. */
+:is(#un-side-panel, #un-side-panel-float) .un-stats .un-stats-title,
+:is(#un-side-panel, #un-side-panel-float) .un-fc-title,
+:is(#un-side-panel, #un-side-panel-float) .un-ai-header,
+:is(#un-side-panel, #un-side-panel-float) .un-forge-brand { display: none; }
+:is(#un-side-panel, #un-side-panel-float) .un-forge-head { justify-content: flex-end; min-height: 0; padding-top: 8px; padding-bottom: 0; border-bottom: 0; }
+:is(#un-side-panel, #un-side-panel-float) .un-stats .un-stats-head { gap: 8px; }
+:is(#un-side-panel, #un-side-panel-float) .un-stats .un-stats-head::before {
+  content: "Score";
+  color: var(--un-yt-text-dim);
+  font: 500 13px/1 var(--un-font, Roboto, Arial, sans-serif);
+}
+:is(#un-side-panel, #un-side-panel-float) .un-stats .un-stats-gear { margin-left: auto; }
+
+/* fact-check: was a slot body in the deck */
+.un-sp-body .un-fact-check { margin: 0; padding: 12px 14px; }
+
+/* The deck's stats row keeps its meter and numbers — the glance — but its
+   Compare / Expand / Summarize buttons and the inline compare table are the
+   Stats and AI tabs now. One place for each. */
+html.un-sp-present .un-watch-deck .un-vid-stats-tools,
+html.un-sp-present .un-watch-deck .un-vid-stats-panel { display: none !important; }
+
+/* AI assistant: was a fixed full-height slide-out with its own close. The
+   whole root is hosted; its fixed shell becomes a plain block. */
+.un-sp-body .un-ai-root {
+  position: static;
+  width: auto;
+  height: auto;
+  z-index: auto;
+  pointer-events: auto;
+}
+.un-sp-body .un-ai-panel {
+  position: static;
+  width: auto;
+  height: auto;
+  min-height: 100%;
+  transform: none;
+  border: 0;
+  box-shadow: none;
+  transition: none;
+}
+.un-sp-body .un-ai-resize,
+.un-sp-body .un-ai-collapse,
+.un-sp-body .un-ai-close { display: none; }
+
+/* Forge's six-tab nav at the docked column's ~360px: one line each, or
+   "This page" folds to "This / page". */
+.un-sp-body .un-forge-nav button {
+  white-space: nowrap;
+  font-size: 12px;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+/* Forge: was a fixed full-height slide-out with its own close and backdrop.
+   The whole root is hosted; its backdrop must never paint from inside. */
+.un-sp-body .un-forge-root {
+  position: static;
+  width: auto;
+  height: auto;
+  z-index: auto;
+  pointer-events: auto;
+}
+.un-sp-body .un-forge-backdrop { display: none !important; }
+.un-sp-body .un-forge-panel {
+  position: static;
+  width: auto;
+  height: auto;
+  min-height: 100%;
+  transform: none;
+  border: 0;
+  box-shadow: none;
+  transition: none;
+}
+.un-sp-body .un-forge-x { display: none; }
+
+/* ---- inside the guide beside the video (2026-09-22) ---------------------
+   The doors above are the tabs, so the host's own tab strip steps aside and
+   the bar shows the open tab's name, pop-out and close. Not sticky, no card:
+   it is a section of the guide card. Bounded height with its own scroll so a
+   long tab (Stats, a chat) never pushes the page. */
+.un-sp-title { display: none; }
+.un-sp.un-sp--docked.un-sp--inguide.is-open {
+  position: static;
+  width: auto;
+  max-height: min(680px, calc(100vh - 240px));
+  margin: 6px -14px 0;
+  border: 0;
+  border-top: 1px solid var(--un-guide-line, var(--un-yt-line));
+  border-radius: 0;
+  background: transparent;
+  overflow: hidden;
+}
+/* ONE ROW, NOT THREE. The open door already names the section, so the bar's
+   title would say "Stats" twice in 40px (captured), and Forge stacked a bar
+   row over a row holding only "Site ↗". Pop-out and close float at the
+   section's top-right; each module's first row leaves them room, so its own
+   controls (Score · ⚙, the provider line, Site ↗) share that single line. */
+/* top: auto, or the sticky offset (masthead + 12px) inherited from the docked
+   rule shifts a RELATIVE box 68px down: a dead band above, the same 68px
+   spilling past the card below (measured 2026-09-22). */
+.un-sp.un-sp--docked.un-sp--inguide.is-open { position: relative; top: auto; }
+.un-sp--inguide .un-sp-tabs,
+.un-sp--inguide .un-sp-title { display: none; }
+.un-sp--inguide .un-sp-bar {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.un-sp--inguide .un-sp-pop,
+.un-sp--inguide .un-sp-close { background: var(--un-guide-bg, var(--un-yt-bg)); }
+.un-sp--inguide .un-sp-pop:hover,
+.un-sp--inguide .un-sp-close:hover { background: var(--un-guide-hover, var(--un-yt-raised-hover)); }
+.un-sp--inguide .un-sp-bodies { background: transparent; }
+.un-sp--inguide .un-sp-body :is(.un-stats-head, .un-forge-head, .un-ai-provider, .un-fc-head) { padding-right: 76px; }
+.un-sp--inguide .un-sp-body .un-forge-head { min-height: 44px; align-items: center; }
+.un-sp--inguide .un-sp-body .un-stats-head { min-height: 44px; }
+
+/* The AI door is in the guide; the masthead AI chip only ever worked on
+   watch pages, so while the guide is present it would be a second door to
+   the same room. Forge keeps its chip: it is the door on every other page. */
+html:has(#un-watch-deck.is-side:not(.is-empty)) .un-ai-tab { display: none !important; }

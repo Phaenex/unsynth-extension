@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Unsynth</title>
+    <link rel="stylesheet" href="shared/design-tokens.css" />
+    <link rel="stylesheet" href="shared/controls.css" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="pop-head">
+      <div class="pop-brand"><span class="dot"></span>Unsynth</div>
+      <div class="pop-head-actions">
+        <button id="open-playlist-organizer" class="icobtn" type="button" title="Playlist Organizer" aria-label="Open Playlist Organizer">▤</button>
+        <button id="open-dash" class="icobtn" type="button" title="All settings" aria-label="Open all settings">⚙</button>
+      </div>
+    </header>
+
+    <!--
+      Three tabs. "Now" holds the handful of controls reached on most openings
+      (audio, the AI filter, watched display) and is sized to need no scrolling.
+      "Features" holds the module toggles, grouped and searchable — they used
+      to sit in a flat list below everything else, which is what pushed the
+      popup to ~1840px of content inside a 320px window.
+      "Playlists" gathers everything playlist-shaped in one place. It was
+      spread across four toggles buried in Features, a single unlabelled ▤ icon
+      in the header for the organizer, and two more tools that only existed on
+      the dashboard — so the feature set was effectively undiscoverable unless
+      you already knew it was there.
+    -->
+    <nav class="pop-tabs" id="pop-tabs" role="tablist" aria-label="Popup sections">
+      <button class="pop-tab on" type="button" role="tab" id="pop-tab-now" data-tab="now" aria-selected="true" aria-controls="pop-pane-now">Now</button>
+      <button class="pop-tab" type="button" role="tab" id="pop-tab-playlists" data-tab="playlists" aria-selected="false" aria-controls="pop-pane-playlists">
+        Playlists
+      </button>
+      <button class="pop-tab" type="button" role="tab" id="pop-tab-features" data-tab="features" aria-selected="false" aria-controls="pop-pane-features">
+        Features <span class="pop-tab-count" id="pop-feature-count"></span>
+      </button>
+    </nav>
+
+    <div id="pop-tab-reload-banner" class="pop-reload-banner" style="display: none">
+      <span>Reload open YouTube tabs to apply changes.</span>
+      <button id="pop-reload-yt-tabs" type="button">Reload</button>
+    </div>
+
+    <!-- ============================ NOW ============================ -->
+    <div class="pop-pane" id="pop-pane-now" role="tabpanel" aria-labelledby="pop-tab-now">
+      <section class="pop-card pop-audio-panel" id="pop-audio-panel">
+        <div class="pop-audio-header">
+          <span class="pop-audio-title"><span class="pop-audio-icon">🔊</span>Audio &amp; Booster</span>
+          <span id="pop-audio-badge" class="pop-audio-badge">100%</span>
+        </div>
+
+        <div class="pop-audio-slider-container">
+          <input id="pop-audio-slider" class="pop-audio-slider" type="range" min="0" max="600" step="5" value="100" aria-label="Volume level" />
+        </div>
+
+        <div class="pop-audio-presets">
+          <button type="button" class="pop-audio-chip" data-v="0">Mute</button>
+          <button type="button" class="pop-audio-chip" data-v="100">100%</button>
+          <button type="button" class="pop-audio-chip" data-v="150">150%</button>
+          <button type="button" class="pop-audio-chip" data-v="200">200%</button>
+          <button type="button" class="pop-audio-chip" data-v="300">300%</button>
+          <button type="button" class="pop-audio-chip" data-v="400">400%</button>
+          <button type="button" class="pop-audio-chip" data-v="600">600%</button>
+        </div>
+
+        <details class="pop-audio-more">
+          <summary>Enhancer &amp; options</summary>
+          <div class="pop-audio-enhancements">
+            <label for="pop-audio-eq">Enhance:</label>
+            <select id="pop-audio-eq" class="pop-select">
+              <option value="cinematic">Cinematic (Default)</option>
+              <option value="smart-enhance">Smart Enhancer</option>
+              <option value="normal">Normal (Bypass)</option>
+              <option value="bass-boost">Bass Boost (Deep/Warm)</option>
+              <option value="vocal-boost">Vocal Enhancer (Speech)</option>
+              <option value="treble-boost">Treble Boost (Crisp)</option>
+              <option value="compressor">Night Mode (Loudness Equalizer)</option>
+              <option value="mono">Mono Downmix (One-Ear Fix)</option>
+            </select>
+          </div>
+
+          <div class="pop-audio-options">
+            <label class="pop-audio-opt yt-only-opt">
+              <input type="checkbox" id="pop-audio-scroll" />
+              <span>Scroll-to-vol</span>
+            </label>
+            <label class="pop-audio-opt">
+              <input type="checkbox" id="pop-audio-remember" />
+              <span>Remember lvl</span>
+            </label>
+            <label class="pop-audio-opt yt-only-opt">
+              <input type="checkbox" id="pop-audio-player-ctrl" />
+              <span>Player ctrl</span>
+            </label>
+          </div>
+        </details>
+
+        <div id="pop-audio-inactive" class="pop-audio-inactive" style="display: none;">
+          <span>Audio controls not active on this page</span>
+        </div>
+      </section>
+
+      <section class="pop-card pop-master" id="pop-master">
+        <div class="master-txt"><b>AI filter</b><span>Hide synthetic narration &amp; robot-voice channels</span></div>
+        <input id="enabled" class="un-switch" type="checkbox" title="Turn filtering on/off" aria-label="AI filter on/off" />
+      </section>
+
+      <p class="count"><b id="count">0</b> hidden total · <b id="page-count">0</b> on this page</p>
+      <p class="pop-active-badge" id="active-filter-badge" hidden></p>
+
+      <div class="sec-label">Watched display</div>
+      <div class="wmodes" id="pop-wmode"></div>
+
+      <section class="pop-card pop-actions">
+        <button id="block-channel" type="button" disabled>Block AI channel</button>
+        <button id="scan-ai" class="secondary" type="button" disabled>Open YouTube to scan for AI channels</button>
+      </section>
+
+      <p class="pop-sync" id="pop-sync-line">
+        <a id="open-sync" href="#">Chrome profile syncs settings</a>
+        <span id="pop-sync-detail"></span>
+      </p>
+
+      <div class="links">
+        <a id="open-updates" href="#">Updates</a>
+        <a id="open-options" href="#">Filter word list</a>
+        <a id="open-support" href="#" title="Tips optional — Ko-fi: phaenex">Support Phaenex</a>
+        <a id="open-dash2" href="#">All settings ↗</a>
+      </div>
+    </div>
+
+    <!-- ========================= PLAYLISTS ==========================
+      Everything playlist-shaped, in the order you actually reach for it:
+      the tools that DO something first, then the on-page features that have
+      to be switched on for those tools to appear, then the library summary.
+      Counts are read from real storage on open — never rendered as a
+      placeholder, because a fake "0 playlists" reads as a broken account. -->
+    <div class="pop-pane" id="pop-pane-playlists" role="tabpanel" aria-labelledby="pop-tab-playlists" hidden>
+      <section class="pop-card pop-pl-hero">
+        <div class="pop-pl-hero-txt">
+          <b>Playlist Organizer</b>
+          <span>Open two playlists side by side and move, copy or delete videos between them.</span>
+        </div>
+        <button id="pop-pl-open-organizer" class="primary" type="button">Open organizer</button>
+      </section>
+
+      <p class="sec-label">Library</p>
+      <div class="pop-pl-stats" id="pop-pl-stats" role="status" aria-live="polite">
+        <div class="pop-pl-stat">
+          <b id="pop-pl-count">—</b>
+          <span>pinned</span>
+        </div>
+        <div class="pop-pl-stat">
+          <b id="pop-pl-folders">—</b>
+          <span>folders</span>
+        </div>
+      </div>
+      <p class="pop-hint" id="pop-pl-empty" hidden>
+        Nothing pinned yet. Pin playlists from YouTube's sidebar once Playlist groups is on.
+      </p>
+
+      <p class="sec-label">Tools</p>
+      <!-- Deliberately NOT .pop-actions: that class carries a Now-tab rule
+           stripping `.secondary` buttons to bare centred text, which is right
+           for one throwaway action under a primary button and wrong here,
+           where these three are peers and must look alike. -->
+      <section class="pop-card pop-pl-actions">
+        <button id="pop-pl-seen" type="button">Mark a playlist as already watched…</button>
+        <button id="pop-pl-folders-btn" type="button">Manage folders &amp; pins</button>
+        <button id="pop-pl-forge" type="button">Build a playlist with Forge</button>
+      </section>
+
+      <p class="sec-label">On-page features</p>
+      <div class="modgroup-items" id="pop-pl-modules"></div>
+
+      <p class="pop-shortcuts-note pop-pl-note">
+        Bulk select, dedupe and the ＋ Folder controls appear on YouTube itself once these are on.
+      </p>
+    </div>
+
+    <!-- ========================== FEATURES ========================== -->
+    <div class="pop-pane" id="pop-pane-features" role="tabpanel" aria-labelledby="pop-tab-features" hidden>
+      <div class="pop-searchwrap">
+        <svg class="pop-searchicon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="M20 20l-3.5-3.5"></path>
+        </svg>
+        <input id="pop-feature-search" class="pop-search" type="search" placeholder="Search features…" aria-label="Search features" autocomplete="off" />
+      </div>
+
+      <p class="sec-label">I'm here for…</p>
+      <div class="pop-use-cases" id="pop-use-cases"></div>
+
+      <div id="modules" class="modgroups"></div>
+      <p class="pop-no-results" id="pop-no-results" hidden>No feature matches that search.</p>
+
+      <details class="pop-shortcuts" id="pop-shortcuts">
+        <summary>⌨ Keyboard shortcuts</summary>
+        <ul class="pop-shortcut-list">
+          <li><kbd data-env="alt-shift-w">Alt+Shift+W</kbd> Mark video watched</li>
+          <li><kbd data-env="alt-shift-u">Alt+Shift+U</kbd> Mark video unwatched</li>
+          <li><kbd data-env="alt-shift-f">Alt+Shift+F</kbd> Toggle AI filter</li>
+          <li><kbd data-env="alt-shift-p">Alt+Shift+P</kbd> Pop out player</li>
+        </ul>
+        <a id="open-shortcuts" href="#" class="pop-shortcuts-link">Customize in-page shortcuts ↗</a>
+        <p class="pop-shortcuts-note">The four keys above are Chrome commands. Screenshot, skip, speed, and the rest live on the dashboard Shortcuts card.</p>
+      </details>
+    </div>
+
+    <script src="shared/messages.js"></script>
+    <script src="shared/browser-env.js"></script>
+    <script src="shared/ai-keywords.js"></script>
+    <script src="defaults.js"></script>
+    <script src="shared/modules-normalize.js"></script>
+    <script src="shared/use-case-presets.js"></script>
+    <script src="shared/watched-display.js"></script>
+    <script src="shared/open-page.js"></script>
+    <script src="shared/donation-links.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

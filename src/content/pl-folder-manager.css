@@ -1,0 +1,206 @@
+/* Playlist folder sidebar — PocketTube-style folder filter on Library. */
+.un-plf-hidden {
+  display: none !important;
+}
+
+.un-plf-empty {
+  margin: 16px 24px;
+  padding: 16px 18px;
+  border: 1px dashed var(--un-yt-line, #333);
+  border-radius: 10px;
+  color: var(--un-yt-text, #e8e8e8);
+  font: 500 14px/1.4 var(--un-font, Roboto, Arial, sans-serif);
+  max-width: 420px;
+}
+.un-plf-empty p {
+  margin: 0 0 10px;
+}
+.un-plf-empty-clear {
+  background: var(--un-yt-line, #272727);
+  color: var(--un-yt-text, #fff);
+  border: 1px solid transparent;
+  border-radius: 18px;
+  padding: 6px 14px;
+  font: 600 13px/1 var(--un-font, Roboto, Arial, sans-serif);
+  cursor: pointer;
+}
+.un-plf-empty-clear:hover {
+  background: var(--un-hover-strong, #3a3a3a);
+}
+
+.un-plf-addbtn {
+  margin-left: 8px;
+  background: var(--un-yt-line, #272727);
+  color: var(--un-yt-text, #fff);
+  border: 1px solid transparent;
+  border-radius: var(--un-radius-pill, 18px);
+  padding: 0 14px;
+  height: 36px;
+  font: 600 14px/1 var(--un-font, Roboto, Arial, sans-serif);
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.un-plf-addbtn:hover {
+  background: var(--un-hover-strong, #3a3a3a);
+  border-color: color-mix(in srgb, var(--un-forge) 25%, transparent);
+}
+.un-plf-tile-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  background: color-mix(in srgb, var(--un-yt-panel, #181818) 92%, transparent);
+  color: var(--un-forge, #6ee787);
+  border: 1px solid color-mix(in srgb, var(--un-forge) 35%, transparent);
+  border-radius: var(--un-radius-pill, 14px);
+  width: 28px;
+  height: 28px;
+  font: 700 16px/1 var(--un-font, Roboto, Arial, sans-serif);
+  cursor: pointer;
+  opacity: 0.45;
+  transition: opacity 0.15s, background 0.12s;
+}
+ytd-playlist-renderer:hover .un-plf-tile-btn,
+ytd-grid-playlist-renderer:hover .un-plf-tile-btn,
+ytd-rich-item-renderer:hover .un-plf-tile-btn,
+yt-lockup-view-model:hover .un-plf-tile-btn,
+.un-plf-tile-btn:focus-visible {
+  opacity: 1;
+}
+.un-plf-tile-btn:hover {
+  background: var(--un-forge-soft, rgba(110, 231, 135, 0.18));
+}
+#un-plf-menu {
+  position: fixed;
+  z-index: 2147483000;
+  background: var(--un-yt-panel, #181818);
+  border: 1px solid var(--un-yt-line, #303030);
+  border-radius: var(--un-radius, 10px);
+  padding: 8px 10px;
+  min-width: 180px;
+  box-shadow: var(--un-shadow-md, 0 8px 28px rgba(0, 0, 0, 0.5));
+}
+.un-plf-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  font: var(--un-text-body, 13px) var(--un-font, Roboto, Arial, sans-serif);
+  color: var(--un-yt-text, #eee);
+  cursor: pointer;
+  border-radius: var(--un-radius-sm, 6px);
+  transition: background 0.12s ease;
+}
+.un-plf-menu-row:hover {
+  background: var(--un-hover, rgba(255, 255, 255, 0.06));
+}
+.un-plf-menu-row:focus-within,
+.un-plf-menu-action:focus-visible,
+.un-plf-menu-newinput:focus-visible,
+.un-plf-menu-newform button:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: 2px;
+}
+.un-plf-menu-row { min-height: 36px; }
+.un-plf-menu-row input {
+  accent-color: var(--un-forge, #6ee787);
+}
+.un-plf-menu-hint {
+  font-size: 12px;
+  color: var(--un-yt-text-dim, #999);
+  padding: 8px;
+}
+.un-plf-menu-action {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: color-mix(in srgb, var(--un-forge, #6ee787) 14%, transparent);
+  color: var(--un-yt-text, #eee);
+  border: 1px solid color-mix(in srgb, var(--un-forge) 35%, transparent);
+  border-radius: var(--un-radius-sm, 6px);
+  padding: 8px 10px;
+  font: 600 13px/1.2 var(--un-font, Roboto, Arial, sans-serif);
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+.un-plf-menu-action:hover {
+  background: color-mix(in srgb, var(--un-forge, #6ee787) 24%, transparent);
+}
+.un-plf-menu-action.on {
+  background: transparent;
+  border-color: var(--un-yt-line, #303030);
+  font-weight: 500;
+}
+/* ＋ New folder — a quieter variant of the primary action, since it sits below
+   the pin row and should not compete with it for attention. */
+.un-plf-menu-action.add {
+  background: transparent;
+  border-color: var(--un-yt-line, #303030);
+  font-weight: 500;
+  margin-bottom: 0;
+}
+.un-plf-menu-action.add:hover {
+  background: color-mix(in srgb, var(--un-forge, #6ee787) 14%, transparent);
+  border-color: color-mix(in srgb, var(--un-forge) 35%, transparent);
+}
+.un-plf-menu-newform {
+  padding: 6px 0 0;
+}
+.un-plf-menu-newinput {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--un-yt-bg, #0f0f0f);
+  color: var(--un-yt-text, #eee);
+  border: 1px solid var(--un-yt-line, #303030);
+  border-radius: var(--un-radius-sm, 6px);
+  padding: 7px 9px;
+  font: 500 13px/1.2 var(--un-font, Roboto, Arial, sans-serif);
+}
+.un-plf-menu-newinput:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--un-forge, #6ee787) 55%, transparent);
+}
+
+.un-plf-menu-sep {
+  font-size: 11px;
+  color: var(--un-yt-text-dim, #999);
+  padding: 6px 4px 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.un-plf-addbtn.on,
+.un-plf-tile-btn.on {
+  color: var(--un-forge, #6ee787);
+  border-color: color-mix(in srgb, var(--un-forge) 45%, transparent);
+}
+.un-plf-menu-link {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: none;
+  border: 0;
+  border-radius: var(--un-radius-sm, 6px);
+  color: var(--un-forge, #6ee787);
+  font: 600 12px var(--un-font, Roboto, Arial, sans-serif);
+  text-align: left;
+  cursor: pointer;
+}
+.un-plf-menu-link:hover {
+  background: var(--un-forge-soft, rgba(110, 231, 135, 0.14));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .un-plf-tile-btn {
+    transition: none !important;
+  }
+}
+
+.un-plf-addbtn:focus-visible,
+.un-plf-tile-btn:focus-visible,
+.un-plf-menu-row:focus-visible,
+.un-plf-menu-link:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: 2px;
+}

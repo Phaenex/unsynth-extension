@@ -1,0 +1,1903 @@
+/* Subscription-focused Unsynth sidebar hub — top of YouTube guide */
+
+/* Theme-aware fallbacks.
+ *
+ * Every rule below reads YouTube's own `--yt-spec-*` custom properties with a
+ * hardcoded fallback. Those properties DO NOT RESOLVE inside this subtree —
+ * verified live: getPropertyValue('--yt-spec-text-primary') returns an empty
+ * string on the hub, on <body>, and on :root. So the fallback is what actually
+ * paints, always. Every fallback was a DARK-theme value (var(--un-yt-text) near-white
+ * text, var(--un-yt-line) lines), which meant that in YouTube's LIGHT theme the hub
+ * rendered near-white text on a white guide — contrast ~1.1:1, effectively
+ * invisible. That's the "doesn't look right" report: group names and counts
+ * that are there but unreadable.
+ *
+ * Fixed by defining our own tokens that default to LIGHT values and flip to
+ * dark under both of YouTube's dark-mode signals (html[dark] and the
+ * prefers-color-scheme media query), so the fallbacks are correct in whichever
+ * theme is actually painting. YouTube's own variables still win wherever they
+ * genuinely resolve.
+ */
+#un-sidebar-hub,
+#un-hub-panel,
+#un-hub-feedpage {
+  --un-hub-text: var(--yt-spec-text-primary, #0f0f0f);
+  --un-hub-text-2: var(--yt-spec-text-secondary, #606060);
+  --un-hub-line: var(--yt-spec-10-percent-layer, #e5e5e5);
+  --un-hub-hover: rgba(0, 0, 0, 0.06);
+  --un-hub-surface: var(--yt-spec-badge-chip-background, #f2f2f2);
+  /* Subtle raised tint. A white overlay is invisible on a white guide, so the
+     light theme has to tint DARKER, not lighter. */
+  --un-hub-tint: rgba(0, 0, 0, 0.04);
+  --un-hub-tint-2: rgba(0, 0, 0, 0.06);
+  /* Selected-row text. The pale pink/blue below were designed against a dark
+     guide; on white they drop to roughly 1.6:1 and the active row reads as
+     blank. Light theme needs the SATURATED end of the accent instead. */
+  --un-hub-on-text: #c5221f;
+  --un-hub-on-text-pl: #10508f;
+  --un-hub-pl-accent: #0b5cab;
+}
+html[dark] #un-sidebar-hub,
+html[dark] #un-hub-panel,
+html[dark] #un-hub-feedpage,
+[dark] #un-sidebar-hub,
+[dark] #un-hub-panel,
+[dark] #un-hub-feedpage {
+  --un-hub-text: var(--yt-spec-text-primary, #f1f1f1);
+  --un-hub-text-2: var(--yt-spec-text-secondary, #aaa);
+  --un-hub-line: var(--yt-spec-10-percent-layer, #272727);
+  --un-hub-hover: rgba(255, 255, 255, 0.08);
+  --un-hub-surface: var(--yt-spec-badge-chip-background, #1a1a1a);
+  --un-hub-tint: rgba(255, 255, 255, 0.04);
+  --un-hub-tint-2: rgba(255, 255, 255, 0.07);
+  --un-hub-on-text: #ffb4b7;
+  --un-hub-on-text-pl: #c8e4ff;
+  --un-hub-pl-accent: #9ecfff;
+}
+/*
+ * Dark palette. Gated on YouTube's OWN [dark] attribute, not on
+ * prefers-color-scheme.
+ *
+ * This used to live inside @media (prefers-color-scheme: dark) with a
+ * :not([dark="false"]) guard. On a LIGHT YouTube page under a dark OS that
+ * matched — YouTube sets no [dark] attribute on a light page, so the negation
+ * was true — and the dark palette painted onto a white background. Measured:
+ * 12 hub elements under 3:1, "＋ Add playlists" at rgb(241,241,241) on white,
+ * which is 1.13:1 and unreadable.
+ *
+ * The --yt-spec-* variables do not resolve on these surfaces, so every value
+ * below falls through to its literal; the gate is the only thing standing
+ * between those literals and the wrong background.
+ */
+html[dark] #un-sidebar-hub,
+html[dark] #un-hub-panel,
+html[dark] #un-hub-feedpage,
+[dark] #un-sidebar-hub,
+[dark] #un-hub-panel,
+[dark] #un-hub-feedpage {
+    --un-hub-text: var(--yt-spec-text-primary, #f1f1f1);
+    --un-hub-text-2: var(--yt-spec-text-secondary, #aaa);
+    --un-hub-line: var(--yt-spec-10-percent-layer, #272727);
+    --un-hub-hover: rgba(255, 255, 255, 0.08);
+    --un-hub-surface: var(--yt-spec-badge-chip-background, #1a1a1a);
+    --un-hub-tint: rgba(255, 255, 255, 0.04);
+    --un-hub-tint-2: rgba(255, 255, 255, 0.07);
+  --un-hub-on-text: #ffb4b7;
+  --un-hub-on-text-pl: #c8e4ff;
+  --un-hub-pl-accent: #9ecfff;
+}
+
+#un-sidebar-hub {
+  padding: 0 0 8px;
+  color: var(--un-hub-text);
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+.un-hub-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font: 500 14px/1.4 var(--un-font, Roboto, Arial, sans-serif);
+  letter-spacing: 0.01em;
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  padding: 10px 16px 6px 12px;
+}
+.un-hub-brand-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.un-hub-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--yt-spec-text-primary, var(--un-yt-text));
+  opacity: 0.5;
+  flex: none;
+}
+.un-hub-section.subs-hero {
+  padding: 0;
+}
+.un-hub-brand.pl {
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  padding-top: 10px;
+}
+.un-hub-dot.pl {
+  background: var(--yt-spec-text-primary, var(--un-yt-text));
+  opacity: 0.5;
+  box-shadow: none;
+}
+.un-hub-section.pl-hero {
+  padding: 0;
+}
+.un-hub-row.on.pl {
+  background: var(--un-hub-hover, rgba(255, 255, 255, 0.12));
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  font-weight: 500;
+  box-shadow: none;
+}
+.un-hub-row-wrap {
+  margin-bottom: 1px;
+}
+.un-hub-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  font: 400 14px/20px Roboto, Arial, sans-serif;
+  padding: 0;
+  border-radius: 10px;
+  transition: background 0.12s ease;
+  min-height: 40px;
+}
+a.un-hub-row-link {
+  text-decoration: none;
+  color: inherit;
+}
+a.un-hub-row-link:visited {
+  color: inherit;
+}
+.un-hub-row-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 8px 6px 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.un-hub-row:hover,
+.un-hub-row-main:hover,
+.un-hub-chev-btn:hover {
+  background: var(--un-hub-hover, rgba(255, 255, 255, 0.08));
+}
+.un-hub-row-main:focus-visible,
+.un-hub-chev-btn:focus-visible,
+button.un-hub-row.simple:focus-visible,
+.un-hub-pop-btn:focus-visible {
+  outline: 2px solid var(--un-focus);
+  outline-offset: -2px;
+}
+.un-hub-row.on {
+  background: var(--un-hub-hover, rgba(255, 255, 255, 0.12));
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  font-weight: 500;
+  box-shadow: none;
+}
+.un-hub-row.on .un-hub-row-main:hover,
+.un-hub-row.on .un-hub-chev-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+button.un-hub-row.simple {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  font: 400 14px/20px Roboto, Arial, sans-serif;
+  padding: 0 12px;
+  min-height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+button.un-hub-row.simple:hover {
+  background: var(--un-hub-hover, rgba(255, 255, 255, 0.08));
+}
+button.un-hub-row.simple.on {
+  background: var(--un-hub-hover, rgba(255, 255, 255, 0.12));
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  font-weight: 500;
+  box-shadow: none;
+}
+.un-hub-row-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  font-size: 14px;
+  opacity: 0.85;
+}
+.un-hub-chev-btn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 6px;
+  background: none;
+  border: 0;
+  color: var(--un-hub-text-2, var(--un-yt-text-dim));
+  cursor: pointer;
+  border-radius: 50%;
+  padding: 0;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.un-hub-row.expanded .un-hub-chev {
+  transform: rotate(90deg);
+}
+.un-hub-row-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.un-hub-row-count {
+  font-size: 11px;
+  color: var(--un-hub-text-2, var(--un-yt-text-dim));
+  font-variant-numeric: tabular-nums;
+  flex: none;
+  opacity: 0.7;
+}
+.un-hub-row-new {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--un-txt);
+  background: #cc0000;
+  border-radius: 10px;
+  padding: 1px 6px;
+  min-width: 16px;
+  text-align: center;
+  flex: none;
+  line-height: 1.35;
+}
+.un-hub-row.on .un-hub-row-new {
+  background: #cc0000;
+  color: var(--un-txt);
+}
+.un-hub-row-live {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--un-txt);
+  background: #cc0000;
+  border-radius: 4px;
+  padding: 1px 5px;
+  flex: none;
+  margin-left: 4px;
+  letter-spacing: 0.04em;
+  animation: un-live-pulse 1.8s infinite ease-in-out;
+}
+@keyframes un-live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.96); }
+}
+.un-hub-row.on .un-hub-row-count {
+  color: inherit;
+  opacity: 0.75;
+}
+.un-hub-chev {
+  font-size: 10px;
+  color: var(--un-hub-text-2);
+  transition: transform 0.18s ease;
+  flex: none;
+}
+.un-hub-popout {
+  display: none;
+  margin: 3px 8px 10px;
+  padding: 10px;
+  background: var(--un-hub-surface, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--un-hub-line, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  animation: un-hub-pop-in 0.16s ease;
+}
+@keyframes un-hub-pop-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.un-hub-popout.open {
+  display: block;
+}
+.un-hub-pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  padding: 2px 4px 8px;
+}
+.un-hub-pop-head-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.un-hub-pop-add-btn {
+  flex: none;
+  background: var(--un-hub-hover, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--un-hub-line, rgba(255, 255, 255, 0.15));
+  border-radius: 10px;
+  color: var(--yt-spec-text-primary, var(--un-yt-text));
+  font: 500 11px/1.2 Roboto, Arial, sans-serif;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.un-hub-pop-add-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.un-hub-pop-search {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+  border: 1px solid var(--un-hub-line, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  font: 12.5px/1.3 Roboto, Arial, sans-serif;
+  padding: 6px 10px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.un-hub-pop-search:focus {
+  border-color: var(--un-link-text);
+}
+.un-hub-pop-list {
+  max-height: 220px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+}
+.un-hub-pop-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 8px;
+  transition: background 0.12s ease;
+}
+.un-hub-pop-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.un-hub-pop-item.has-new .un-hub-pop-link {
+  font-weight: 500;
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+}
+.un-hub-pop-new {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #cc0000;
+  flex: none;
+}
+.un-hub-pop-seen {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--un-forge);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  transition: background 0.12s, color 0.12s;
+}
+.un-hub-pop-seen:hover {
+  background: rgba(110, 231, 135, 0.15);
+}
+.un-hub-pop-link {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  font-size: 12.5px;
+  text-decoration: none;
+}
+.un-hub-pop-link:hover {
+  color: var(--un-link-text);
+  text-decoration: underline;
+}
+.un-hub-pop-rm {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  transition: color 0.12s, background 0.12s;
+}
+.un-hub-pop-rm:hover {
+  color: var(--un-accent);
+  background: rgba(255, 90, 95, 0.15);
+}
+.un-hub-pop-empty {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--un-hub-text-2, var(--un-yt-text-dim));
+  padding: 6px 4px;
+}
+.un-hub-pop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--un-hub-line, rgba(255, 255, 255, 0.1));
+}
+.un-hub-pop-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 1px solid var(--un-hub-line, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  padding: 7px 10px;
+  font: 500 12px/1.2 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: background 0.12s ease;
+}
+/* Theme tokens, not white overlays (2026-09-23). The popover sits on
+   --un-hub-surface, #f2f2f2 in light, and the ghost label fell back to
+   #e0e0e0 (about 1.2:1) with white hovers that could not show. Primary reads
+   stronger than ghost through its tint and border, in both themes. */
+.un-hub-pop-btn.primary {
+  background: var(--un-hub-tint-2);
+  color: var(--un-hub-text);
+  border-color: var(--un-hub-text-2);
+}
+.un-hub-pop-btn.primary:hover {
+  background: var(--un-hub-hover);
+}
+.un-hub-pop-btn.ghost {
+  background: var(--un-hub-tint);
+  color: var(--un-hub-text);
+}
+.un-hub-pop-btn.ghost:hover {
+  background: var(--un-hub-hover);
+}
+.un-hub-pop-btn.on {
+  background: rgba(62, 166, 255, 0.18);
+  color: var(--un-link);
+  border-color: rgba(62, 166, 255, 0.35);
+}
+.un-hub-pop-btn.on:hover {
+  background: rgba(62, 166, 255, 0.26);
+}
+
+/* "pinned to home" badge on a group row */
+.un-hub-row-home {
+  font-size: 11px;
+  line-height: 1;
+  color: var(--un-link);
+  background: rgba(62, 166, 255, 0.16);
+  border-radius: 8px;
+  padding: 2px 6px;
+  flex: none;
+  margin-left: 2px;
+}
+.un-hub-row.on .un-hub-row-home {
+  background: rgba(255, 255, 255, 0.85);
+  color: #1f6fb2;
+}
+.un-hub-hint {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--un-hub-text-2);
+  padding: 8px 10px 4px;
+}
+.un-hub-hint.empty {
+  text-align: center;
+  padding: 10px 12px;
+  background: var(--un-hub-tint, rgba(255, 255, 255, 0.04));
+  border: 1px dashed var(--un-hub-line, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  margin: 6px 8px;
+  color: var(--un-hub-text-2, var(--un-yt-text-dim));
+}
+.un-hub-hint.empty.pl {
+  border-color: var(--un-hub-line, rgba(255, 255, 255, 0.12));
+}
+.un-hub-pl-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.un-hub-pl-quick-btn {
+  font: 500 12px/1.2 var(--un-font, Roboto, Arial, sans-serif);
+  padding: 5px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--un-hub-line, rgba(255, 255, 255, 0.15));
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--yt-spec-text-primary, var(--un-yt-text));
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.un-hub-pl-quick-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.un-hub-pl-quick-btn.ghost {
+  border-color: var(--un-hub-line);
+  background: transparent;
+  color: var(--un-hub-text-2);
+}
+.un-hub-pl-quick-btn.ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.un-hub-hint.scan {
+  font-size: 10.5px;
+  opacity: 0.85;
+  padding-top: 6px;
+}
+.un-hub-hint a {
+  color: var(--un-link);
+  text-decoration: none;
+}
+.un-hub-hint a:hover {
+  text-decoration: underline;
+}
+.un-hub-divider {
+  height: 1px;
+  margin: 10px 6px 2px;
+  background: var(--un-hub-line);
+}
+
+/* Legacy bottom sidebar blocks — hidden when hub is active */
+#un-sub-guide,
+#un-plf-guide {
+  display: none !important;
+}
+
+/* Full-height slide-out panel — subscription groups only */
+#un-hub-panel {
+  position: fixed;
+  inset: 0;
+  z-index: var(--un-z-hub-panel, 2147483000);
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+#un-hub-panel[hidden] {
+  display: none !important;
+}
+#un-hub-panel.open {
+  pointer-events: auto;
+}
+.un-hub-panel-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.58);
+  cursor: pointer;
+  animation: un-hub-fade-in 0.2s ease;
+}
+.un-hub-panel-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(440px, 94vw);
+  max-width: 100%;
+  height: 100%;
+  background: var(--un-yt-bg, #0f0f0f);
+  border-left: 1px solid color-mix(in srgb, var(--un-accent) 18%, transparent);
+  box-shadow: var(--un-shadow, -16px 0 48px rgba(0, 0, 0, 0.5));
+  animation: un-hub-slide-in 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes un-hub-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes un-hub-slide-in {
+  from { transform: translateX(100%); opacity: 0.6; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.un-hub-panel-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--un-hub-line);
+  flex: none;
+  background: transparent;
+}
+.un-hub-panel-head-text {
+  flex: 1;
+  min-width: 0;
+}
+.un-hub-panel-title {
+  margin: 0;
+  font: 600 18px/1.3 Roboto, Arial, sans-serif;
+  color: var(--yt-spec-text-primary, var(--un-yt-text));
+  word-break: break-word;
+}
+#un-hub-panel.subs .un-hub-panel-title {
+  color: var(--yt-spec-text-primary, var(--un-yt-text));
+}
+.un-hub-panel-new-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--un-txt);
+  background: #cc0000;
+  border-radius: 10px;
+  padding: 2px 7px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+.un-hub-panel-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--un-hub-text-2, var(--un-yt-text-dim));
+}
+.un-hub-panel-close {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--un-hub-line, rgba(255, 255, 255, 0.08));
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.un-hub-panel-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--un-txt);
+}
+.un-hub-panel-search-wrap {
+  flex: none;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--un-hub-line);
+}
+.un-hub-panel-search {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--un-hub-line, rgba(255, 255, 255, 0.15));
+  border-radius: 8px;
+  background: var(--un-hub-surface, rgba(255, 255, 255, 0.05));
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  font: 13.5px/1.35 Roboto, Arial, sans-serif;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.un-hub-panel-search:focus {
+  border-color: var(--un-link-text);
+  box-shadow: 0 0 0 2px rgba(62, 166, 255, 0.2);
+}
+.un-hub-panel-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+}
+.un-hub-panel-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 8px;
+  border-radius: 10px;
+  transition: background 0.12s ease;
+}
+.un-hub-panel-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.un-hub-panel-item.has-new {
+  background: rgba(255, 255, 255, 0.04);
+}
+.un-hub-panel-item.has-new .un-hub-panel-link {
+  font-weight: 500;
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+}
+.un-hub-panel-avatar {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 12px/1 Roboto, Arial, sans-serif;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  overflow: hidden;
+}
+.un-hub-panel-avatar.un-hub-pop-avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 11px;
+}
+.un-chan-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.un-hub-panel-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #cc0000;
+  flex: none;
+}
+.un-hub-panel-link {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  font-size: 13.5px;
+  text-decoration: none;
+}
+.un-hub-panel-link:hover {
+  color: var(--un-link-text);
+  text-decoration: underline;
+}
+.un-hub-panel-seen {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--un-forge);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 0.12s, color 0.12s;
+}
+.un-hub-panel-seen:hover {
+  background: rgba(110, 231, 135, 0.15);
+}
+.un-hub-panel-rm {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: color 0.12s, background 0.12s;
+}
+.un-hub-panel-rm:hover {
+  color: var(--un-accent);
+  background: rgba(255, 90, 95, 0.15);
+}
+.un-hub-panel-empty {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--un-hub-text-2);
+  padding: 24px 12px;
+  text-align: center;
+}
+.un-hub-panel-actions {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 18px 20px;
+  border-top: 1px solid var(--un-hub-line);
+  background: var(--yt-spec-base-background, var(--un-yt-bg));
+}
+.un-hub-panel-btn {
+  flex: 1 1 auto;
+  min-width: 120px;
+  border: 0;
+  border-radius: 9px;
+  padding: 11px 14px;
+  font: 600 12.5px/1.2 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: filter 0.12s ease;
+}
+/* Same fix as the popover buttons above: theme tokens, so the panel's
+   buttons are visible on the light panel too (white overlays and a #e0e0e0
+   ghost label were invisible there). */
+.un-hub-panel-btn.primary,
+.un-hub-panel-btn.primary.pl {
+  background: var(--un-hub-tint-2);
+  color: var(--un-hub-text);
+  border: 1px solid var(--un-hub-text-2);
+}
+.un-hub-panel-btn.primary:hover {
+  background: var(--un-hub-hover);
+}
+.un-hub-panel-btn.ghost {
+  background: var(--un-hub-tint);
+  color: var(--un-hub-text);
+  border: 1px solid var(--un-hub-line);
+}
+.un-hub-panel-btn.ghost:hover {
+  background: var(--un-hub-hover);
+}
+.un-hub-inline-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--un-link-text);
+  cursor: pointer;
+  text-decoration: underline;
+}
+.un-hub-inline-link:hover {
+  opacity: 0.85;
+}
+
+/* Full-viewport video feed page — Suggested / News / Discover.
+ * Anchored below YouTube's own masthead (its --ytd-masthead-height custom
+ * property, with a 56px fallback matching its default) so it reads as a
+ * destination page rather than a dialog stacked on top of everything. */
+/* The feed page paints its OWN background, unlike the sidebar and the panel,
+   which sit on YouTube's. That makes the shared light-theme token fallbacks
+   above wrong here: when YouTube's --yt-spec-* variables do not resolve — which
+   is the live case on a channel page, measured, html carrying no [dark]
+   attribute and every yt-spec var reading "" — the background fell back to dark
+   var(--un-yt-bg) while --un-hub-text fell back to the light theme's var(--un-yt-bg) ink. The
+   page heading and every card title were painted black on black: present in the
+   DOM, invisible on screen, at 1.00:1 contrast.
+
+   So the feed page overrides the baseline to agree with the background it
+   actually paints. The html[dark] and prefers-color-scheme blocks above were
+   never wrong and still apply wherever they match. */
+#un-hub-feedpage {
+  --un-hub-text: var(--yt-spec-text-primary, #f1f1f1);
+  --un-hub-text-2: var(--yt-spec-text-secondary, #aaa);
+  --un-hub-line: var(--yt-spec-10-percent-layer, #272727);
+  --un-hub-hover: rgba(255, 255, 255, 0.08);
+  --un-hub-surface: var(--yt-spec-badge-chip-background, #1a1a1a);
+  --un-hub-tint: rgba(255, 255, 255, 0.04);
+  --un-hub-tint-2: rgba(255, 255, 255, 0.07);
+}
+#un-hub-feedpage {
+  position: fixed;
+  top: var(--ytd-masthead-height, 56px);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--un-z-feedpage, 2147483500);
+  overflow-y: auto;
+  background: var(--un-yt-bg, #0f0f0f);
+  color: var(--un-hub-text, var(--un-yt-text));
+  animation: unHubFadeIn 0.15s ease-out;
+}
+#un-hub-feedpage[hidden] {
+  display: none !important;
+}
+html.un-hub-feedpage-open {
+  overflow: hidden !important;
+}
+html.un-hub-feedpage-open ytd-app {
+  overflow: hidden !important;
+}
+
+/* ── Feed page header ── */
+.un-hub-feedpage-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 24px;
+  background: var(--un-yt-bg, #0f0f0f);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.un-hub-feedpage-head-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.un-hub-feedpage-back {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--un-hub-text, var(--un-yt-text));
+  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.un-hub-feedpage-back:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.un-hub-feedpage-head-text {
+  min-width: 0;
+}
+.un-hub-feedpage-title {
+  margin: 0;
+  font: 600 18px/1.3 'YouTube Sans', Roboto, Arial, sans-serif;
+  color: var(--un-hub-text, var(--un-yt-text));
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.un-hub-feedpage-sub {
+  display: block;
+  margin-top: 2px;
+  font: 400 12px/1.4 Roboto, Arial, sans-serif;
+  color: var(--un-hub-text-2, rgba(255, 255, 255, 0.5));
+}
+
+/* ── Feed toolbar (search + filters) ── */
+.un-hub-feedpage-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.un-hub-feedpage-search {
+  padding: 6px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--un-hub-text, var(--un-yt-text));
+  font: 13px Roboto, Arial, sans-serif;
+  width: 200px;
+  outline: none;
+  transition: border-color 0.15s ease, width 0.2s ease;
+}
+.un-hub-feedpage-search:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+  width: 240px;
+}
+.un-hub-feedpage-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.un-hub-feedpage-filter-pill {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  font: 500 13px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.un-hub-feedpage-filter-pill:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--un-txt);
+}
+.un-hub-feedpage-filter-pill.active {
+  background: var(--un-yt-text);
+  color: var(--un-yt-bg);
+  font-weight: 600;
+}
+
+/* ── Feed grid ── */
+.un-hub-feedpage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 32px 16px;
+  padding: 20px 24px 60px;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+/* ── Empty state ── */
+.un-hub-feedpage-empty {
+  grid-column: 1 / -1;
+  padding: 48px 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font: 14px/1.6 Roboto, Arial, sans-serif;
+  max-width: 480px;
+  margin: 60px auto;
+}
+.un-hub-feedpage-empty-icon {
+  font-size: 40px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+.un-hub-feedpage-empty-title {
+  font: 500 16px/1.4 Roboto, Arial, sans-serif;
+  color: var(--un-hub-text, var(--un-yt-text));
+  margin-bottom: 8px;
+}
+.un-hub-feedpage-empty-btn {
+  margin-top: 20px;
+  padding: 8px 20px;
+  border-radius: 18px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--un-link-text);
+  font: 500 13px Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.un-hub-feedpage-empty-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* ── Video cards (YouTube-native style) ── */
+.un-hub-feedpage-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+}
+.un-hub-feedpage-card:hover {
+  /* No transform — YouTube doesn't lift cards on hover */
+}
+.un-hub-feedpage-thumb-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+.un-hub-feedpage-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.un-hub-feedpage-card:hover .un-hub-feedpage-thumb {
+  /* YouTube doesn't scale thumbnails on hover */
+}
+
+/* Score badge — subtle inline, not garish overlay */
+.un-hub-feedpage-score {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  color: rgba(255, 255, 255, 0.9);
+  font: 500 11px/1.3 Roboto, Arial, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+/* ── Meta row below thumbnail ── */
+.un-hub-feedpage-meta-row {
+  display: flex;
+  gap: 12px;
+  padding-top: 12px;
+  min-width: 0;
+}
+.un-hub-feedpage-avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 13px Roboto, Arial, sans-serif;
+  color: rgba(255, 255, 255, 0.8);
+}
+.un-hub-feedpage-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.un-hub-feedpage-meta-text {
+  flex: 1;
+  min-width: 0;
+}
+.un-hub-feedpage-card-title {
+  font: 500 14px/1.4 Roboto, Arial, sans-serif;
+  color: var(--un-hub-text, var(--un-yt-text));
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.un-hub-feedpage-card-channel {
+  font: 400 12px/1.4 Roboto, Arial, sans-serif;
+  color: rgba(255, 255, 255, 0.55);
+}
+.un-hub-feedpage-card-channel:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+/* Two lines, not one. This carries the evidence behind the match badge — "You
+   watch this channel (7 videos) · Matches your interests: horror, stories" —
+   and clamping that to a single line truncated it to the half that says least.
+   The full set is on the title attribute for anything longer. */
+.un-hub-feedpage-card-reason {
+  font: 400 11px/1.4 Roboto, Arial, sans-serif;
+  color: rgba(62, 166, 255, 0.8);
+  margin-top: 3px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Quick-queue button ── */
+.un-hub-feedpage-quick-queue {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 0;
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--un-txt);
+  font: 600 11px Roboto, Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.12s ease;
+  z-index: 5;
+}
+.un-hub-feedpage-card:hover .un-hub-feedpage-quick-queue {
+  opacity: 1;
+}
+.un-hub-feedpage-quick-queue:hover {
+  background: rgba(0, 0, 0, 0.95);
+}
+
+@media (max-width: 768px) {
+  .un-hub-feedpage-grid {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+  .un-hub-feedpage-head {
+    padding: 10px 16px;
+  }
+  .un-hub-feedpage-toolbar {
+    width: 100%;
+  }
+  .un-hub-feedpage-search {
+    width: 100%;
+  }
+}
+
+/* Playlist Forge section in guide */
+.un-hub-forge {
+  padding: 0;
+  margin-top: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.un-hub-forge-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 500 14px/1.4 var(--un-font, Roboto, Arial, sans-serif);
+  letter-spacing: 0.01em;
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  padding: 8px 16px 4px 12px;
+}
+.un-hub-forge-ico {
+  color: var(--yt-spec-text-primary, var(--un-yt-text));
+  font-size: 14px;
+  opacity: 0.8;
+}
+.un-hub-forge-status {
+  font: var(--un-text-body, 12px)/1.35 var(--un-font, Roboto, Arial, sans-serif);
+  color: var(--yt-spec-text-secondary, var(--un-yt-text-dim));
+  padding: 0 16px 6px 12px;
+}
+.un-hub-forge-status.muted {
+  font-style: italic;
+}
+.un-hub-forge-sync {
+  font: var(--un-text-label, 11px)/1.3 var(--un-font, Roboto, Arial, sans-serif);
+  color: var(--yt-spec-text-disabled, #717171);
+  padding: 0 16px 8px 12px;
+}
+.un-hub-forge-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 8px;
+}
+a.un-hub-forge-btn,
+button.un-hub-forge-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  font: 500 13px/1.2 var(--un-font, Roboto, Arial, sans-serif);
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+  background: var(--un-hub-hover, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--un-hub-line, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  padding: 8px 10px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+a.un-hub-forge-btn:hover,
+button.un-hub-forge-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+a.un-hub-forge-btn.primary,
+button.un-hub-forge-btn.primary {
+  background: var(--un-hub-hover, rgba(255, 255, 255, 0.08));
+  border-color: rgba(255, 255, 255, 0.18);
+  font-weight: 600;
+}
+a.un-hub-forge-btn.primary:hover,
+button.un-hub-forge-btn.primary:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .un-hub-dot,
+  .un-hub-popout,
+  .un-hub-panel-backdrop,
+  .un-hub-panel-sheet,
+  .un-hub-chev,
+  .un-hub-row,
+  .un-hub-row-main,
+  button.un-hub-row.simple,
+  .un-hub-chev-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Keyboard focus rings for the controls not already covered above. */
+.un-hub-pop-seen:focus-visible,
+.un-hub-pop-rm:focus-visible,
+.un-hub-panel-close:focus-visible,
+.un-hub-panel-seen:focus-visible,
+.un-hub-panel-rm:focus-visible,
+.un-hub-panel-btn:focus-visible,
+.un-hub-inline-link:focus-visible,
+button.un-hub-forge-btn:focus-visible {
+  outline: 2px solid var(--un-focus);
+  outline-offset: 2px;
+}
+
+.un-hub-brand-btn {
+  flex: none;
+  margin-left: auto;
+  border: 1px solid var(--un-hub-line, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  padding: 3px 9px;
+  font: 500 12px/1.2 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  background: var(--un-hub-hover, rgba(255, 255, 255, 0.06));
+  /* --un-hub-text, not a raw --yt-spec fallback: the literal var(--un-yt-text) here
+     resolved to near-white on YouTube's light theme (1.13:1, invisible).
+     --un-hub-text already flips dark/light with the theme like every other
+     row in this panel. */
+  color: var(--un-hub-text, var(--un-yt-bg));
+  transition: background 0.12s ease;
+}
+.un-hub-brand-btn:hover {
+  background: var(--un-hub-hover-strong, rgba(127, 127, 127, 0.18));
+}
+.un-hub-panel-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: none;
+  margin-left: auto;
+}
+.un-hub-panel-chip {
+  border: 0;
+  border-radius: 10px;
+  padding: 4px 9px;
+  font: 600 11px/1.2 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  background: var(--un-hub-tint-2);
+  color: var(--un-hub-text-2);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.un-hub-panel-chip.on {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--yt-spec-text-primary, var(--un-hub-text));
+}
+.un-hub-panel-chip-hint {
+  font-size: 11px;
+  color: var(--un-hub-text-2);
+}
+.un-hub-panel-newgroup,
+.un-hub-panel-manualadd {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex: 1 1 100%;
+}
+.un-hub-panel-newgroup-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--un-hub-line);
+  border-radius: 8px;
+  background: var(--un-hub-surface);
+  color: var(--un-hub-text);
+  font: 13px/1.3 Roboto, Arial, sans-serif;
+  padding: 7px 10px;
+}
+.un-hub-brand-btn.pl {
+  background: var(--un-hub-hover, rgba(255, 255, 255, 0.06));
+  color: var(--yt-spec-text-primary, var(--un-yt-text));
+  border-color: var(--un-hub-line, rgba(255, 255, 255, 0.12));
+}
+.un-hub-brand-btn.pl:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+.un-hub-panel-chip.pl.on {
+  background: rgba(110, 181, 255, 0.28);
+  color: var(--un-hub-on-text-pl);
+}
+.un-hub-panel-plthumb {
+  flex: none;
+  width: 48px;
+  height: 27px;
+  border-radius: 4px;
+  background: var(--un-hub-surface);
+  overflow: hidden;
+  display: block;
+}
+.un-hub-panel-plthumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.un-hub-panel-plmeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.un-hub-panel-plcount {
+  font-size: 11px;
+  color: var(--un-hub-text-2);
+}
+.un-hub-panel-pin {
+  flex: none;
+  border: 0;
+  background: transparent;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  opacity: 0.4;
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+.un-hub-panel-pin.on {
+  opacity: 1;
+}
+.un-hub-panel-pin:hover {
+  background: rgba(110, 181, 255, 0.15);
+}
+.un-hub-panel-error-banner {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--un-accent-light);
+  background: rgba(255, 90, 95, 0.1);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+/* ---- Panel Segmented Tabs & Filters ---- */
+.un-hub-panel-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 18px 0;
+  border-bottom: 1px solid var(--un-hub-line);
+  background: var(--un-hub-surface-2, rgba(255, 255, 255, 0.02));
+}
+.un-hub-panel-tab {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--un-hub-text-2);
+  font: 700 13px/1.3 Roboto, Arial, sans-serif;
+  padding: 9px 12px 10px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  border-radius: 6px 6px 0 0;
+  text-align: center;
+}
+.un-hub-panel-tab:hover {
+  color: var(--un-hub-text);
+  background: rgba(255, 255, 255, 0.04);
+}
+.un-hub-panel-tab.active {
+  color: var(--un-accent-light, var(--un-accent-light));
+  border-bottom-color: var(--un-accent);
+  background: rgba(255, 90, 95, 0.08);
+}
+#un-hub-panel.pl .un-hub-panel-tab.active {
+  color: var(--un-hub-pl-accent, var(--un-link));
+  border-bottom-color: var(--un-hub-pl-accent, var(--un-link));
+  background: rgba(110, 181, 255, 0.08);
+}
+
+.un-hub-panel-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-bottom: 1px solid var(--un-hub-line);
+  background: rgba(0, 0, 0, 0.15);
+}
+.un-hub-filter-pill {
+  border: 1px solid var(--un-hub-line);
+  border-radius: 12px;
+  background: var(--un-hub-tint-2, rgba(255, 255, 255, 0.05));
+  color: var(--un-hub-text-2);
+  font: 600 11.5px/1.2 Roboto, Arial, sans-serif;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.un-hub-filter-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--un-hub-text);
+}
+.un-hub-filter-pill.active {
+  background: rgba(255, 90, 95, 0.25);
+  border-color: rgba(255, 90, 95, 0.5);
+  color: var(--un-hub-on-text, var(--un-txt));
+  font-weight: 700;
+}
+#un-hub-panel.pl .un-hub-filter-pill.active {
+  background: rgba(110, 181, 255, 0.25);
+  border-color: rgba(110, 181, 255, 0.5);
+  color: var(--un-hub-on-text-pl, var(--un-txt));
+}
+
+.un-hub-panel-section-title {
+  font: 700 11px/1.3 Roboto, Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--un-accent-light, var(--un-accent-light));
+  padding: 12px 6px 6px;
+  border-top: 1px dashed var(--un-hub-line);
+  margin-top: 10px;
+}
+#un-hub-panel.pl .un-hub-panel-section-title {
+  color: var(--un-hub-pl-accent, var(--un-link));
+}
+
+.un-hub-panel-quick-add {
+  padding: 8px 6px;
+}
+
+/* Item details & Action buttons */
+.un-hub-panel-item-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.un-hub-panel-item-sub {
+  font-size: 11px;
+  color: var(--un-hub-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+.un-hub-panel-add-btn {
+  flex: none;
+  border: 1px solid rgba(255, 90, 95, 0.4);
+  border-radius: 8px;
+  background: rgba(255, 90, 95, 0.16);
+  color: var(--un-accent-light, var(--un-accent-light));
+  font: 700 12px/1.2 Roboto, Arial, sans-serif;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.un-hub-panel-add-btn:hover {
+  background: rgba(255, 90, 95, 0.32);
+  color: var(--un-txt);
+  border-color: var(--un-accent);
+  transform: scale(1.02);
+}
+#un-hub-panel.pl .un-hub-panel-add-btn {
+  border-color: rgba(110, 181, 255, 0.4);
+  background: rgba(110, 181, 255, 0.16);
+  color: var(--un-hub-pl-accent, var(--un-link));
+}
+#un-hub-panel.pl .un-hub-panel-add-btn:hover {
+  background: rgba(110, 181, 255, 0.32);
+  border-color: var(--un-link);
+}
+
+.un-hub-panel-added-btn {
+  flex: none;
+  border: 1px solid rgba(110, 231, 135, 0.35);
+  border-radius: 8px;
+  background: rgba(110, 231, 135, 0.14);
+  color: var(--un-forge);
+  font: 700 12px/1.2 Roboto, Arial, sans-serif;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.un-hub-panel-added-btn:hover {
+  background: rgba(255, 90, 95, 0.2);
+  border-color: rgba(255, 90, 95, 0.4);
+  color: var(--un-accent-light);
+}
+
+/* Popout improvements */
+.un-hub-pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.un-hub-pop-head-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.un-hub-pop-add-btn {
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 90, 95, 0.2);
+  color: var(--un-accent-light, var(--un-accent-light));
+  font: 700 11px/1.2 Roboto, Arial, sans-serif;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+  flex: none;
+}
+.un-hub-pop-add-btn:hover {
+  background: rgba(255, 90, 95, 0.35);
+  color: var(--un-txt);
+}
+.un-hub-pop-search-wrap {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--un-hub-line);
+}
+.un-hub-pop-search {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--un-hub-line);
+  border-radius: 6px;
+  background: var(--un-hub-surface);
+  color: var(--un-hub-text);
+  font: 12px/1.2 Roboto, Arial, sans-serif;
+  padding: 5px 8px;
+  outline: none;
+}
+.un-hub-pop-search:focus {
+  border-color: var(--un-accent-light);
+}
+
+
+/* Disabled state. Several hub buttons set disabled=true while refreshing,
+   but nothing styled it, so "Refreshing…" kept a pointer cursor and full
+   saturation and still looked clickable. */
+.un-hub-panel-btn:disabled,
+.un-hub-pop-btn:disabled,
+.un-hub-brand-btn:disabled,
+.un-hub-panel-add-btn:disabled,
+.un-hub-pop-add-btn:disabled,
+.un-hub-forge-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* The quick-queue button is revealed on card hover; without this a keyboard
+   user tabs onto a button they cannot see. */
+.un-hub-feedpage-card:focus-within .un-hub-feedpage-quick-queue,
+.un-hub-feedpage-quick-queue:focus-visible {
+  opacity: 1;
+}
+
+/* ── Catch-up digest controls ──
+   A second toolbar row on the shared feed page, shown only for the catch-up
+   kind (the other kinds have no day window to set). Sits on its own line
+   rather than folding into .un-hub-feedpage-toolbar so the search field does
+   not get squeezed to nothing on a narrow window. */
+.un-hub-catchup-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  padding-top: 10px;
+  margin-top: 2px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+.un-hub-catchup-bar[hidden] {
+  display: none;
+}
+.un-hub-catchup-label {
+  font: 500 12px/1 Roboto, Arial, sans-serif;
+  color: var(--un-hub-text-2, rgba(255, 255, 255, 0.5));
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.un-hub-catchup-days {
+  display: flex;
+  gap: 4px;
+}
+.un-hub-catchup-day {
+  padding: 5px 11px;
+  border: none;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+  font: 500 12px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.un-hub-catchup-day:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--un-txt);
+}
+.un-hub-catchup-day.active {
+  background: var(--un-yt-text);
+  color: var(--un-yt-bg);
+  font-weight: 600;
+}
+.un-hub-catchup-shorts {
+  padding: 5px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 7px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font: 500 12px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+.un-hub-catchup-shorts:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--un-txt);
+}
+.un-hub-catchup-shorts.active {
+  border-color: rgba(255, 255, 255, 0.55);
+  color: var(--un-txt);
+}
+.un-hub-catchup-spacer {
+  flex: 1 1 auto;
+}
+.un-hub-catchup-fill {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 7px;
+  background: var(--un-yt-text);
+  color: var(--un-yt-bg);
+  font: 600 12px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: opacity 0.12s ease;
+}
+.un-hub-catchup-fill:hover {
+  opacity: 0.85;
+}
+.un-hub-catchup-fill:disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ── Feed-page card: duration, members badge, stats line ──
+   These pages showed a thumbnail, a title and a channel and nothing else — no
+   way to tell a 40-second clip from a two-hour stream, a fresh upload from a
+   five-year-old one, or 300 views from 3 million. All three were already on the
+   tiles being scraped and were simply discarded. */
+
+/* Bottom-LEFT on purpose: .un-hub-feedpage-score already owns bottom-right, and
+   two badges in one corner is the exact collision that put the select button on
+   top of YouTube's duration elsewhere in this codebase. */
+.un-hub-feedpage-duration {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--un-on-plate); /* fixed: the plate is dark in both themes (design-tokens.css) */
+  font: 600 11px/1.3 Roboto, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* Top-left, clear of both bottom badges. Tinted rather than neutral because it
+   is a warning, not a statistic: the video looks ordinary until it paywalls. */
+.un-hub-feedpage-members {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(46, 26, 10, 0.92);
+  border: 1px solid rgba(240, 160, 60, 0.55);
+  color: #f0c07a;
+  font: 600 10px/1.3 Roboto, Arial, sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.un-hub-feedpage-card-stats {
+  margin-top: 2px;
+  color: var(--yt-spec-text-secondary, #9a9a9a);
+  font: 500 11.5px/1.3 Roboto, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Divides the one-of-many views above from the stacking toggles below, so the
+   menu does not read as one long list of mutually exclusive choices. */
+.un-home-menu-sep {
+  height: 1px;
+  margin: 6px 4px;
+  /* Adapter token, not --yt-spec-*: that never resolves from the extension,
+     so this was always white at 12% and invisible on the light menu. */
+  background: var(--un-yt-line);
+}
+
+/* ── Feed-page card: dismiss actions and creator link ──
+   +Q was the only thing you could do with a recommendation, so the only
+   response to a bad one was to ignore it — and the taste profile cannot tell
+   "not interested" from "not seen yet", so ignoring taught it nothing and the
+   same video came back. These are the negative signal.
+
+   Stacked UNDER +Q (top:8px, 28px tall, 4px gap) rather than beside it: the
+   members-only badge already owns top-left and the duration owns bottom-left,
+   so the right edge is the only free column. */
+.un-hub-feedpage-acts {
+  position: absolute;
+  top: 40px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  z-index: 2;
+}
+.un-hub-feedpage-card:hover .un-hub-feedpage-acts,
+.un-hub-feedpage-acts:focus-within {
+  opacity: 1;
+}
+.un-hub-feedpage-act {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 0;
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--un-txt);
+  font: 600 13px/1 Roboto, Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.un-hub-feedpage-act:hover {
+  background: rgba(255, 90, 95, 0.9);
+  color: #0b0b0b;
+}
+.un-hub-feedpage-act:focus-visible {
+  outline: 2px solid var(--un-accent);
+  outline-offset: 1px;
+}
+
+/* The creator, reachable. It was plain text before — the card named who made
+   the video but gave you no way to go and see more of it. A button rather than
+   an <a> because the whole card is already a link to the video, and nesting
+   anchors is invalid HTML that browsers unnest unpredictably. */
+.un-hub-feedpage-channel-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.un-hub-feedpage-channel-link:hover {
+  color: var(--yt-spec-text-primary, var(--un-yt-text));
+  text-decoration: underline;
+}
+.un-hub-feedpage-channel-link:focus-visible {
+  outline: 2px solid var(--un-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* ---- one icon set (2026-09-23) ------------------------------------------
+   Line icons at YouTube's own guide weight, drawn as masks so they take the
+   row's text colour in both themes. Replaces emoji (👍 📰 🕒) and text glyphs
+   (✦ ★ ☰ ⏱) that put three visual languages in one list (DESIGN-STANDARD §11). */
+.un-hub-row-ico[data-ico] {
+  width: 20px;
+  height: 20px;
+  margin: 0 2px;
+  opacity: 1;
+  background: currentColor;
+  -webkit-mask: var(--un-hub-ico) center / 20px 20px no-repeat;
+  mask: var(--un-hub-ico) center / 20px 20px no-repeat;
+}
+.un-hub-row-ico[data-ico="subs"] { --un-hub-ico: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linejoin='round'><rect x='3' y='6' width='18' height='14' rx='2'/><path d='M6 3h12M10.5 10.5v6l4.5-3z'/></svg>"); }
+.un-hub-row-ico[data-ico="suggest"] { --un-hub-ico: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linejoin='round'><path d='M12 3l2.3 5.6 6 .5-4.6 3.9 1.4 5.9L12 15.8 6.9 18.9l1.4-5.9-4.6-3.9 6-.5z'/></svg>"); }
+.un-hub-row-ico[data-ico="news"] { --un-hub-ico: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linejoin='round' stroke-linecap='round'><rect x='3' y='4' width='18' height='16' rx='2'/><path d='M7 8h6v5H7zM15.5 8.5H17M15.5 12H17M7 16.5h10'/></svg>"); }
+.un-hub-row-ico[data-ico="discover"] { --un-hub-ico: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M15.5 8.5l-2 5-5 2 2-5z'/></svg>"); }
+.un-hub-row-ico[data-ico="history"] { --un-hub-ico: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M3.5 12a8.5 8.5 0 1 0 2.5-6M3.5 4.5V9H8M12 7.5V12l3 2'/></svg>"); }
+.un-hub-row-ico[data-ico="liked"] { --un-hub-ico: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linejoin='round'><path d='M7.5 10.5v9.5H4v-9.5zM7.5 10.5L11 3.5c1.6 0 2.6 1.3 2.2 2.9l-.9 3.6h5.9c1.2 0 2.1 1.1 1.8 2.3l-1.6 6.3c-.2.8-.9 1.4-1.8 1.4H7.5'/></svg>"); }
+.un-hub-row-ico[data-ico="later"] { --un-hub-ico: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'><circle cx='12' cy='12' r='9'/><path d='M12 7v5l3.5 2'/></svg>"); }
+.un-hub-row-ico[data-ico="list"] { --un-hub-ico: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'><path d='M4 6h16M4 12h16M4 18h10'/></svg>"); }
+
+/* ---- empty states: a line, not a box (2026-09-23) -----------------------
+   Two dashed boxes of 11px centred text sat in the guide on every page,
+   restating the "＋ Add" buttons in the section headers above them. What is
+   missing is worth one quiet line aligned with the row labels. */
+.un-hub-hint.empty,
+.un-hub-hint.empty.pl {
+  margin: 0;
+  padding: 2px 12px 10px 46px;
+  border: 0;
+  background: none;
+  border-radius: 0;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.un-hub-hint.empty b { font-weight: 500; }
+.un-hub-pl-empty-actions { justify-content: flex-start; margin-top: 6px; }

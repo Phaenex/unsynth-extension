@@ -1,0 +1,46 @@
+/*
+ * The completion sentence on a channel page header.
+ *
+ * Deliberately quiet: this sits inside YouTube's own header beside the handle
+ * and video count, and a loud chip there reads as an ad rather than as a fact
+ * about your own watching.
+ *
+ * COLOUR: THREE WRONG ANSWERS BEFORE THIS ONE, ALL CAUGHT BY MEASURING
+ *   1. `html:not([dark])` as the light selector — matched the LIGHT page and
+ *      applied a dark-background colour to it. Inverted.
+ *   2. `var(--yt-spec-text-secondary, …)` — none of the --yt-spec-* variables
+ *      are defined on the channel page, so BOTH themes hit the fallback.
+ *      Measured 1.95:1 on light, under the 4.5:1 floor.
+ *   3. `color: inherit` — the header info block inherits WHITE (its description
+ *      child computes rgb(255,255,255) in both themes), giving 1.00:1 on light.
+ *      White on white, while every existence assertion still passed.
+ *
+ * What is actually true, measured live 2026-09-14 on a real channel page: the
+ * sibling metadata line (handle · video count) computes rgb(96,96,96) on light
+ * and rgb(170,170,170) on dark, switching on the [dark] attribute. This text is
+ * the same kind of thing sitting in the same row, so it takes the same two
+ * values rather than inventing a third or trying to derive one.
+ */
+.un-cc-header {
+  margin-top: 4px;
+  font-size: 1.2rem;
+  line-height: 1.6rem;
+  /* Light is the base, matching how core.css and dislike-restore.css handle
+     this, because a light page carries no theme marker to select on. */
+  color: var(--un-yt-meta-light);
+  /* The header is a flex row in some generations; a full-width block keeps the
+     sentence on its own line instead of squeezing it beside the video count. */
+  flex-basis: 100%;
+  cursor: default;
+}
+
+/*
+ * Dark only. NOTE the absent selector: html[darker-dark-theme] was tried and is
+ * WRONG — that attribute is present on a LIGHT page too (measured in the live
+ * attribute list), so it matched always and painted the dark colour over both
+ * themes, giving 2.32:1 on light. [dark] is the attribute that actually toggles.
+ */
+html[dark] .un-cc-header,
+[dark] .un-cc-header {
+  color: var(--un-yt-meta-dark);
+}

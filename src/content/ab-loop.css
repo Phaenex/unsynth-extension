@@ -1,0 +1,53 @@
+.un-abl-panel {
+  position: absolute;
+  top: 48px;
+  right: 8px;
+  z-index: 60;
+  max-width: 220px;
+  background: rgba(20, 20, 20, 0.95);
+  color: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.un-abl-status {
+  margin-bottom: 8px;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+.un-abl-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.un-abl-btn {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.un-abl-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.un-abl-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.un-abl-toggle {
+  background: rgba(255, 90, 95, 0.35);
+}
+
+.un-abl-close {
+  opacity: 0.7;
+}

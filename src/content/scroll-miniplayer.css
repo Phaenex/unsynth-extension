@@ -1,0 +1,263 @@
+/* Scroll dock — CSS-only: #movie_player itself gets fixed-positioned into
+   the corner, never reparented (see scroll-miniplayer.js's file header for
+   why). These bottom-right values are only the STATIC FALLBACK: the real
+   default anchors the box's right edge to the primary column's right edge,
+   which lands it in the empty band between the comment text and the
+   suggestions rail (measured live — see defaultDockPos() in the JS). That
+   edge can't be known in CSS, so the corner is the closest static
+   approximation. The user can drag it anywhere via the top strip, and the
+   last position is remembered. Size values must stay in sync with
+   DOCK_W/DOCK_H/DOCK_BOTTOM_GAP over there: JS only applies its inline
+   position one frame later, so a mismatch shows up as a visible jump on
+   every dock. JS overrides with
+   `element.style.setProperty('top'/'left', ..., 'important')` once a
+   specific (dragged or restored) position is known — an inline !important
+   rule correctly beats an author-stylesheet !important rule per the CSS
+   cascade, so this file's bottom/right defaults only apply until JS sets
+   something more specific. !important also overrides YouTube's own inline
+   sizing on the player itself. */
+.un-mini-docked-player {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 16px !important;
+  left: auto !important;
+  width: 320px !important;
+  height: 180px !important;
+  max-width: 320px !important;
+  max-height: 180px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  background: #000 !important;
+  z-index: var(--un-z-miniplayer, 2147483000) !important;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transform: translateZ(0) !important;
+  isolation: isolate;
+}
+/* Resizing #movie_player via CSS alone doesn't trigger YouTube's own resize
+   logic — confirmed live, the inner <video> and its wrapper keep their
+   original explicit inline pixel size (e.g. width:880px;height:495px;
+   left:0;top:0) set at construction time, so without this the docked box
+   would show only an unscaled top-left crop of the full-size frame instead
+   of the whole video shrunk to fit. !important here correctly beats the
+   inline style (non-important inline styles lose to !important stylesheet
+   rules per the CSS cascade). */
+/* #player-container (position:absolute, no z-index of its own) traps the
+   paint/stacking order of everything nested inside it — confirmed live by
+   binary-searching the ancestor chain: a trivial fixed+huge-z-index box
+   loses to unrelated normal-flow sidebar content when appended anywhere
+   inside #player-container, but wins immediately once appended to
+   #player-container-inner or shallower. #movie_player can't be moved past
+   this boundary (that's the same reparenting this file's header explains is
+   unsafe), but simply making #player-container itself establish a stacking
+   context — no DOM structure change, no risk to YouTube's own
+   player-construction or SPA logic — raises its entire subtree (including
+   the docked player) so it correctly out-ranks the sidebar. Scoped to only
+   apply while actually docked. See the rule body for why that takes an
+   explicit position AND !important, not just a z-index. */
+html.un-mini-docked #player-container,
+html.un-mini-docked #player-container-inner,
+html.un-mini-docked #player-container-outer,
+html.un-mini-docked #player-full-bleed-container,
+html.un-mini-docked #full-bleed-container {
+  /* Every wrapper between #movie_player and ytd-watch-flexy is listed, because
+     YouTube uses TWO different ancestor paths and the docked player has to win
+     on both. Measured live at 2185x1017:
+
+       default layout : #player-container > #player-container-inner
+                        > #player-container-outer > #player > #primary-inner
+                        > #primary > #columns > ytd-watch-flexy
+       theater layout : #player-container > #player-full-bleed-container
+                        > #full-bleed-container > ytd-watch-flexy
+
+     The first fix for "the mini player when scrolling is behind things and
+     cant be clicked on" raised only #player-container. That is the sole
+     positioned ancestor on the default path, so it looked sufficient and
+     passed at 1280x720 — but it left the theater path's two full-bleed
+     wrappers static with z-index auto. A raised element whose own parents are
+     static still resolves inside ytd-watch-flexy's stacking context, and the
+     comment/suggestion renderers are LATER siblings there, so at an equal
+     effective z-index they win on DOM order. Measured in exactly that state,
+     with #player-container correctly reading Z=2147483000@relative:
+       elementFromPoint(centre)      -> div.ytLockupViewModelMetadata
+       elementFromPoint(top-left)    -> span.ytAttributedStringHost (comment TEXT)
+       elementFromPoint(bottom-left) -> div.ytLockupViewModelMetadata
+     Raising either full-bleed wrapper took the failing-point count 3 -> 0.
+     Raising the whole chain is what makes it hold on both paths, and on
+     whichever path a future YouTube layout picks from these ids.
+
+     'position' — z-index is ignored outright on a static element, and these
+     wrappers ARE static by default, so the position is not optional here.
+     'relative' keeps every one of them exactly where it already sits (they are
+     plain blocks in normal flow) while making it establish a stacking context.
+     A wrapper that is absent from the current layout simply matches nothing.
+
+     '!important' — YouTube's own selectors carry an extra class
+     (e.g. '#player-container.style-scope.ytd-watch-flexy', specificity 0,2,1)
+     and so outrank 'html.un-mini-docked #player-container' (0,2,0). Measured:
+     with these declarations unflagged, an injected static rule at YouTube's
+     specificity won and the dock stayed unclickable; flagged, position
+     resolved to relative and every probe point hit the player again. Same
+     specificity-collision failure mode as .fig-narrow losing to figure.fig.
+
+     Scoped to .un-mini-docked so none of it applies unless actually docked. */
+  position: relative !important;
+  z-index: var(--un-z-miniplayer, 2147483000) !important;
+}
+
+
+.un-mini-docked-player .html5-video-container,
+.un-mini-docked-player video.html5-main-video {
+  width: 100% !important;
+  height: 100% !important;
+  left: 0 !important;
+  top: 0 !important;
+}
+.un-mini-docked-player video.html5-main-video {
+  object-fit: contain;
+}
+/* Volume Master's own overlay bar (mute/slider/EQ presets: Smart, Bass,
+   Vocal, Treble, Night, Mono, Off) is sized for the full-width player —
+   confirmed live it overflows the docked box and gets clipped
+   mid-button ("Vocal" cut down to "Vo"). Hidden while docked rather than
+   trying to cram a 7-button EQ picker into a mini player — matches how
+   real compact/mini players show only essential controls, not a full
+   settings row. The player's own controls (play/pause, volume, all of
+   Unsynth's other player buttons) are unaffected — this only targets
+   Volume Master's separate overlay element. */
+.un-mini-docked-player .un-vol-inline--overlay {
+  display: none !important;
+}
+
+/* Draggable top strip + expand/close controls — a separate fixed overlay
+   aligned to the top edge of the docked player's rect (not a child of it,
+   so it never risks touching YouTube's own managed subtree). Sized to just
+   the top ~32px, not the whole height of the box, so it doesn't intercept
+   clicks meant for the video/controls beneath it — only this strip is
+   draggable. Position is kept in sync with the player's by JS on every
+   move (see scroll-miniplayer.js, setDockPosition()). Hover-to-reveal is
+   driven by JS mouseenter/mouseleave on the player itself (see tryDock()),
+   since this overlay no longer shares a common ancestor with the player to
+   use a pure CSS :hover selector. */
+.un-mini-dock-bar {
+  position: fixed;
+  bottom: calc(24px + 180px - 36px);
+  right: 16px;
+  left: auto;
+  width: 320px;
+  height: 36px;
+  z-index: 2147483001;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+  cursor: grab;
+  touch-action: none;
+}
+.un-mini-dock-bar--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.un-mini-dock-bar--dragging {
+  opacity: 1;
+  cursor: grabbing;
+}
+.un-mini-dock-bar button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.un-mini-dock-bar button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.06);
+}
+.un-mini-dock-bar button:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: 2px;
+}
+
+/* Resize grabber — a small fixed corner handle tracking the docked box's
+   bottom-right, same "separate overlay, positioned in sync by JS" approach
+   as the drag bar above, for the same reason (no shared ancestor with the
+   player to hang a CSS-only corner off of). Locked to the video's 16:9
+   aspect ratio (see scroll-miniplayer.js, startResize()) so resizing never
+   letterboxes/stretches the picture. */
+.un-mini-resize-handle {
+  position: fixed;
+  width: 28px;
+  height: 28px;
+  z-index: 2147483001;
+  border-radius: 0 0 10px 0;
+  background: linear-gradient(135deg, transparent 50%, rgba(0, 0, 0, 0.55) 50%);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+.un-mini-resize-handle::after {
+  content: '';
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 9px;
+  height: 9px;
+  background-image: repeating-linear-gradient(
+    135deg,
+    #fff 0,
+    #fff 1.5px,
+    transparent 1.5px,
+    transparent 4px
+  );
+}
+.un-mini-resize-handle--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.un-mini-resize-handle--dragging {
+  opacity: 1;
+}
+
+/* Manual player-bar toggle button. */
+.un-mini-btn {
+  padding: 0 6px;
+}
+
+
+/* The dock bar and resize handle fade in on mouseenter. Keyboard focus has
+   to reveal them too, otherwise the expand/close buttons are focusable but
+   invisible. */
+.un-mini-dock:focus-within .un-mini-dock-bar,
+.un-mini-dock-bar:focus-within,
+.un-mini-dock:focus-within .un-mini-resize-handle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Reduced motion (WCAG 2.3.3): keep the colour feedback, drop the transform.
+   A button that changes colour on press still confirms the press; one that
+   moves under the pointer is the part worth removing. */
+@media (prefers-reduced-motion: reduce) {
+  .un-mini-dock-bar button {
+    transition: background 0.15s ease;
+  }
+}

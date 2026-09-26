@@ -1,0 +1,797 @@
+/* AI assistant.
+   Twelve of this surface 14 measured contrast failures were not twelve colour
+   mistakes: they were three always-dark tokens (--un-accent-light,
+   --un-forge-text, --un-forge-light) that had no light half, shared with five
+   other injected stylesheets. Fixed in design-tokens.css rather than here.
+   The other two were a probe limitation — #0b0b0b on a coral GRADIENT is
+   6.45:1, reported as 1.03:1 because the audit could not sample a gradient and
+   fell through to the page ground. */
+/* ============================================================
+   Unsynth AI Assistant — watch-page slide-out panel
+   Uses shared design-tokens.css (loaded via manifest).
+   ============================================================ */
+.un-ai-root {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 2147483000;
+  font-family: var(--un-font);
+  color: var(--yt-spec-text-primary, var(--un-yt-text));
+}
+
+/* ---- toggle tab ---- */
+/* A masthead chip (.un-wft-btn carries the look); hidden until mountTab()
+   moves it into #un-synth-masthead-extra. The dot is the one brand mark it
+   keeps — coral, so "AI" reads as Unsynth's, not YouTube's. */
+.un-ai-root > .un-ai-tab {
+  display: none;
+}
+#un-synth-masthead-extra .un-ai-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.un-ai-tab-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--un-accent);
+  flex: none;
+}
+#un-synth-masthead-extra .un-ai-tab[aria-expanded="true"] {
+  background: var(--un-mb-on-bg, var(--un-yt-bg));
+  color: var(--un-mb-on-text, var(--un-yt-text));
+  border-color: var(--un-mb-on-bg, var(--un-yt-bg));
+}
+
+/* ---- panel shell ---- */
+.un-ai-panel {
+  position: fixed;
+  top: var(--ytd-masthead-height, 56px); /* below the masthead; see forge-link.css */
+  right: 0;
+  width: var(--un-ai-w, 380px);
+  height: calc(100vh - var(--ytd-masthead-height, 56px));
+  background: var(--un-yt-bg);
+  color: var(--yt-spec-text-primary, var(--un-yt-text));
+  border-left: 1px solid var(--yt-spec-10-percent-layer, var(--un-line-soft));
+  box-shadow: var(--un-shadow);
+  transform: translateX(100%);
+  transition: transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.un-ai-root.open .un-ai-panel {
+  transform: translateX(0);
+}
+
+/* ---- resize handle ---- */
+.un-ai-resize {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 5px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 5;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+.un-ai-resize::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 48px;
+  border-radius: 1px;
+  background: var(--yt-spec-10-percent-layer, var(--un-line));
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.un-ai-resize:hover,
+.un-ai-resize:active {
+  background: var(--un-accent-soft);
+}
+.un-ai-resize:hover::after,
+.un-ai-resize:active::after {
+  opacity: 1;
+  background: var(--un-accent);
+}
+
+/* ---- header ---- */
+.un-ai-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 14px 10px;
+  background: linear-gradient(165deg, rgba(255, 90, 95, 0.1) 0%, rgba(255, 90, 95, 0.02) 55%, transparent 100%);
+  border-bottom: 1px solid rgba(255, 90, 95, 0.12);
+  flex: none;
+}
+.un-ai-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.un-ai-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--un-accent);
+  box-shadow: 0 0 10px rgba(255, 90, 95, 0.6);
+  flex: none;
+}
+.un-ai-title {
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--un-accent-light, #ff8a8e);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.un-ai-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+.un-ai-collapse,
+.un-ai-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: var(--un-yt-raised);
+  border: 1px solid var(--un-line);
+  border-radius: var(--un-radius-sm);
+  color: var(--un-yt-text-dim);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.un-ai-collapse {
+  font-size: 20px;
+  font-weight: 600;
+}
+.un-ai-collapse:hover,
+.un-ai-close:hover {
+  background: var(--un-yt-raised-hover);
+  border-color: rgba(255, 90, 95, 0.35);
+  color: var(--un-yt-text);
+}
+
+/* ---- provider hint ---- */
+.un-ai-provider {
+  flex: none;
+  padding: 0 14px 10px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--un-yt-text-dim);
+  border-bottom: 1px solid var(--un-line-soft);
+}
+.un-ai-provider.un-ai-no-key {
+  color: #ff8a8e;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.un-ai-provider.un-ai-no-key:hover {
+  color: var(--un-accent);
+}
+
+/* ---- body wrap (collapsible) ---- */
+.un-ai-body-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 0 14px;
+  transition: opacity 0.15s ease;
+}
+.un-ai-panel.un-ai-collapsed .un-ai-body-wrap {
+  display: none;
+}
+.un-ai-panel.un-ai-collapsed .un-ai-provider {
+  border-bottom: 0;
+  padding-bottom: 12px;
+}
+
+/* ---- primary actions ---- */
+.un-ai-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px 0 10px;
+  flex: none;
+}
+.un-ai-btn {
+  background: var(--un-yt-raised);
+  color: var(--yt-spec-text-primary, var(--un-yt-text));
+  border: 1px solid var(--un-line-soft);
+  border-radius: var(--un-radius-sm);
+  padding: 9px 6px;
+  font: 600 12.5px/1.2 var(--un-font);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.un-ai-btn:hover {
+  background: var(--un-yt-raised-hover);
+  border-color: var(--un-line);
+}
+.un-ai-btn:active {
+  background: var(--un-accent-soft);
+  border-color: rgba(255, 90, 95, 0.35);
+}
+a.un-ai-forge,
+button.un-ai-forge {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  background: var(--un-forge-soft, rgba(110, 231, 135, 0.1));
+  color: var(--un-forge-text, #a8f5bc);
+  border: 1px solid color-mix(in srgb, var(--un-forge) 28%, transparent);
+  border-radius: var(--un-radius-sm);
+  padding: 9px 8px;
+  font: 600 var(--un-text-body, 12.5px)/1.2 var(--un-font);
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  cursor: pointer;
+}
+a.un-ai-forge:hover,
+button.un-ai-forge:hover {
+  background: color-mix(in srgb, var(--un-forge) 22%, transparent);
+  border-color: color-mix(in srgb, var(--un-forge) 45%, transparent);
+  color: var(--un-forge-light, #8ee9a8);
+}
+
+/* ---- toolbar ---- */
+.un-ai-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 8px;
+  flex: none;
+}
+.un-ai-tools {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.un-ai-tool {
+  background: transparent;
+  color: var(--un-yt-text-dim);
+  border: 1px solid var(--un-line);
+  border-radius: var(--un-radius-sm);
+  padding: 4px 9px;
+  font: 600 11px/1.3 var(--un-font);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+.un-ai-tool:hover {
+  color: var(--un-yt-text);
+  border-color: rgba(255, 90, 95, 0.35);
+  background: var(--un-accent-soft);
+}
+.un-ai-tx-meta {
+  font-size: 11px;
+  color: var(--un-yt-text-dim);
+  text-align: right;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---- prompt pills (dashboard preset style) ---- */
+.un-ai-prompts {
+  flex: none;
+  padding-bottom: 8px;
+}
+.un-ai-section-label {
+  display: block;
+  font-size: var(--un-text-label, 10.5px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--un-accent-light, var(--un-accent));
+  margin-bottom: 7px;
+}
+.un-ai-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.un-ai-pill {
+  background: var(--un-yt-raised);
+  color: var(--un-yt-text);
+  border: 1px solid var(--un-line);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font: 600 12px/1.3 var(--un-font);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+.un-ai-pill:hover {
+  border-color: var(--un-accent);
+  background: var(--un-accent-soft);
+  color: #fff;
+}
+
+/* ---- status ---- */
+.un-ai-status {
+  font-size: 12px;
+  color: #ff9a5f;
+  min-height: 16px;
+  margin-bottom: 6px;
+  flex: none;
+}
+.un-ai-root.un-busy .un-ai-status::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 7px;
+  border: 2px solid #ff9a5f;
+  border-top-color: transparent;
+  border-radius: 50%;
+  vertical-align: -1px;
+  animation: un-ai-spin 0.7s linear infinite;
+}
+
+/* ---- scrollable content ---- */
+.un-ai-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--un-line) transparent;
+}
+.un-ai-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.un-ai-scroll::-webkit-scrollbar-thumb {
+  background: var(--un-yt-raised);
+  border-radius: 3px;
+}
+
+.un-ai-output {
+  font-size: 13.5px;
+  line-height: 1.55;
+  flex: 0 1 auto;
+}
+/* A designed empty state, not a void. Before the first answer the panel was
+   quick prompts, 400px of nothing, then an input — nothing said what the
+   space was for. Pure CSS so it cannot drift from the output element. */
+.un-ai-output:empty::before {
+  content: 'Answers appear here. Pick a quick prompt above, or ask anything about this video.';
+  display: block;
+  padding: 18px 2px 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.62;
+}
+.un-ai-h {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--un-accent);
+  margin: 2px 0 8px;
+}
+.un-ai-hrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.un-ai-copy {
+  background: var(--un-yt-raised);
+  color: var(--un-yt-text-dim);
+  border: 1px solid var(--un-line);
+  border-radius: var(--un-radius-sm);
+  padding: 3px 10px;
+  font: 600 11px/1.3 var(--un-font);
+  cursor: pointer;
+  flex: none;
+  transition: border-color 0.12s, background 0.12s;
+}
+.un-ai-copy:hover {
+  border-color: var(--un-accent);
+  background: var(--un-accent-soft);
+}
+.un-ai-body {
+  white-space: pre-wrap;
+  background: var(--un-yt-raised);
+  border: 1px solid var(--un-line-soft);
+  border-radius: var(--un-radius-sm);
+  padding: 12px 13px;
+}
+.un-ai-structured {
+  white-space: normal;
+}
+.un-st-h {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--un-accent);
+  margin: 13px 0 6px;
+}
+.un-st-h:first-child {
+  margin-top: 0;
+}
+.un-st-ul {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+.un-st-ul li {
+  margin: 5px 0;
+  line-height: 1.5;
+}
+.un-st-p {
+  margin: 5px 0;
+  line-height: 1.5;
+}
+.un-ai-chapter {
+  padding: 8px 10px;
+  border: 1px solid var(--un-line-soft);
+  border-radius: var(--un-radius-sm);
+  background: var(--un-yt-raised);
+  margin-bottom: 6px;
+}
+.un-ch-title {
+  font-weight: 600;
+}
+.un-ch-sum {
+  color: var(--un-yt-text-dim);
+  font-size: 12.5px;
+  margin-top: 3px;
+  line-height: 1.45;
+}
+
+/* ---- chat bubbles ---- */
+.un-ai-chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 1 auto;
+}
+.un-ai-msg {
+  font-size: 13.5px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border-radius: var(--un-radius-sm);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 92%;
+}
+.un-ai-msg.un-user {
+  background: linear-gradient(135deg, rgba(255, 90, 95, 0.22) 0%, rgba(255, 90, 95, 0.12) 100%);
+  color: var(--un-yt-text);
+  border: 1px solid rgba(255, 90, 95, 0.28);
+  align-self: flex-end;
+  max-width: 88%;
+}
+.un-ai-msg.un-assistant {
+  position: relative;
+  background: var(--un-yt-raised);
+  border: 1px solid var(--un-line-soft);
+  align-self: flex-start;
+}
+.un-ai-msg-copy {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: var(--un-yt-raised-hover);
+  color: var(--un-yt-text-dim);
+  border: 1px solid var(--un-line);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font: 600 10px/1.3 var(--un-font);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s, border-color 0.12s;
+}
+.un-ai-msg.un-assistant:hover .un-ai-msg-copy {
+  opacity: 1;
+}
+.un-ai-msg-copy:hover {
+  color: var(--un-yt-text);
+  border-color: var(--un-accent);
+}
+/* Reveal the copy button for keyboard users too */
+.un-ai-msg.un-assistant:focus-within .un-ai-msg-copy {
+  opacity: 1;
+}
+/* Visible keyboard focus on all interactive panel controls */
+.un-ai-btn:focus-visible,
+.un-ai-pill:focus-visible,
+.un-ai-tool:focus-visible,
+.un-ai-send:focus-visible,
+.un-ai-stop:focus-visible,
+.un-ai-copy:focus-visible,
+.un-ai-msg-copy:focus-visible,
+.un-ai-collapse:focus-visible,
+.un-ai-close:focus-visible,
+.un-ai-tab:focus-visible,
+.un-ai-forge:focus-visible,
+.un-ai-provider:focus-visible,
+.un-ts:focus-visible,
+.un-wiki:focus-visible {
+  outline: 2px solid var(--un-accent);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .un-ai-msg-copy {
+    transition: none !important;
+  }
+}
+
+/* ---- inline links ---- */
+.un-ts {
+  background: rgba(138, 180, 248, 0.12);
+  color: #8ab4f8;
+  border: 1px solid rgba(138, 180, 248, 0.25);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+.un-ts:hover {
+  background: rgba(138, 180, 248, 0.22);
+}
+.un-wiki {
+  background: none;
+  border: 0;
+  border-bottom: 1px dashed #ff8d91;
+  color: #ff8d91;
+  padding: 0 1px;
+  font: inherit;
+  cursor: pointer;
+}
+.un-wiki:hover {
+  color: var(--un-accent);
+  border-bottom-color: var(--un-accent);
+}
+
+/* ---- input footer ---- */
+.un-ai-input-footer {
+  flex: none;
+  padding: 10px 0 14px;
+  border-top: 1px solid var(--un-line-soft);
+  background: linear-gradient(0deg, var(--un-yt-bg) 70%, transparent);
+}
+.un-ai-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.un-ai-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--un-yt-raised);
+  border: 1px solid var(--un-line);
+  border-radius: var(--un-radius-sm);
+  color: var(--yt-spec-text-primary, var(--un-yt-text));
+  padding: 10px 12px;
+  font: 13px/1.45 var(--un-font);
+  resize: none;
+  min-height: 42px;
+  max-height: 120px;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.un-ai-input::placeholder {
+  color: var(--un-yt-text-dim);
+}
+.un-ai-input:focus {
+  outline: none;
+  border-color: rgba(255, 90, 95, 0.45);
+  box-shadow: 0 0 0 2px var(--un-accent-soft);
+}
+.un-ai-send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  background: var(--un-accent);
+  color: #0b0b0b;
+  border: 0;
+  border-radius: var(--un-radius-sm);
+  cursor: pointer;
+  transition: filter 0.12s, transform 0.1s;
+}
+.un-ai-send:hover {
+  filter: brightness(1.06);
+}
+.un-ai-send:active {
+  transform: scale(0.96);
+}
+.un-ai-send-ico {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Stop button — replaces Send while a response streams */
+.un-ai-stop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  background: var(--un-yt-raised);
+  color: var(--un-accent-light, #ff8a8e);
+  border: 1px solid rgba(255, 90, 95, 0.45);
+  border-radius: var(--un-radius-sm);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.un-ai-stop:hover {
+  background: var(--un-accent-soft);
+  border-color: var(--un-accent);
+}
+.un-ai-stop-ico {
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* ---- disabled ---- */
+.un-ai-btn:disabled,
+.un-ai-pill:disabled,
+.un-ai-send:disabled,
+.un-ai-input:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ---- optional docked mode (#secondary slot) ---- */
+.un-ai-root.un-ai-docked {
+  position: relative;
+  top: auto;
+  right: auto;
+  z-index: auto;
+  margin-bottom: 12px;
+}
+.un-ai-root.un-ai-docked .un-ai-tab {
+  display: none;
+}
+.un-ai-root.un-ai-docked .un-ai-panel {
+  position: relative;
+  width: 100%;
+  height: auto;
+  min-height: 420px;
+  max-height: 70vh;
+  transform: none;
+  border: 1px solid var(--un-line-soft);
+  border-radius: var(--un-radius);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+}
+.un-ai-root.un-ai-docked.open .un-ai-panel {
+  transform: none;
+}
+
+/* ---- motion ---- */
+@keyframes un-ai-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .un-ai-tab,
+  .un-ai-panel,
+  .un-ai-body-wrap,
+  .un-ai-resize,
+  .un-ai-resize::after,
+  .un-ai-btn,
+  .un-ai-pill,
+  .un-ai-tool,
+  .un-ai-send,
+  .un-ai-input {
+    transition: none !important;
+  }
+  .un-ai-root.un-busy .un-ai-status::before {
+    animation: none;
+    border-top-color: #ff9a5f;
+    opacity: 0.7;
+  }
+  .un-ai-dot {
+    box-shadow: none;
+  }
+}
+
+/* ---- light theme: dashboard tokens do not belong on YouTube (2026-09-22) --
+   --un-line / --un-line-soft are the DASHBOARD's tokens: defined once, dark,
+   with no light half (design-tokens.css :root). Used here they drew near-black
+   borders on every button in a light AI tab (captured). Re-mapped for this
+   root only, keyed on YouTube's own [dark] attribute, so the dashboard is
+   untouched. */
+html:not([dark]) .un-ai-root {
+  --un-line: #d6d9e0;
+  --un-line-soft: #e6e8ed;
+}
+
+/* White on the pale accent tint is invisible in light theme — the rule was
+   authored on a dark page. Hover keeps the page's own ink. */
+.un-ai-pill:hover { color: var(--un-yt-text); }
+/* #ff9a5f is ~2:1 on white. Status text is information, not decoration. */
+html:not([dark]) .un-ai-status { color: #9a4a00; }
+
+/* ---- inside the side panel: one button language -----------------------
+   The tab mixed five treatments: outlined rectangles, a green slab, 11px
+   pills, a red uppercase label and a red square send button. One language
+   now: rounded buttons on the raised ground for actions, outlined pills for
+   prompts, sentence-case labels, and a send button in the page's own ink —
+   the accent is not "an AI thing", it is Unsynth's brand and a selected state. */
+.un-sp-body .un-ai-actions { gap: 8px; padding: 14px 0 12px; }
+.un-sp-body .un-ai-btn {
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  background: var(--un-yt-raised);
+  color: var(--un-yt-text);
+  font: 500 14px/1.2 var(--un-font, Roboto, Arial, sans-serif);
+}
+.un-sp-body .un-ai-btn:hover { background: var(--un-yt-raised-hover); border-color: var(--un-line); }
+.un-sp-body a.un-ai-forge,
+.un-sp-body button.un-ai-forge {
+  min-height: 36px;
+  border-radius: 18px;
+  background: transparent;
+  border: 1px solid var(--un-line);
+  color: var(--un-yt-text);
+  font: 500 14px/1.2 var(--un-font, Roboto, Arial, sans-serif);
+}
+.un-sp-body a.un-ai-forge:hover,
+.un-sp-body button.un-ai-forge:hover { background: var(--un-yt-raised-hover); color: var(--un-yt-text); border-color: var(--un-line); }
+.un-sp-body .un-ai-tool {
+  border-radius: 14px;
+  padding: 5px 11px;
+  font: 500 12.5px/1.3 var(--un-font, Roboto, Arial, sans-serif);
+}
+.un-sp-body .un-ai-tool:hover { border-color: var(--un-yt-text-dim); background: var(--un-yt-raised-hover); }
+.un-sp-body .un-ai-section-label {
+  margin: 6px 0 8px;
+  color: var(--un-yt-text-dim);
+  font: 600 13px/1.3 var(--un-font, Roboto, Arial, sans-serif);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.un-sp-body .un-ai-pill {
+  padding: 6px 13px;
+  background: transparent;
+  font: 500 13px/1.3 var(--un-font, Roboto, Arial, sans-serif);
+}
+.un-sp-body .un-ai-pill:hover { background: var(--un-yt-raised-hover); border-color: var(--un-yt-text-dim); }
+.un-sp-body .un-ai-input { border-radius: 21px; padding: 10px 16px; font-size: 14px; }
+.un-sp-body .un-ai-input:focus { border-color: var(--un-yt-text-dim); box-shadow: none; }
+.un-sp-body .un-ai-send {
+  border-radius: 50%;
+  background: var(--un-yt-text);
+  color: var(--un-yt-bg);
+}
+.un-sp-body .un-ai-stop { border-radius: 50%; }
+.un-sp-body .un-ai-provider { padding: 10px 14px; font-size: 13px; }
+/* #ff8a8e is ~2.6:1 on white: the no-key warning is the one line a new user
+   must read. */
+html:not([dark]) .un-ai-provider.un-ai-no-key { color: #b3261e; }

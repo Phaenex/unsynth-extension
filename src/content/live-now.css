@@ -1,0 +1,217 @@
+/* ===== "Live now" home-page shelf ===== */
+/* Sticky under YouTube's masthead. The whole point of this shelf is "who is
+   live RIGHT NOW" — a fact that stops being useful the moment it scrolls off,
+   which is what it did: inserted into the grid's normal flow with no
+   positioning, it vanished after one screen and the answer went with it.
+   Reported as "static live bar for whos live is gone or isnt as static as
+   should be."
+
+   56px is the masthead height this codebase already uses for the same purpose
+   (see desc-digest.css). The background must be OPAQUE now — transparent was
+   fine in flow, but a sticky element with a see-through background has the feed
+   scrolling visibly underneath its text. */
+/* Sticks below YouTube's own filter-chip bar.
+   The REAL fix is in live-now.js: the shelf is now inserted immediately after
+   the chip bar rather than above the grid, because the chip bar is itself
+   sticky and lives inside the grid — so DOM order, not offsets, decided who
+   painted over whom. Two earlier attempts (top:56px/z:2050, then
+   top:112px/z:1900) only moved the overlap around.
+
+   112px = the 56px masthead plus the ~56px chip bar, so the shelf parks under
+   the chips instead of at the same height. z-index stays BELOW YouTube's
+   masthead (measured 2020): if any of this arithmetic is wrong on some layout,
+   the failure is our shelf sliding under theirs rather than hiding one of
+   their controls. */
+.un-live-shelf {
+  position: sticky;
+  top: 112px;
+  z-index: var(--un-z-live-shelf, 1900);
+  margin: 0 0 28px;
+  padding: 12px 12px 14px;
+  background: var(--un-yt-bg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+/* Nothing live means nothing worth pinning — an empty bar holding 56px of the
+   viewport hostage is worse than no bar. */
+.un-live-shelf.is-empty {
+  position: static;
+  box-shadow: none;
+}
+.un-live-shelf-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+.un-live-shelf-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff0033;
+  box-shadow: 0 0 0 0 rgba(255, 0, 51, 0.6);
+  animation: un-live-shelf-pulse 1.8s ease-out infinite;
+}
+@keyframes un-live-shelf-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 0, 51, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(255, 0, 51, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 0, 51, 0);
+  }
+}
+.un-live-shelf-label {
+  font: 600 18px/1.3 'YouTube Sans', Roboto, Arial, sans-serif;
+  color: var(--un-yt-text, #f1f1f1);
+  letter-spacing: -0.01em;
+}
+/* WHITE-ON-WHITE IN LIGHT THEME. Measured at ratio 1.00 — literally invisible.
+   rgba(255,255,255,0.5) is a dark-theme assumption written as a literal, with
+   no light override, which is the same defect class as the var(--yt-spec-*)
+   fallbacks this codebase has now fixed five separate times. The tokens resolve
+   in both themes; the literals never did. */
+.un-live-shelf-count {
+  font: 500 12px/1 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text-dim, #aaa);
+  background: var(--un-yt-chip, rgba(255, 255, 255, 0.08));
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+.un-live-shelf-strip {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 4px 6px;
+}
+.un-live-shelf-strip::-webkit-scrollbar {
+  display: none;
+}
+/* Empty state — the shelf stays mounted when nobody is live so its presence is
+   constant. Kept deliberately quiet: it's a status line, not a card. */
+.un-live-shelf-empty {
+  font: 13px/1.4 Roboto, Arial, sans-serif;
+  /* Also measured at 1.00 in light theme: the empty state — the one thing that
+     has to be readable when there is nothing else in the shelf — was invisible.
+     A quiet status line still has to be a legible one. */
+  color: var(--un-yt-text-dim, #aaa);
+  padding: 8px 4px;
+  align-self: center;
+}
+/* Collapse the vertical bulk when there's nothing to show, so a permanently
+   present shelf never costs much feed space on a quiet day. */
+.un-live-shelf.is-empty {
+  padding-top: 6px;
+  padding-bottom: 6px;
+  opacity: 0.72;
+}
+.un-live-shelf.is-empty .un-live-shelf-strip {
+  padding-bottom: 0;
+}
+.un-live-card {
+  flex: 0 0 220px;
+  width: 220px;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.un-live-card-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+.un-live-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.un-live-card-badge {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  background: #cc0000;
+  color: #fff;
+  font: 700 10px/1 Roboto, Arial, sans-serif;
+  letter-spacing: 0.04em;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+.un-live-card-title {
+  margin-top: 8px;
+  font: 500 13.5px/1.35 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text, #f1f1f1);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.un-live-card-sub {
+  margin-top: 4px;
+  font: 400 12px/1.3 Roboto, Arial, sans-serif;
+  /* Same defect as the two above and as the hover fix documented below, which
+     was applied to the TITLE while the subtitle one line away kept its
+     literal. Found by sweeping the file rather than by the probe: these cards
+     only render when somebody you follow is actually live, so no signed-out
+     audit run can see them. A defect the instrument cannot reach is still a
+     defect. */
+  color: var(--un-yt-text-dim, #aaa);
+}
+/* .un-live-card paints no background, so its title sits on YouTube's page
+   ground: #fff on hover is white-on-white at 1.00:1 in light theme. The themed
+   token is the same "brighten on hover" intent in both directions. */
+.un-live-card:hover .un-live-card-title {
+  color: var(--un-yt-text);
+}
+html[dark] .un-live-card:hover .un-live-card-title,
+[dark] .un-live-card:hover .un-live-card-title {
+  color: #fff;
+}
+.un-live-card:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .un-live-shelf-dot {
+    animation: none;
+  }
+}
+
+/* EMPTY IS ONE LINE, AND IT DOES NOT PULSE (2026-09-23).
+   The shelf stays mounted when nobody is live (its absence read as the feature
+   failing), but it spent a bordered ~90px box at the top of the home feed on
+   that, repeated itself ("0 streams" over "Nobody you follow is live"), and
+   kept the red live dot pulsing — a live signal on an absence. Now: a grey,
+   still dot, the name, and the sentence, on one line. */
+.un-live-shelf.is-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 4px 4px;
+  border: 0;
+  background: none;
+  opacity: 1;
+}
+.un-live-shelf.is-empty .un-live-shelf-head { margin: 0; padding: 0; }
+.un-live-shelf.is-empty .un-live-shelf-count { display: none; }
+.un-live-shelf.is-empty .un-live-shelf-dot {
+  background: var(--un-yt-text-dim);
+  box-shadow: none;
+  animation: none;
+}
+.un-live-shelf.is-empty .un-live-shelf-strip { padding: 0; overflow: visible; }
+.un-live-shelf.is-empty .un-live-shelf-empty {
+  color: var(--un-yt-text-dim);
+  font: 400 13px/1.4 Roboto, Arial, sans-serif;
+}

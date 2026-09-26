@@ -1,0 +1,190 @@
+{
+  "manifest_version": 3,
+  "minimum_chrome_version": "120",
+  "name": "Unsynth — YouTube Power Suite",
+  "version": "1.2.0",
+  "description": "Filter AI-generated narration on YouTube — subscriptions, playlists, stats, creator tools, and analytics in one suite.",
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "tabs",
+    "identity",
+    "alarms",
+    "notifications",
+    "contextMenus",
+    "downloads",
+    "offscreen",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "*://music.youtube.com/*",
+    "https://oauth2.googleapis.com/*",
+    "https://www.googleapis.com/*",
+    "https://suggestqueries.google.com/*",
+    "https://playlist-forge.vercel.app/*",
+    "https://returnyoutubedislikeapi.com/*",
+    "https://sponsor.ajay.app/*",
+    "https://raw.githubusercontent.com/*",
+    "https://api.github.com/*",
+    "https://unsynth.vercel.app/*"
+  ],
+  "optional_host_permissions": [
+    "https://openrouter.ai/*",
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*"
+  ],
+  "icons": {
+    "16": "src/icons/icon16.png",
+    "48": "src/icons/icon48.png",
+    "128": "src/icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.js"
+  },
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_title": "Unsynth",
+    "default_icon": {
+      "16": "src/icons/icon16.png",
+      "48": "src/icons/icon48.png",
+      "128": "src/icons/icon128.png"
+    }
+  },
+  "options_ui": {
+    "page": "src/dashboard/dashboard.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "mark-watched": {
+      "suggested_key": {
+        "default": "Alt+Shift+W"
+      },
+      "description": "Mark current video as watched"
+    },
+    "mark-unwatched": {
+      "suggested_key": {
+        "default": "Alt+Shift+U"
+      },
+      "description": "Mark current video as unwatched"
+    },
+    "toggle-filter": {
+      "suggested_key": {
+        "default": "Alt+Shift+F"
+      },
+      "description": "Toggle AI content filter"
+    },
+    "popout-player": {
+      "suggested_key": {
+        "default": "Alt+Shift+P"
+      },
+      "description": "Pop out current YouTube video"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://music.youtube.com/*"
+      ],
+      "js": [
+        "src/shared/ai-keywords.js",
+        "src/defaults.js",
+        "src/shared/messages.js",
+        "src/shared/match.js",
+        "src/shared/ui-presets.js",
+        "src/shared/transcript.js",
+        "src/shared/desc-digest.js",
+        "src/shared/sub-groups.js",
+        "src/shared/yt-dom.js",
+        "src/shared/sub-feed.js",
+        "src/shared/sub-channel-thumbs.js",
+        "src/shared/playlist-folders.js",
+        "src/shared/playlist-index.js",
+        "src/shared/modules-normalize.js",
+        "src/shared/watch-deck.js",
+        "src/shared/side-panel.js",
+        "src/shared/watch-stats.js",
+        "src/shared/taste-profile.js",
+        "src/shared/sub-smart-rows.js",
+        "src/shared/catch-up.js",
+        "src/shared/catch-up-scrape.js",
+        "src/shared/forge-links.js",
+        "src/shared/forge-discover.js",
+        "src/shared/watch-queue.js",
+        "src/shared/search-filters.js",
+        "src/shared/native-queue.js",
+        "src/shared/side-dock.js",
+        "src/shared/ryd.js",
+        "src/shared/watched-display.js",
+        "src/shared/watched-state.js",
+        "src/shared/sponsorblock-segments.js",
+        "src/shared/segment-cache.js",
+        "src/shared/channel-completion.js",
+        "src/shared/playlist-budget.js",
+        "src/shared/playlist-grouping.js",
+        "src/shared/bulk-undo.js",
+        "src/shared/time-budget.js",
+        "src/shared/creator-studio.js",
+        "src/shared/video-stats-cache.js",
+        "src/shared/discover.js",
+        "src/shared/volume-level.js",
+        "src/shared/browser-env.js",
+        "src/content/core.js",
+        "src/content/boot.js"
+      ],
+      "css": [
+        "src/shared/design-tokens.css",
+        "src/content/core.css",
+        "src/content/side-dock.css",
+        "src/content/media-tools.css",
+        "src/content/watch-deck.css",
+        "src/content/side-panel.css"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://music.youtube.com/*"
+      ],
+      "js": [
+        "src/defaults.js",
+        "src/content/volume-startup-guard.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://music.youtube.com/*"
+      ],
+      "js": [
+        "src/shared/sub-groups.js",
+        "src/shared/yt-dom.js",
+        "src/content/ai-bridge.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://playlist-forge.vercel.app/*"
+      ],
+      "js": [
+        "src/shared/messages.js",
+        "src/shared/auth-state.js",
+        "src/shared/playlist-folders.js",
+        "src/shared/forge-discover.js",
+        "src/shared/watch-stats.js",
+        "src/shared/forge-sync.js",
+        "src/content/forge-bridge.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}

@@ -1,0 +1,2112 @@
+/* ============================================================
+   Unsynth suite — shared content-script styles.
+   Module-specific styles are appended below per module.
+   ============================================================ */
+
+/* ---- stale extension context banner ---- */
+.unsynth-stale-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--un-accent) 12%, var(--un-panel));
+  border-bottom: 2px solid var(--un-accent);
+  color: var(--un-txt);
+  font: 600 13px/1.4 Roboto, Arial, sans-serif;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+}
+.unsynth-stale-banner button {
+  background: var(--un-accent);
+  border: 0;
+  color: var(--un-txt);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.unsynth-stale-banner button:hover {
+  background: var(--un-accent-light);
+}
+
+/* ---- shared toast / OSD (UNSYNTH.showToast) ---- */
+.un-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 64px;
+  transform: translate(-50%, 8px);
+  /* Top of the layer scale: any surface can raise a toast, and a toast can
+     carry the only undo for a destructive action, so nothing may cover it.
+     At the old flat 2147483200 the feed page (2147483500) painted over the
+     bulk-fill undo and ate its clicks. */
+  z-index: var(--un-z-toast, 2147483700);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(480px, 90vw);
+  padding: 10px 16px;
+  border-radius: var(--un-radius-sm, 8px);
+  background: var(--un-yt-panel, rgba(20, 20, 24, 0.95));
+  border: 1px solid var(--un-yt-line, rgba(255, 255, 255, 0.12));
+  color: var(--un-yt-text);
+  font: 500 13px/1.4 var(--un-font, Roboto, Arial, sans-serif);
+  box-shadow: var(--un-shadow-md, 0 10px 28px rgba(0, 0, 0, 0.42));
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  pointer-events: auto;
+}
+.un-toast.un-toast-show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.un-toast-msg {
+  min-width: 0;
+}
+.un-toast-btn {
+  flex: none;
+  border: 1px solid var(--un-yt-line, rgba(255, 255, 255, 0.16));
+  background: var(--un-hover, rgba(255, 255, 255, 0.06));
+  color: var(--un-yt-text, #fff);
+  font: 600 12px/1 var(--un-font, Roboto, Arial, sans-serif);
+  padding: 6px 12px;
+  border-radius: var(--un-radius-xs, 6px);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.un-toast-btn:hover {
+  background: var(--un-hover-strong, rgba(255, 255, 255, 0.1));
+}
+@media (prefers-reduced-motion: reduce) {
+  .un-toast {
+    transition: none;
+  }
+}
+
+/* ---- watched-video display modes ---- */
+/* Dimming has to be obvious at a glance while scanning a grid — 0.38 opacity
+   alone was reported as too subtle to pick out. Pushing opacity alone much
+   lower makes the TITLE unreadable before the thumbnail reads as dimmed, so
+   the weight is split across three cues that compound visually without
+   destroying legibility: lower opacity, desaturated color (watched thumbnails
+   go grey while unwatched ones stay saturated — the fastest signal in a grid
+   of colorful thumbnails), and a slight darkening. Full color and opacity
+   snap back on hover so a watched video is still perfectly usable. */
+/* DIM, REDESIGNED 2026-09-23. The whole tile used to go to opacity 0.3 with
+   85% grayscale, title included: measured 2.5:1 in dark and 2.0:1 in light,
+   so a watched video could be skipped but no longer read. Now the two jobs
+   are split. The THUMBNAIL carries "you have seen this": a greyscale scrim
+   (backdrop-filter, so the art goes grey and dark) that sits UNDER the eye,
+   the checkbox and the progress bar, which stay crisp. The TEXT stays
+   readable at 0.72: titles about 7-8.6:1 in both themes. Hover or keyboard
+   focus brings the tile back to full.
+   Only the TITLE is dimmed, not the metadata line (panel, 2026-09-23): the
+   channel/views line is already grey, and at 0.72 it fell to about 4.35:1 in
+   dark (#aaa) and 3.3:1 in light (#606060), under the 4.5:1 minimum. */
+.un-watched-dim .un-watched-host::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 38;
+  pointer-events: none;
+  border-radius: inherit;
+  background: rgba(0, 0, 0, 0.42);
+  -webkit-backdrop-filter: grayscale(1);
+  backdrop-filter: grayscale(1);
+  transition: opacity 0.15s ease;
+}
+.un-watched-dim :is(h3, #video-title) {
+  opacity: 0.72;
+  transition: opacity 0.15s ease;
+}
+.un-watched-dim:is(:hover, :focus-within) .un-watched-host::before { opacity: 0; }
+.un-watched-dim:is(:hover, :focus-within) :is(h3, #video-title) { opacity: 1; }
+.un-watched-hide {
+  display: none !important;
+}
+/* Hide the grid/search row when only an inner lockup got the class. */
+ytd-rich-item-renderer:has(.un-watched-hide),
+ytd-video-renderer:has(.un-watched-hide),
+ytd-compact-video-renderer:has(.un-watched-hide),
+ytd-grid-video-renderer:has(.un-watched-hide),
+ytd-rich-grid-media:has(.un-watched-hide) {
+  display: none !important;
+}
+.un-watched-host {
+  position: relative;
+}
+.un-synth-masthead-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 8px;
+  flex-wrap: nowrap;
+  flex-shrink: 1;
+  /* 860px is the room YouTube own masthead needs for its logo, search field and
+     account controls at desktop width. Below ~900px that reservation is larger
+     than the viewport, so calc() went negative, the max-width constraint
+     collapsed, and the bar took its natural width — measured 149px past the
+     right edge at 420px, which is what made the whole document scroll
+     sideways. At 900px it resolved to 40px, which clipped the bar instead.
+     max() floors the reservation so the bar always gets a usable strip and
+     scrolls within it, which is what overflow-x: auto and the edge fades above
+     were built for. */
+  max-width: max(120px, calc(100vw - 860px));
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-radius: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+/* Explicit slots. The shell's children are appended by three different
+   modules in whatever order they happen to initialise, and DOM order alone put
+   the session-wide Pause switch between the two value chips. Values first,
+   then the type toggles, then Pause on its own past its divider. */
+#un-watched-feed-toggle { order: 1; }
+#un-synth-masthead-extra { order: 2; }
+#un-synth-masthead-bar > .un-wft-default { order: 3; }
+
+.un-synth-masthead-bar::-webkit-scrollbar {
+  display: none;
+}
+
+/* The scrollbar above is hidden on purpose (it would sit in the masthead), so
+   these fades are the ONLY thing telling the user there are chips past the
+   edge. Toggled from core.js's _watchMastheadOverflow, per side, so a bar that
+   fits gets no fade and one scrolled to the end stops fading the end.
+   mask-image rather than a gradient overlay: the bar sits on YouTube's own
+   masthead background, which changes with the theme, so anything painting its
+   own fade colour would band against it. */
+.un-synth-masthead-bar.un-mb-fade-start.un-mb-fade-end {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+}
+
+.un-synth-masthead-bar.un-mb-fade-end:not(.un-mb-fade-start) {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
+}
+
+.un-synth-masthead-bar.un-mb-fade-start:not(.un-mb-fade-end) {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px);
+  mask-image: linear-gradient(to right, transparent 0, #000 18px);
+}
+
+/* A fade is a hint, not an affordance -- it says "there is more" but not "you
+   can get at it". Keyboard users never see it at all, so scrolling the bar has
+   to stay reachable: the chips are real buttons, and focusing one scrolls it
+   into view natively. The mask must never cover a focused chip. */
+.un-synth-masthead-bar:focus-within {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+/* Guard against search suggestions and masthead controls overlapping the guide sidebar */
+ytd-masthead {
+  z-index: 2020 !important;
+}
+.sbsb_a,
+#search-suggestions,
+ytd-searchbox #results {
+  z-index: 2030 !important;
+}
+.un-synth-masthead-extra {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-left: 0;
+  /* At 150% zoom the viewport is 945px and this strip ran past the right edge,
+     taking .un-wft-btn fully outside it — measured, not predicted. An
+     unreachable control is loss of function under WCAG 1.4.4, which requires
+     200% without it.
+
+     min-width:0 lets the strip actually shrink inside YouTube's flex masthead
+     (a flex item's default min-width:auto refuses to go below its content, which
+     is what pushed the overflow outward instead of absorbing it), and scrolling
+     the strip itself keeps every button reachable without the PAGE scrolling
+     horizontally, which 1.4.10 forbids. */
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.un-synth-masthead-extra::-webkit-scrollbar {
+  /* The strip is one row of icon buttons; a scrollbar would eat most of it. */
+  display: none;
+}
+.un-watched-feed-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+}
+.un-watched-feed-toggle:empty {
+  display: none;
+}
+/* Masthead bar theme tokens.
+ *
+ * --yt-spec-* does NOT resolve from the extension's context here: measured live,
+ * --yt-spec-text-primary / -text-secondary / -10-percent-layer all read as unset
+ * on documentElement, so every var(--yt-spec-x, #fff) silently becomes #fff.
+ * That is why the old hardcoded rgba(255,255,255,0.82) and a naive
+ * "just use the token" rewrite are the SAME bug: white text on YouTube's white
+ * masthead, measured at contrast 1.0.
+ *
+ * Same fix the sidebar hub already documents: own tokens defaulting to LIGHT,
+ * flipped to dark by YouTube's own signals. YouTube's variables still win
+ * wherever they genuinely resolve. */
+#un-synth-masthead-bar {
+  --un-mb-text: var(--yt-spec-text-secondary, #606060);
+  /* NOT var(--un-yt-bg). That worked only while the yt fallback tokens were
+     dark-only — with a correct light default it is white on white (1:1,
+     measured). Strong text in light theme is simply near-black. */
+  --un-mb-text-strong: var(--yt-spec-text-primary, var(--un-yt-text));
+  --un-mb-line: var(--yt-spec-10-percent-layer, #d9d9d9);
+  --un-mb-hover: rgba(0, 0, 0, 0.06);
+  /* An "on" chip is the inverse of the bar: dark fill, light text. Stated
+     literally rather than borrowed from tokens whose meaning is the opposite
+     of the role they were filling here. */
+  --un-mb-on-bg: var(--un-yt-text);
+  --un-mb-on-text: var(--un-yt-bg);
+  --un-mb-scope-bg: rgba(0, 0, 0, 0.08);
+}
+html[dark] #un-synth-masthead-bar,
+[dark] #un-synth-masthead-bar {
+  --un-mb-text: var(--yt-spec-text-secondary, rgba(255, 255, 255, 0.72));
+  --un-mb-text-strong: var(--yt-spec-text-primary, var(--un-yt-text));
+  --un-mb-line: var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.2));
+  --un-mb-hover: rgba(255, 255, 255, 0.14);
+  /* Inverse of the dark bar: light fill, dark text. Literal for the same
+     reason as the light block above. */
+  --un-mb-on-bg: var(--un-yt-text);
+  --un-mb-on-text: var(--un-yt-bg);
+  --un-mb-scope-bg: rgba(255, 255, 255, 0.16);
+}
+@media (prefers-color-scheme: dark) {
+  /* Only when YouTube has not explicitly declared the light theme. */
+  html:not([dark="false"]):not(.un-yt-light) #un-synth-masthead-bar {
+    --un-mb-text: var(--yt-spec-text-secondary, rgba(255, 255, 255, 0.72));
+    --un-mb-text-strong: var(--yt-spec-text-primary, var(--un-yt-text));
+    --un-mb-line: var(--yt-spec-10-percent-layer, rgba(255, 255, 255, 0.2));
+    --un-mb-hover: rgba(255, 255, 255, 0.14);
+    --un-mb-on-bg: var(--un-yt-text);
+    --un-mb-on-text: var(--un-yt-bg);
+    --un-mb-scope-bg: rgba(255, 255, 255, 0.16);
+  }
+}
+
+/* One rule decides legibility here: FILLED MEANS THIS CONTROL IS CHANGING WHAT
+   YOU SEE. Off is outlined and transparent.
+
+   Previously every chip carried background rgba(255,255,255,0.1) whether on or
+   off, so "off" still read as a solid pill and nothing looked inactive. That,
+   not the layout, is why active state was unreadable: with six filled pills in
+   a row the one that is actually doing something has to be found by comparing
+   shades. Now "is anything filtering?" is "is anything filled?".
+
+   Colours go through YouTube's own tokens. The hardcoded rgba(255,255,255,...)
+   these replace had no light-theme fallback at all, so on a light masthead the
+   text was white on white. */
+.un-wft-btn,
+.un-plm-select-btn {
+  border: 1px solid var(--un-mb-line, #d9d9d9);
+  background: transparent;
+  color: var(--un-mb-text, #606060);
+  font: 500 12.5px/1 var(--un-font, Roboto, Arial, sans-serif);
+  padding: 6px 11px;
+  border-radius: var(--un-radius-sm, 8px);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.un-wft-btn:focus-visible,
+.un-plm-select-btn:focus-visible {
+  outline: 2px solid var(--un-accent);
+  outline-offset: 2px;
+}
+/* Removed: `.un-wft-btn + .un-wft-btn { border-left: 0 }`.
+   Collapsing shared edges is right for a SEGMENTED control, where the buttons
+   touch and a doubled 2px seam would show. These do not touch — the container
+   sets gap: 4px — so the reset was deleting the left edge of a detached pill
+   and leaving the other three sides. Measured live it produced Select with a
+   1px left border, Download with none and Pause with one, which is what an
+   independent review read as three equal-weight buttons with no hierarchy: the
+   only visual difference between them was an accident of source order. */
+.un-wft-btn:hover,
+.un-plm-select-btn:hover {
+  background: var(--un-mb-hover, rgba(0, 0, 0, 0.06));
+  color: var(--un-mb-text-strong, var(--un-yt-bg));
+  border-color: var(--un-mb-text, #606060);
+}
+/* Watch status is a PERSISTED setting, so its active fill is the neutral,
+   highest-contrast one. Content-type toggles are session facets and use the
+   accent tint instead (sub-manager.css), so two lit chips from different
+   dimensions no longer look identical. They were byte-identical before:
+   var(--un-yt-text) / var(--un-yt-bg) in both files. */
+.un-wft-btn.on {
+  background: var(--un-mb-on-bg, var(--un-yt-bg));
+  color: var(--un-mb-on-text, var(--un-yt-text));
+  border-color: var(--un-mb-on-bg, var(--un-yt-bg));
+  font-weight: 600;
+}
+/* "YT Default" peek — green so an active bypass reads as "filters off / native
+   YouTube", distinct from the watch-status filter states. */
+/* Pause is a different KIND of control from the filters beside it: a session
+   switch that suspends all of them. It sits past a divider so the row reads as
+   "filters | override" rather than one undifferentiated strip. */
+/* The watch-status value chip. Reads as a value, not a toggle: the axis is
+   set in a muted weight, the current value in normal weight, so "Watched:
+   Hidden" scans as one phrase rather than two competing labels. Matches
+   .un-sub-filter-chip's Channels treatment on purpose -- they are the two
+   value chips in the bar and looking alike is the point. */
+.un-wft-view-chip {
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.un-wft-chip-axis {
+  opacity: 0.62;
+}
+
+.un-wft-view-chip.on .un-wft-chip-axis {
+  opacity: 0.72;
+}
+
+.un-wft-view-chip b {
+  font-weight: 500;
+}
+/* How many the filter hides on this page: "Hide watched · 15". */
+.un-wft-chip-count {
+  margin-left: 6px;
+  padding-left: 6px;
+  border-left: 1px solid currentColor;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+/* A saved whole-feed view that this surface cannot honour. Dotted underline
+   marks it as "there is more to this than the label", which the title
+   explains; it is not an error, so it does not get an error colour. */
+.un-wft-view-chip.un-wft-parked b {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+/* Pause is a session switch that suspends every filter beside it, so the row
+   should read "filters | override" rather than as one undifferentiated strip.
+   That was attempted with border-left on the button itself, which does not
+   work: `.un-wft-btn + .un-wft-btn { border-left: 0 }` strips the edge between
+   adjacent buttons, so Select (first in its group) KEPT a 1px edge while
+   Download lost its, and Pause's "divider" rendered identical to Select's
+   ordinary border. Measured live: Select bl=1px rgb(217,217,217), Download
+   bl=0, Pause bl=1px rgb(217,217,217) — three buttons, two arbitrary edges,
+   and nothing marking the group boundary.
+
+   A separator is its own mark, not a borrowed button edge. ::before draws a
+   short rule in the gap, is immune to the adjacency reset, and leaves the
+   button's own border free to mean what it means on every other chip. */
+.un-wft-default {
+  position: relative;
+  margin-left: 14px;
+}
+.un-wft-default::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 16px;
+  background: var(--un-mb-line, #d9d9d9);
+  pointer-events: none;
+}
+/* Green so an active pause reads as "filters off / native YouTube", distinct
+   from any filter being on. */
+.un-wft-default.on {
+  background: color-mix(in srgb, var(--un-forge) 22%, transparent);
+  border-color: color-mix(in srgb, var(--un-forge) 55%, transparent);
+  color: var(--un-forge-text, #2b7a45);
+  font-weight: 600;
+}
+html[dark] .un-wft-default.on,
+[dark] .un-wft-default.on {
+  color: var(--un-forge);
+}
+/* Watch-status buttons are bypassed while the YT Default peek is on — dim them
+   and kill the hover so they read as temporarily inactive, not broken. */
+.un-wft-btn.un-wft-muted {
+  opacity: 0.4;
+  cursor: default;
+}
+.un-wft-btn.un-wft-muted:hover {
+  background: transparent;
+  color: var(--un-mb-text, #606060);
+  border-color: var(--un-mb-line, #d9d9d9);
+}
+.un-track-dot {
+  display: none;
+  width: 7px;
+  height: 7px;
+  margin: 0 6px 0 2px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #444;
+}
+.un-track-dot.idle {
+  display: inline-block;
+  background: var(--un-forge);
+  opacity: 0.45;
+}
+.un-track-dot.on {
+  display: inline-block;
+  background: var(--un-forge);
+  box-shadow: 0 0 0 2px var(--un-forge-soft, rgba(110, 231, 135, 0.35));
+  animation: un-track-pulse 1.8s ease-in-out infinite;
+}
+@keyframes un-track-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.un-plm-select-btn.on {
+  background: var(--un-accent);
+  color: var(--un-txt);
+  font-weight: 600;
+}
+/* Bottom progress/status bar across the whole thumbnail — a 32px corner chip
+   is easy to miss while scanning a grid of tiles; a full-width bar at the
+   thumbnail edge reads at a glance, peripherally, the same way YouTube's own
+   in-progress scrub bar does (which this extends to fully-watched videos too
+   — native YouTube's bar disappears once a video is finished). Sits just
+   under the corner chip's z-index so the two never fight for a click target
+   (this bar is pointer-events:none). */
+.un-watched-host::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  z-index: 39;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.un-watched-host.un-watched-full::after {
+  opacity: 1;
+  height: 4px;
+  background: var(--un-yt-cta, var(--un-accent));
+}
+.un-watched-host.un-watched-partial::after {
+  opacity: 1;
+  background: linear-gradient(to right, #ffb020 var(--uwm-pct, 0%), rgba(255, 255, 255, 0.28) 0);
+}
+/* minimal watch chip — top-left corner of thumbnail */
+.un-watched-mark {
+  position: absolute;
+  /* FLUSH: welded to the thumbnail corner rather than floating 6px inside it,
+     so the eye, the match badge and the select checkbox read as one strip
+     along the top edge. See playlist-bulk.css for the other two pieces. */
+  top: 0;
+  left: 0;
+  /* Anchors the badge itself rather than leaving a 0x0 box and positioning
+     each child separately. The chip can then be a normal in-flow element
+     that sizes to its own content, which is what lets the pill grow for a
+     timestamp instead of clipping it. */
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  max-width: calc(100% - 12px);
+  pointer-events: none;
+}
+.un-watched-mark .uwm-chip {
+  position: relative;
+  min-width: 28px;
+  height: 28px;
+  flex: 0 1 auto;
+  overflow: hidden;
+  /* Sizes to its own content. The timestamp lives inside this button, so the
+     pill grows for "3mo" and stays a 28px square when there is no label —
+     no second element, and nothing to collide with. */
+  max-width: 100%;
+  padding: 0;
+  gap: 5px;
+  border: 0;
+  border-radius: var(--un-thumb-radius, 12px) 0 7px 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  background: rgba(12, 12, 15, 0.88);
+  backdrop-filter: blur(10px);
+  color: var(--un-on-plate); /* fixed: the plate is dark in both themes (design-tokens.css) */
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+  transition: transform 0.14s ease, background 0.14s ease, border-color 0.14s ease, opacity 0.14s ease;
+  opacity: 1;
+}
+/* Give the pill side padding only when it actually carries a label. */
+.un-watched-mark.has-time .uwm-chip {
+  padding: 0 9px 0 7px;
+}
+.un-watched-mark .uwm-chip:hover {
+  background: rgba(45, 45, 55, 0.96);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+.un-watched-mark .uwm-chip:active {
+  transform: translateY(0) scale(0.96);
+}
+.un-watched-mark .uwm-icon {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  display: block;
+  background: currentColor;
+  transition: opacity 0.14s ease;
+}
+/* fully watched — filled chip + checkmark */
+/* Watched is the state you want to look PAST, so it recedes: neutral dark
+   glass at rest, no accent fill. A solid red chip made every already-seen
+   video the loudest thing in the grid and competed with the fresh-upload
+   badge and the CTA colour, which both mean "look here". The accent returns
+   on hover, where it promises the un-mark click. */
+.un-watched-mark.is-full .uwm-chip {
+  background: rgba(12, 12, 15, 0.82);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+.un-watched-mark.is-full .uwm-chip:hover {
+  background: var(--un-yt-cta, var(--un-accent));
+  border-color: rgba(255, 90, 95, 0.85);
+  color: var(--un-txt);
+  box-shadow: 0 3px 12px rgba(255, 90, 95, 0.4);
+}
+/* watched — an OPEN eye on a filled chip. Paired with the slashed eye of the
+   unseen state so the control reads as one idea (seen / not seen) in both
+   states. A bare checkmark here was half of why the chip was mistaken for a
+   selection checkbox. */
+.un-watched-mark.is-full .uwm-icon {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+/* partial — the same neutral pill as the watched state, with the progress
+   ring drawn on the icon itself rather than as the chip's background. The
+   ring used to be a conic-gradient across the whole chip, which was fine
+   while the chip was a fixed 28px square but smears into a lozenge now that
+   the pill grows to fit a label. */
+.un-watched-mark.is-partial .uwm-chip {
+  background: rgba(12, 12, 15, 0.82);
+  border-color: rgba(255, 176, 32, 0.45);
+  color: #ffb020;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+.un-watched-mark.is-partial .uwm-chip:hover {
+  background: rgba(38, 30, 14, 0.94);
+  border-color: rgba(255, 176, 32, 0.8);
+}
+/* The ring: a fixed 18px disc that never stretches with the pill. */
+.un-watched-mark.is-partial .uwm-icon {
+  position: relative;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: conic-gradient(
+    #ffb020 var(--uwm-pct, 0%),
+    rgba(255, 255, 255, 0.26) 0
+  );
+}
+.un-watched-mark.is-partial .uwm-icon::before {
+  content: '';
+  position: absolute;
+  inset: 3.5px;
+  border-radius: 50%;
+  background: rgba(10, 10, 12, 0.95);
+}
+.un-watched-mark.is-partial .uwm-pct-text {
+  position: relative;
+  z-index: 1;
+  font: 700 9px/1 Roboto, Arial, sans-serif;
+  color: #ffe8a8;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  letter-spacing: -0.03em;
+}
+/* The ring is the icon in this state, so it renders whether or not a %
+   label is shown — it must not be display:none'd like the mask icon was. */
+.un-watched-mark.is-partial .uwm-icon {
+  -webkit-mask: none;
+  mask: none;
+}
+/* unseen — an EYE, not an empty ring.
+   The unseen state used to be a bare circle with the icon hidden, revealing a
+   checkmark only on hover. An empty circle plus a checkmark is the universal
+   shape of a selection checkbox, and this extension has a real bulk-select
+   mode on the same thumbnails, so the two were genuinely ambiguous — reported
+   as "the marker seems more like a select button". An eye says "seen / not
+   seen" on sight and shares no visual language with selection. */
+.un-watched-mark.is-unseen .uwm-chip {
+  background: rgba(12, 12, 12, 0.72);
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.65),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+/* Eye with a slash — "not watched yet". Visible at rest rather than on hover:
+   a control whose meaning only appears once you point at it can't be scanned. */
+.un-watched-mark.is-unseen .uwm-icon {
+  opacity: 0.85;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M12 6.5c3.79 0 7.17 2.13 8.82 5.5a9.8 9.8 0 0 1-2.4 3.05l1.42 1.42A11.8 11.8 0 0 0 23 12c-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l1.63 1.63c.76-.21 1.54-.33 2.35-.33zM2.7 3.02 1.29 4.43l3.1 3.1A11.7 11.7 0 0 0 1 12c1.73 4.39 6 7.5 11 7.5 1.9 0 3.7-.45 5.29-1.24l3.02 3.02 1.41-1.41L2.7 3.02zM7.53 10.67A4.5 4.5 0 0 0 12 16.5c.54 0 1.06-.1 1.54-.28l-1.6-1.6a2.5 2.5 0 0 1-2.56-2.56l-1.85-1.39z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M12 6.5c3.79 0 7.17 2.13 8.82 5.5a9.8 9.8 0 0 1-2.4 3.05l1.42 1.42A11.8 11.8 0 0 0 23 12c-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l1.63 1.63c.76-.21 1.54-.33 2.35-.33zM2.7 3.02 1.29 4.43l3.1 3.1A11.7 11.7 0 0 0 1 12c1.73 4.39 6 7.5 11 7.5 1.9 0 3.7-.45 5.29-1.24l3.02 3.02 1.41-1.41L2.7 3.02zM7.53 10.67A4.5 4.5 0 0 0 12 16.5c.54 0 1.06-.1 1.54-.28l-1.6-1.6a2.5 2.5 0 0 1-2.56-2.56l-1.85-1.39z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+/* Hover promises what the click does: the slash comes off — an open eye. */
+.un-watched-mark.is-unseen .uwm-chip:hover {
+  background: var(--yt-spec-call-to-action, var(--un-accent));
+  box-shadow: none;
+}
+.un-watched-mark.is-unseen .uwm-chip:hover .uwm-icon {
+  opacity: 1;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+/* Last viewed time badge next to watch chip */
+/* An inline part of the chip, not a floating second badge. It previously sat
+   absolutely positioned against .un-watched-mark — a 0x0 box — so its
+   `max-width: calc(100% - 136px)` computed against zero width and clipped
+   "Watched 3mo ago" down to a couple of characters at EVERY tile size. */
+.un-watched-mark .uwm-time-tag {
+  font: 600 11px/1 var(--un-font, Roboto, Arial, sans-serif);
+  color: inherit;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.un-watched-mark.is-partial .uwm-time-tag {
+  color: #ffb020;
+}
+.un-watched-mark.is-unseen .uwm-time-tag {
+  display: none;
+}
+
+/* Fresh Upload indicator (< 24h old) */
+/* Quiet (2026-09-23): was a coral gradient with a glow and "✦ NEW" in
+   capitals, the loudest thing on the tile for a fact that is a date. Now a
+   small solid pill in the accent, like YouTube's own "New" badge. Ink is
+   dark on the coral in both themes (white measured 3.05:1 on this coral). */
+.un-fresh-badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--un-accent, #ff5a5f);
+  color: var(--un-on-accent, #0b0b0b);
+  font: 600 11px/1 var(--un-font, Roboto, Arial, sans-serif);
+  padding: 3px 6px;
+  border-radius: 4px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* ---- Shorts feed tiles (portrait orientation) — badge repositioning ---- */
+/* ytd-reel-item-renderer is a portrait card; pin the badge to the bottom
+   so it doesn't overlap the channel avatar that YouTube places top-left. */
+ytd-reel-item-renderer .un-watched-mark .uwm-chip {
+  top: auto;
+  bottom: 6px;
+  left: 6px;
+}
+/* Newer YouTube tile type (yt-lockup-view-model) uses `contain: paint` which
+   clips absolutely-positioned overlays. Force the thumbnail host to allow
+   visible overflow so the watched mark is not clipped. */
+yt-lockup-view-model .un-watched-host {
+  overflow: visible !important;
+  contain: layout style !important;
+}
+/* Ensure dim/hide also target the portrait Shorts item */
+ytd-reel-item-renderer.un-watched-dim {
+  opacity: 0.38 !important;
+  transition: opacity 0.15s;
+}
+ytd-reel-item-renderer.un-watched-dim:hover {
+  opacity: 1 !important;
+}
+
+@keyframes un-pop-fadein {
+  from { opacity: 0; transform: translateY(4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.un-watched-pop {
+  position: fixed;
+  z-index: 10001;
+  max-width: 280px;
+  padding: 10px 14px;
+  background: rgba(16, 16, 22, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--un-radius-sm, 8px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  font: var(--un-text-body, 12px)/1.45 var(--un-font, Roboto, Arial, sans-serif);
+  color: var(--un-on-plate); /* fixed: the plate is dark in both themes (design-tokens.css) */
+  display: none;
+  pointer-events: auto;
+  animation: un-pop-fadein 0.16s cubic-bezier(0.2, 0, 0, 1);
+}
+.un-watched-pop.open {
+  display: block;
+}
+.un-watched-pop .uwp-id {
+  display: block;
+  margin-top: 6px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.28);
+  word-break: break-all;
+  font-family: ui-monospace, monospace;
+}
+
+/* ---- AI channel scan review overlay ---- */
+#unsynth-scan {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483600;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  font-family: Roboto, Arial, sans-serif;
+}
+#unsynth-scan .un-scan-card {
+  width: min(560px, 96vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--un-yt-bg);
+  color: #e8e8e8;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  overflow: hidden;
+}
+#unsynth-scan .un-scan-h {
+  font-size: 16px;
+  font-weight: 700;
+  padding: 16px 18px 4px;
+}
+#unsynth-scan .un-scan-h::first-letter {
+  color: var(--un-accent);
+}
+#unsynth-scan .un-scan-sub {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #9a9a9a;
+  padding: 0 18px 12px;
+}
+#unsynth-scan .un-scan-list {
+  overflow-y: auto;
+  padding: 4px 10px;
+}
+#unsynth-scan .un-scan-row {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  padding: 10px 8px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+#unsynth-scan .un-scan-row:hover {
+  background: #181818;
+}
+#unsynth-scan .un-scan-row input {
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  accent-color: var(--un-accent);
+  flex: none;
+}
+#unsynth-scan .un-scan-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+#unsynth-scan .un-scan-meta {
+  font-size: 11.5px;
+  color: var(--un-accent-light);
+  margin-top: 1px;
+}
+#unsynth-scan .un-scan-sample {
+  font-size: 12px;
+  color: #8a8a8a;
+  margin-top: 3px;
+  font-style: italic;
+}
+#unsynth-scan .un-scan-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid #242424;
+}
+#unsynth-scan .un-scan-add {
+  background: var(--un-accent);
+  color: #0b0b0b;
+  border: 0;
+  border-radius: 9px;
+  padding: 10px 16px;
+  font: 600 13px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+#unsynth-scan .un-scan-add:hover:not(:disabled) {
+  background: #ff7378;
+}
+#unsynth-scan .un-scan-add:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+#unsynth-scan .un-scan-close {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ddd;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  padding: 10px 16px;
+  font: 600 13px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+#unsynth-scan .un-scan-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+#unsynth-scan .un-scan-note {
+  font-size: 12.5px;
+  color: var(--un-forge);
+}
+
+/* ---- AI filter: hidden / blurred tiles + watch block screen ---- */
+.unsynth-hidden {
+  display: none !important;
+}
+
+.unsynth-blur {
+  filter: blur(10px) grayscale(60%);
+  opacity: 0.45;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+}
+.unsynth-blur:hover {
+  filter: none;
+  opacity: 1;
+}
+
+/* Label mode: an "AI" badge stamped on the thumbnail of a matching tile. */
+.unsynth-ai-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px 3px 6px;
+  border-radius: 6px;
+  background: rgba(196, 62, 92, 0.94);
+  color: var(--un-txt);
+  font: 700 11px/1 Roboto, Arial, sans-serif;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  cursor: help;
+}
+/* Confidence tiers. The badge now carries a 0–100 score, so a disclosed
+   100% video and a borderline 45% heuristic guess must not look identical —
+   the whole point of showing a number is being able to judge the borderline
+   ones. Red = high, amber = medium, slate = low. */
+.unsynth-ai-badge.lvl-high {
+  background: rgba(196, 62, 92, 0.94);
+}
+.unsynth-ai-badge.lvl-medium {
+  background: rgba(190, 118, 30, 0.94);
+}
+.unsynth-ai-badge.lvl-low {
+  background: rgba(90, 98, 112, 0.94);
+}
+.unsynth-ai-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.9;
+}
+/* Shorts tiles are tall/narrow — keep the badge compact and out of the title. */
+ytm-thumbnail-cover .unsynth-ai-badge,
+ytd-reel-item-renderer .unsynth-ai-badge {
+  top: 4px;
+  left: 4px;
+}
+
+#unsynth-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 8, 8, 0.93);
+}
+#unsynth-overlay .unsynth-card {
+  max-width: 420px;
+  padding: 30px 26px;
+  text-align: center;
+  color: var(--un-yt-text);
+  font-family: Roboto, Arial, sans-serif;
+}
+#unsynth-overlay .unsynth-badge {
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--un-accent);
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+#unsynth-overlay .unsynth-why {
+  font-size: 16px;
+  line-height: 1.55;
+  margin: 0 0 24px;
+}
+#unsynth-overlay .unsynth-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+#unsynth-overlay button {
+  cursor: pointer;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font: 500 14px/1 Roboto, Arial, sans-serif;
+  transition: opacity 0.12s;
+}
+#unsynth-overlay button:hover {
+  opacity: 0.88;
+}
+#unsynth-overlay button:focus-visible {
+  outline: 2px solid var(--yt-spec-call-to-action, var(--un-focus));
+  outline-offset: 2px;
+}
+#unsynth-overlay #unsynth-watch-anyway {
+  background: #272727;
+  color: var(--un-txt);
+}
+#unsynth-overlay #unsynth-not-ai {
+  background: var(--un-forge);
+  color: #0b0b0b;
+  font-weight: 700;
+}
+#unsynth-overlay #unsynth-not-ai:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+#unsynth-overlay #unsynth-back {
+  background: var(--un-accent);
+  color: #0b0b0b;
+}
+
+/* ---- watch page: Block channel chip — lives below channel name ---- */
+.un-watch-blockbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 6px 0 0 0;
+  padding: 5px 12px 5px 9px;
+  border-radius: 999px;
+  /* Tokens, not white alphas. Border, fill and text were all white-on-
+     transparent, so on a light YouTube page the entire control vanished —
+     measured 1:1 on its label. An alpha tint is the right tool for a surface of
+     unknown colour; it just has to be the right COLOUR of alpha, which is black
+     on a light ground. */
+  border: 1px solid var(--un-yt-line);
+  background: var(--un-yt-raised);
+  color: var(--un-yt-text-dim);
+  font: 600 11.5px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.un-watch-blockbtn:hover:not(:disabled) {
+  background: rgba(255, 90, 95, 0.12);
+  border-color: rgba(255, 90, 95, 0.35);
+  color: var(--un-accent-light);
+}
+.un-watch-blockbtn:focus-visible {
+  outline: 2px solid var(--yt-spec-call-to-action, var(--un-focus));
+  outline-offset: 2px;
+}
+/* Blocked state — collapses to just a green checkmark chip */
+.un-watch-blockbtn.on {
+  padding: 4px 8px;
+  background: rgba(80, 200, 120, 0.08);
+  border-color: rgba(80, 200, 120, 0.25);
+  color: var(--un-forge);
+  cursor: default;
+}
+.un-watch-blockbtn:disabled:not(.on) {
+  opacity: 0.35;
+  cursor: default;
+}
+.un-wbb-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.un-wbb-label {
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .un-watched-mark .uwm-chip,
+  .un-wft-btn,
+  .un-plm-select-btn,
+  .un-track-dot.on {
+    transition: none !important;
+    animation: none !important;
+  }
+  .un-watched-dim .un-watched-host::before,
+  .un-watched-dim :is(h3, #video-title) {
+    transition: none !important;
+  }
+}
+
+/* ---- taste match badge (watch-page suggestion rail) ---- */
+/* Bottom-LEFT of the thumbnail.
+   It used to sit top-right, opposite the AI badge — which put it exactly on
+   top of the quick-action buttons (.un-plm-feedacts, also top:6px/right:6px)
+   and at a HIGHER z-index, so the badge swallowed the clicks meant for
+   "+Q" / "add to playlist". Bottom-left is the only corner left free:
+   top-left is the AI badge and the watched bubble, top-right is the quick
+   actions, bottom-right is YouTube's own duration chip. */
+.un-taste-badge {
+  position: absolute;
+  /* FLUSH head strip: the badge is the middle segment, between the watched eye
+     and the select checkbox, welded to the thumbnail's top edge. It used to
+     sit bottom-left, which is the corner the checkbox also claimed. */
+  top: 0;
+  bottom: auto;
+  /* Butts against the eye chip. Its width is MEASURED, not assumed: the chip
+     grows to fit a timestamp ("Yesterday" renders 86px wide), so a hardcoded
+     28px put the next segment inside it. watch-history.js publishes --un-eye-w. */
+  left: var(--un-eye-w, 28px);
+  z-index: 25; /* below the quick actions (30) — never intercept their clicks */
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--un-txt);
+  font: 700 11px/1 Roboto, Arial, sans-serif;
+  letter-spacing: 0.3px;
+  box-shadow: none;
+  pointer-events: auto;
+}
+/* The select checkbox later claimed this same corner (.un-plm-selectbtn is
+   also bottom:6px/left:6px) at z-index 82, so it rendered ON TOP of this badge
+   and hid all but its tail — "★ 65%" read as a stray "5%". Measured: the badge
+   spans 48px from x=334 and the 28px checkbox covered x=334-362.
+   The comment above ("bottom-left is the only corner left free") predates that
+   button and is no longer true.
+   Shift clear of the checkbox only on tiles that actually have one, so a tile
+   without bulk-select keeps the badge in the corner. 6 + 28 + 6 = 40.
+   This is a class rather than an ancestor selector because the badge hangs off
+   ytd-thumbnail while the checkbox lives in a sibling .un-plm-overlay, so no
+   selector joins the two — taste-rank.js sets it. */
+/* The checkbox now follows the badge along the top strip rather than sharing
+   the bottom-left corner, so the badge no longer needs to dodge it — but
+   taste-rank.js still flags it, and that flag is what tells the checkbox how
+   far to shift. Kept at the eye's width: the badge starts right after the eye
+   either way. */
+.un-taste-badge.has-select-btn {
+  left: var(--un-eye-w, 28px);
+}
+/* A floor for --un-taste-w on any tile that actually has a badge. taste-rank.js
+   overwrites this with the MEASURED width, but until it does (first paint, or a
+   caller that sets the class without the variable) the checkbox would fall back
+   to 0 and land on top of the badge.
+   Sized for the WIDEST real badge, not the narrowest: '★ 100%' renders at 51px,
+   and a floor below that still lets the checkbox clip the badge's tail. A floor
+   that is slightly too wide only leaves a hairline gap until the real width
+   lands; one that is too narrow is the bug this exists to prevent. */
+ytd-video-renderer:has(.un-taste-badge),
+ytd-rich-item-renderer:has(.un-taste-badge),
+yt-lockup-view-model:has(.un-taste-badge),
+ytd-compact-video-renderer:has(.un-taste-badge) {
+  --un-taste-w: 52px;
+}
+/* In the head strip the badge shares the strip's own glass rather than
+   carrying a solid fill of its own — a solid green block read as a separate
+   sticker pasted over the strip and dominated it. The match level now lives in
+   the TEXT colour, which is the part that actually carries the meaning. */
+.un-taste-badge.lvl-high {
+  background: rgba(10, 10, 13, 0.86);
+  color: var(--un-match-high);
+}
+.un-taste-badge.lvl-medium {
+  background: rgba(10, 10, 13, 0.86);
+  color: var(--un-match-mid);
+}
+.un-taste-badge.lvl-low {
+  background: rgba(10, 10, 13, 0.86);
+  color: var(--un-match-low);
+}
+
+/* Floating Mini-Queue Dock & Flyout Drawer */
+/* The dock and this card ignore the page theme, on purpose.
+   The masthead bar above is fully themed, with its own light/dark token set
+   and a documented reason for not trusting --yt-spec-*, so the absence of the
+   same treatment here is a deliberate constraint rather than an oversight, and
+   was previously only inferable.
+   A masthead chip only ever sits against YouTube's own themed nav bar, so
+   matching that theme is right. These are position: fixed overlays sitting on
+   top of whatever happens to be underneath -- a bright thumbnail, a dark video
+   frame, a page mid-scroll. There is no background to match, so they commit to
+   one high-contrast treatment instead. Flipping them light on a light theme
+   would land a pale panel over a bright thumbnail with no contrast margin,
+   which is a worse failure than not matching the page.
+   Bottom-right for the same reason the miniplayer avoids it: it is the corner
+   YouTube's own player controls do not occupy, and the one the bulk bar is
+   told to clear (see emitQueueDockChange). */
+
+/* Queue finished card -- stands in for the dock once the queue drains, so
+   "ran to completion" is not the same pixels as "never mounted". Matches the
+   dock's dark glass treatment deliberately: it occupies the dock's corner and
+   is read as the same surface, not a new one. */
+.un-queue-done {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: var(--un-z-queue-dock, 2147483100);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(14, 16, 22, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(90, 200, 140, 0.22);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 8px 10px 8px 12px;
+  max-width: min(340px, 94vw);
+  animation: un-pop-fadein 0.18s cubic-bezier(0.2, 0, 0, 1);
+  font: var(--un-text-body, 13px)/1.3 var(--un-font, Roboto, Arial, sans-serif);
+  color: var(--un-on-plate); /* fixed: the plate is dark in both themes (design-tokens.css) */
+  user-select: none;
+}
+
+.un-qdone-tick {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(90, 200, 140, 0.18);
+  color: #6fdca4;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.un-qdone-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.un-qdone-text strong {
+  font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.un-qdone-text span {
+  font-size: 11px;
+  color: rgba(241, 241, 241, 0.62);
+  white-space: nowrap;
+}
+
+.un-qdone-x {
+  flex: 0 0 auto;
+  margin-left: 2px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(241, 241, 241, 0.55);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.un-qdone-x:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--un-yt-text);
+}
+
+/* Thumbnail whose image failed to load. Dropping the src is what actually
+   stops the browser painting its own broken-image glyph; the base rule's
+   background then shows through, so this class sets no colour of its own --
+   it exists so the state is inspectable (and testable) rather than implicit.
+   A dashed edge marks it as absent-on-purpose rather than still loading. */
+.un-qf-thumb.un-thumb-missing {
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  box-sizing: border-box;
+}
+
+.un-qdone-x:focus-visible {
+  outline: 2px solid rgba(255, 90, 95, 0.7);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .un-queue-done { animation: none; }
+}
+
+.un-queue-dock {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: var(--un-z-queue-dock, 2147483100);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(14, 16, 22, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 90, 95, 0.2);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 6px 8px;
+  max-width: min(540px, 94vw);
+  animation: un-pop-fadein 0.18s cubic-bezier(0.2, 0, 0, 1);
+  font: var(--un-text-body, 13px)/1.3 var(--un-font, Roboto, Arial, sans-serif);
+  color: var(--un-on-plate); /* fixed: the plate is dark in both themes (design-tokens.css) */
+  user-select: none;
+  transition: bottom 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+.un-queue-dock.has-flyout-open {
+  border-color: rgba(255, 90, 95, 0.45);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.75), 0 0 16px rgba(255, 90, 95, 0.25);
+}
+.un-queue-dock.is-dragging {
+  cursor: grabbing !important;
+  opacity: 0.92;
+  transform: scale(1.02);
+  transition: none !important;
+}
+.un-queue-dock.is-dragging * {
+  pointer-events: none !important;
+}
+
+/* Compact & Minimal Modes */
+.un-queue-dock.mode-compact {
+  padding: 5px 6px;
+  gap: 5px;
+}
+.un-queue-dock.mode-minimal {
+  padding: 4px;
+  border-radius: 50%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+}
+
+/* Floating Queue Flyout Drawer */
+.un-queue-flyout {
+  position: absolute;
+  width: 440px;
+  max-width: calc(100vw - 20px);
+  max-height: 480px;
+  background: rgba(15, 17, 24, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: un-pop-fadein 0.2s cubic-bezier(0.2, 0, 0, 1);
+  z-index: var(--un-z-queue-flyout, 2147483101);
+}
+.un-queue-flyout.fly-up {
+  bottom: calc(100% + 12px);
+  top: auto;
+}
+.un-queue-flyout.fly-down {
+  top: calc(100% + 12px);
+  bottom: auto;
+}
+.un-queue-flyout.fly-right {
+  right: 0;
+  left: auto;
+}
+.un-queue-flyout.fly-left {
+  left: 0;
+  right: auto;
+}
+.un-qf-header {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 8px;
+}
+.un-qf-head-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+/* Wraps. This row held three fixed buttons and was safely nowrap; the tidy
+   actions ("Clear N watched" / "Rescue N stale" / "Remove N unavailable")
+   appear conditionally and carry a variable count, so its width is no longer
+   knowable in advance — measured at 465px of buttons inside a 442px flyout,
+   putting the last two 165px past the right edge with no scrollbar and no way
+   to reach them. */
+.un-qf-head-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+.un-qf-title-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.un-qf-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--un-txt);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.un-qf-count {
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255, 90, 95, 0.2);
+  color: var(--un-accent-light);
+  border: 1px solid rgba(255, 90, 95, 0.4);
+  padding: 1px 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.un-qf-progress {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.un-qf-progress:empty {
+  display: none;
+}
+.un-qf-head-meta {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.un-qf-acts {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  /* flex-wrap plus min-width:0 instead of flex-shrink:0 — the old rule is what
+     forced the overflow above rather than letting the row give ground. */
+  flex-wrap: wrap;
+  row-gap: 6px;
+  min-width: 0;
+}
+.un-qf-mode-group {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 1px;
+  flex-shrink: 0;
+}
+.un-qf-mode-btn {
+  height: 22px;
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.un-qf-mode-btn.on {
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--un-txt);
+}
+.un-qf-act-btn {
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
+  white-space: nowrap;
+}
+.un-qf-act-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--un-txt);
+  transform: translateY(-1px);
+}
+.un-qf-act-btn.clear:hover {
+  background: rgba(255, 90, 95, 0.2);
+  color: var(--un-accent);
+}
+/* Tidy actions ("Clear N watched", "Rescue N stale", "Remove N unavailable")
+   only render when they have a real count to act on, so they are the row's
+   attention-getter rather than another equal-weight button. Bordered rather
+   than filled: they sit next to Clear-all, which is the genuinely destructive
+   one, and must not outrank it visually. */
+.un-qf-act-btn.tidy {
+  border-color: rgba(120, 200, 255, 0.35);
+  color: rgba(160, 215, 255, 0.95);
+}
+.un-qf-act-btn.tidy:hover {
+  background: rgba(120, 200, 255, 0.18);
+  color: #cfe9ff;
+}
+
+/* Row flags: why this item is marked. Inline in the subtitle line, because the
+   flyout shows ~8 of up to 500 rows and a second line per row would cost a
+   third of the visible queue. */
+.un-qf-flag {
+  display: inline-block;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  vertical-align: baseline;
+}
+.un-qf-flag.watched {
+  background: rgba(110, 231, 135, 0.16);
+  color: var(--un-forge);
+}
+.un-qf-flag.stale {
+  background: rgba(255, 193, 90, 0.16);
+  color: #ffc15a;
+}
+.un-qf-flag.gone {
+  background: rgba(255, 90, 95, 0.16);
+  color: #ff8b8f;
+}
+.un-qf-flag.partial {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+/* Marked rows are dimmed, not hidden: the user asked to SEE what is flagged,
+   and a row that vanishes before they act on it explains nothing. Full opacity
+   returns on hover so the row is still readable when they reach for it. */
+.un-qf-row.is-watched,
+.un-qf-row.is-stale,
+.un-qf-row.is-gone {
+  opacity: 0.62;
+}
+.un-qf-row.is-watched:hover,
+.un-qf-row.is-stale:hover,
+.un-qf-row.is-gone:hover {
+  opacity: 1;
+}
+/* A left edge marker, so the shape of the queue is readable at a glance while
+   scrolling past — which of these rows is dead weight, without reading a word. */
+.un-qf-row.is-watched {
+  box-shadow: inset 2px 0 0 rgba(110, 231, 135, 0.5);
+}
+.un-qf-row.is-stale {
+  box-shadow: inset 2px 0 0 rgba(255, 193, 90, 0.5);
+}
+.un-qf-row.is-gone {
+  box-shadow: inset 2px 0 0 rgba(255, 90, 95, 0.5);
+}
+
+/* Confirmation sheet. Covers the flyout rather than sitting beside it: the
+   list it shows IS the thing being confirmed, so it gets the whole panel and
+   the queue behind it stays out of the way. */
+.un-qtidy-confirm {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 8px;
+  background: rgba(16, 16, 18, 0.985);
+  border-radius: inherit;
+}
+.un-qtidy-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--un-txt);
+  line-height: 1.25;
+}
+.un-qtidy-note {
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.62);
+}
+/* Scrolls. A tidy action can legitimately cover the whole 500-item cap, and a
+   list that runs off the sheet would hide exactly the rows the user is meant to
+   be checking. */
+.un-qtidy-list {
+  flex: 1 1 auto;
+  min-height: 60px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 6px 4px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.un-qtidy-row {
+  display: flex;
+  gap: 6px;
+  padding: 2px 5px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.85);
+}
+.un-qtidy-n {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.4);
+  font-variant-numeric: tabular-nums;
+}
+.un-qtidy-t {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.un-qtidy-acts {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.un-qtidy-btn {
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.un-qtidy-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--un-txt);
+}
+.un-qtidy-btn.go {
+  border-color: rgba(120, 200, 255, 0.4);
+  color: #cfe9ff;
+}
+.un-qtidy-btn.go:hover {
+  background: rgba(120, 200, 255, 0.2);
+}
+.un-qtidy-btn.go.danger {
+  border-color: rgba(255, 90, 95, 0.4);
+  color: #ff8b8f;
+}
+.un-qtidy-btn.go.danger:hover {
+  background: rgba(255, 90, 95, 0.2);
+  color: var(--un-accent);
+}
+.un-qf-close-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.12s ease, background 0.12s ease;
+  flex-shrink: 0;
+}
+.un-qf-close-btn:hover {
+  color: var(--un-txt);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Flyout Items List */
+.un-qf-list {
+  padding: 6px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 360px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+.un-qf-list::-webkit-scrollbar {
+  width: 5px;
+}
+.un-qf-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+.un-qf-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
+  position: relative;
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+}
+.un-qf-row.is-dragging-row {
+  opacity: 0.35;
+}
+.un-qf-row.drop-target {
+  background: rgba(255, 90, 95, 0.15) !important;
+  border-top-color: var(--un-accent);
+}
+.un-qf-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.un-qf-row.is-playing-next {
+  background: rgba(255, 140, 90, 0.08);
+  border-bottom-color: rgba(255, 140, 90, 0.25);
+}
+.un-qf-row.is-playing-next:hover {
+  background: rgba(255, 140, 90, 0.14);
+}
+.un-qf-next-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #ff8c5a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 1px;
+}
+.un-qf-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+  cursor: grab;
+}
+.un-qf-thumb {
+  width: 44px;
+  height: 28px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.un-qf-meta {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  overflow: hidden;
+}
+.un-qf-item-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--un-yt-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.un-qf-item-sub {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+  max-width: 100%;
+}
+.un-qf-row-acts {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.14s ease;
+  flex-shrink: 0;
+}
+.un-qf-row:hover .un-qf-row-acts,
+.un-qf-row:focus-within .un-qf-row-acts {
+  opacity: 1;
+}
+.un-qf-row-btn {
+  width: 24px;
+  height: 24px;
+  position: relative;
+  padding: 0;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
+}
+.un-qf-row-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: var(--un-txt);
+  transform: translateY(-1px);
+}
+.un-qf-row-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+  pointer-events: none;
+}
+.un-qf-row-btn.play {
+  background: rgba(255, 90, 95, 0.2);
+  color: var(--un-accent-light);
+  border-color: rgba(255, 90, 95, 0.35);
+  font-size: 10px;
+}
+.un-qf-row-btn.play:hover {
+  background: var(--un-accent);
+  color: var(--un-txt);
+}
+.un-qf-row-btn.pl {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+}
+.un-qf-row-btn.pl:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: var(--un-txt);
+}
+
+/* Quick Playlist Menu in Queue Flyout */
+.un-qf-pl-menu {
+  position: fixed;
+  z-index: var(--un-z-menu, 2147483300);
+  width: 300px;
+  max-width: calc(100vw - 24px);
+  max-height: 340px;
+  overflow-y: auto;
+  background: rgba(18, 20, 28, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: un-pop-fadein 0.14s cubic-bezier(0.2, 0, 0, 1);
+  scrollbar-width: thin;
+}
+.un-qf-pl-head {
+  padding: 4px 8px 6px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 2px;
+}
+.un-qf-pl-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.un-qf-pl-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #e8e8e8;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.un-qf-pl-item-icon {
+  flex-shrink: 0;
+  font-size: 13px;
+  line-height: 1;
+}
+.un-qf-pl-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
+  word-break: break-word;
+}
+.un-qf-pl-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--un-txt);
+}
+.un-qf-pl-item.wl {
+  color: #ff8c5a;
+  font-weight: 600;
+}
+.un-qf-pl-item.wl:hover {
+  background: rgba(255, 140, 90, 0.18);
+  color: #ff9d70;
+}
+.un-qf-pl-item.new-pl {
+  color: #5ad8ff;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px 6px 0 0;
+  margin-bottom: 2px;
+}
+.un-qf-pl-item.new-pl:hover {
+  background: rgba(90, 216, 255, 0.16);
+  color: #7ee2ff;
+}
+.un-qf-pl-item.loading {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  cursor: default;
+}
+.un-qf-pl-hint {
+  padding: 8px 10px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+}
+
+/* Inline "New Playlist" name form — replaces a native prompt() dialog with
+   something that matches the rest of the picker's styling. */
+.un-qf-pl-newform {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 7px 8px 8px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 2px;
+}
+.un-qf-pl-newform-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--un-txt);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  outline: none;
+}
+.un-qf-pl-newform-input:focus {
+  border-color: #5ad8ff;
+  background: rgba(255, 255, 255, 0.1);
+}
+.un-qf-pl-newform-row {
+  display: flex;
+  gap: 6px;
+}
+.un-qf-pl-newform-btn {
+  flex: 1;
+  padding: 6px 0;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.1s ease, opacity 0.1s ease;
+}
+.un-qf-pl-newform-btn.create {
+  background: #5ad8ff;
+  color: #0b1420;
+}
+.un-qf-pl-newform-btn.create:hover {
+  background: #7ee2ff;
+}
+.un-qf-pl-newform-btn.create:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.un-qf-pl-newform-btn.cancel {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+}
+.un-qf-pl-newform-btn.cancel:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--un-txt);
+}
+
+/* Accessible, non-overlapping compact controls for queue flyout */
+.un-qf-close-btn,
+.un-qf-act-btn,
+.un-qf-mode-btn {
+  position: relative;
+}
+
+/* A playlist the video is already in. The row is a toggle, so it reads as
+   "in this one — click to take it out" rather than looking like an add that
+   silently did nothing. */
+.un-qf-pl-item--in {
+  color: var(--un-forge);
+}
+.un-qf-pl-item--in .un-qf-pl-item-icon {
+  color: var(--un-forge);
+}
+.un-qf-pl-item--in:hover {
+  color: var(--un-accent);
+  background: var(--un-accent-soft, rgba(255, 90, 95, 0.14));
+}
+.un-qf-pl-item--in:hover .un-qf-pl-item-icon {
+  color: var(--un-accent);
+}
+
+/* ── Smart queue fill menu ──
+   Spawned from the catch-up digest's "Fill queue" button, which lives on the
+   feed page — the top surface on the layer scale. It therefore needs
+   --un-z-feedpage-menu rather than the generic --un-z-menu, which sits below
+   the feed page and would put this menu under the page that opened it. */
+.un-qfill-menu {
+  position: fixed;
+  z-index: var(--un-z-feedpage-menu, 2147483600);
+  min-width: 260px;
+  max-width: 320px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #212121;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+  font-family: Roboto, Arial, sans-serif;
+}
+.un-qfill-head {
+  padding: 2px 4px 6px;
+  font: 600 12px/1.3 Roboto, Arial, sans-serif;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.un-qfill-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--un-yt-text);
+  font: 600 13px/1.2 Roboto, Arial, sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.un-qfill-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.un-qfill-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+.un-qfill-note {
+  font: 400 11px/1.3 Roboto, Arial, sans-serif;
+  color: rgba(255, 255, 255, 0.55);
+}
+.un-qfill-budget {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 2px 0;
+}
+.un-qfill-budget-label {
+  margin-right: 2px;
+  font: 500 11px/1 Roboto, Arial, sans-serif;
+  color: rgba(255, 255, 255, 0.5);
+}
+.un-qfill-min {
+  padding: 4px 9px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.7);
+  font: 500 11px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.un-qfill-min:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--un-txt);
+}
+.un-qfill-min.active {
+  background: var(--un-yt-text);
+  color: var(--un-yt-bg);
+  font-weight: 600;
+}

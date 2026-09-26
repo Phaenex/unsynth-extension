@@ -1,0 +1,328 @@
+/* Compact description of the video currently on the watch page. */
+
+/* NO CARD. The deck slot already groups this.
+   This was a bordered, rounded, filled panel with a 3px blue left rule, living
+   inside a deck slot whose whole job is to separate sections with a hairline.
+   Two grouping mechanisms for one group, and the inner one is the louder:
+   card-inside-strip is the box-in-box the redesign exists to remove.
+   The container communicated nothing the slot was not already saying, so it
+   goes, and spacing carries the grouping instead. */
+.un-desc-digest {
+  margin: 0;
+  /* Left padding to nothing: the slot owns the column edge, so an inset here
+     only pushed our text out of alignment with the rows above and below. */
+  padding: 2px 0 0;
+  border: 0;
+  background: none;
+  font: 500 12px/1.45 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+ytd-watch-metadata .un-desc-digest {
+  flex: 0 0 100%;
+}
+ytd-watch-metadata :has(> .un-desc-digest) {
+  flex-wrap: wrap;
+}
+
+ytd-watch-flexy[theater] .un-desc-digest,
+html.un-full-width .un-desc-digest {
+  position: sticky;
+  top: 56px;
+  z-index: 4;
+  backdrop-filter: blur(10px);
+  background: var(--un-yt-bg);
+}
+
+.un-desc-title {
+  font: 650 13px/1.3 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.un-desc-channel {
+  margin-top: 2px;
+  color: var(--un-yt-text-dim);
+  font-size: 12px;
+}
+
+.un-desc-empty {
+  margin: 6px 0 0;
+  color: var(--un-yt-text-dim);
+}
+
+.un-desc-stamps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.un-desc-stamp {
+  border: 1px solid var(--un-yt-line);
+  background: transparent;
+  color: var(--un-yt-text);
+  border-radius: 999px;
+  /* 24px minimum target (WCAG 2.5.8). Measured 40x19 before — the glyph
+     size is unchanged, the hit area is not. */
+  padding: 6px 8px;
+  min-height: 24px;
+  font: 600 11px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+}
+
+.un-desc-stamp:hover {
+  background: var(--un-yt-raised-hover);
+}
+
+.un-desc-links {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
+}
+
+.un-desc-links a {
+  color: var(--un-link-text, #0b5cab);
+  text-decoration: none;
+  /* 11px to match the timestamp chips beside them: same row, same kind of
+     object, and they were 12px for no reason other than inheritance. */
+  font-size: 11px;
+  font-weight: 600;
+  /* 24px minimum target, same as the chapter chips beside them. These were bare
+     anchors at 34x14 — the text is the control, and a 14px-tall link is a hard
+     thing to hit. The row gap drops to compensate so the band does not grow. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+.un-desc-links a:hover {
+  text-decoration: underline;
+}
+
+/* The list item that carries the control on the links row. No marker, no box:
+   it is a position, not a container. */
+.un-desc-more-host {
+  display: inline-flex;
+  align-items: center;
+}
+
+.un-desc-more {
+  /* Inline, and now ACTUALLY inline. The comment below has said "not a row of
+     its own" since it was written, but the button was still appended straight
+     to the panel, so it rendered as a 23px row — nearly a quarter of a 104px
+     digest — for one short label. It now rides the links row, which already
+     wraps and had the horizontal space. Intent and DOM finally agree.
+
+     It sat on its own line directly above a native description block that
+     offers the same affordance, spending a full row of a surface measured at
+     2px from the fold. It keeps its size, focus ring and keyboard
+     reachability. */
+  display: inline-block;
+  margin-top: 0;
+  border: 0;
+  background: transparent;
+  color: var(--un-yt-text-dim);
+  font: 600 11px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  /* An 11px line-height with no padding gave an 11px-tall click target, which
+     the zoom audit caught as a collapsed control. Vertical padding grows the
+     target without costing a row: the button stays inline-block, so the extra
+     height is absorbed by the line it already sits on rather than pushing the
+     surface further from the fold, which is what the note above protects. */
+  padding: 6px 2px;
+  margin-left: -2px;
+}
+
+.un-desc-more:hover {
+  color: var(--un-yt-text);
+}
+
+/* Overflow chip for capped chapter and link rows.
+   Deliberately quieter than a real chip: it is a control that reveals content
+   rather than content itself, so it reads as the row's continuation and not as
+   another chapter. Same height and rhythm as .un-desc-stamp so the row keeps
+   one baseline. */
+.un-desc-more-chip {
+  border: 1px solid var(--un-yt-line);
+  background: none;
+  color: var(--un-yt-text-dim);
+  border-radius: 999px;
+  padding: 6px 8px;
+  min-height: 24px;
+  font: 600 11px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+.un-desc-more-chip:hover {
+  color: var(--un-yt-text);
+  border-color: var(--un-yt-text-dim);
+}
+.un-desc-more-chip:focus-visible {
+  outline: 2px solid var(--un-focus);
+  outline-offset: 2px;
+}
+
+/* The current-video summary.
+   Two lines maximum: this answers "what is this" at a glance, and a description
+   that runs long belongs behind "Open full description" rather than pushing the
+   chapter row toward the fold. Sized and coloured as host metadata rather than
+   as a quote or a callout — it is the same kind of text as the line above it,
+   not a different kind of object. */
+.un-desc-blurb {
+  margin: 0 0 2px;
+  font: 400 13px/1.45 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text);
+  display: -webkit-box;
+  /* ONE line, not two. Two lines of summary cost ~19px on a surface measured
+     at 2px from the fold, and the first line already answers "what is this" —
+     the rest is detail, which is what "Open full description" is for. The clamp
+     is a display limit only: the full text stays in the DOM and in the title
+     attribute, so it is available to a screen reader and on hover. */
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   WORTH KNOWING + EVERY LINK, BY PURPOSE (2026-09-24)
+
+   Owner request: list every link in the description, say what each one is
+   for, and pull out anything important as a summary. Links were four
+   hostnames and a "+N". Now every link is listed under what it is for
+   (Sponsors & deals, Support, Merch, Socials, Listen, More on YouTube,
+   Sources, Other), named by the description's own words with the site beside
+   it, and the notable lines (a code, a disclosure, a disclaimer, a correction,
+   the credits) sit above them.
+   ========================================================================== */
+.un-desc-h {
+  margin: 10px 0 4px;
+  font: 500 11px/1.3 Roboto, Arial, sans-serif;
+  letter-spacing: .02em;
+  color: var(--un-yt-text-dim);
+}
+.un-desc-know-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.un-desc-know-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: baseline;
+  font: 400 12px/1.4 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text);
+}
+.un-desc-know-k {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.un-desc-know-t {
+  color: var(--un-yt-text-dim);
+  min-width: 0;
+}
+.un-desc-linkgroups .un-desc-links {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+.un-desc-linkgroups .un-desc-links a {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 26px;
+  font-size: 12px;
+  min-width: 0;
+}
+.un-desc-link-t {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.un-desc-link-h {
+  flex: none;
+  font-weight: 400;
+  color: var(--un-yt-text-dim);
+}
+/* Long link names truncate inside the column instead of overflowing it: the
+   first render drew a horizontal scrollbar under the list, with the site name
+   pushed off the right edge (screenshot, 2026-09-24). */
+.un-desc-linkgroups .un-desc-link { min-width: 0; }
+.un-desc-linkgroups .un-desc-links a { max-width: 100%; }
+
+/* ==========================================================================
+   QUICK DESCRIPTION WHOLE, FULL DESCRIPTION IN PLACE (2026-09-24)
+
+   Owner request: show the quick description in full, never cut off or behind
+   a toggle, and open the full description in place. Beside the video the
+   about text shows entire (the parser ends it at a sentence, never mid-word),
+   and "Open full description" unfolds the whole text inside the guide.
+   ========================================================================== */
+.un-desc-full {
+  margin: 6px 0 4px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--un-yt-line);
+}
+.un-desc-full[hidden] { display: none; }
+.un-desc-full-text {
+  font: 400 13px/1.5 Roboto, Arial, sans-serif;
+  color: var(--un-yt-text);
+  overflow-wrap: anywhere;
+}
+.un-desc-full-text a {
+  color: var(--un-link-text, #0b5cab);
+  text-decoration: none;
+}
+.un-desc-full-text a:hover { text-decoration: underline; }
+.un-desc-full-ts {
+  display: inline;
+  padding: 0 2px;
+  margin: 0;
+  border: 0;
+  background: none;
+  color: var(--un-link-text, #0b5cab);
+  font: 600 13px/1.5 Roboto, Arial, sans-serif;
+  cursor: pointer;
+}
+.un-desc-full-ts:hover { text-decoration: underline; }
+.un-desc-full-ts:focus-visible,
+.un-desc-full-yt:focus-visible { outline: 2px solid var(--un-link-text, #0b5cab); outline-offset: 2px; }
+.un-desc-full-yt {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--un-yt-text-dim);
+  font: 500 12px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+}
+.un-desc-full-yt:hover { color: var(--un-yt-text); }
+.un-desc-full-hide { margin-right: 16px; color: var(--un-link-text, #0b5cab); }
+
+/* Link names wrap to two lines rather than cutting at different points on
+   each row (review 2026-09-24: "ragged, unfinished"). The site stays at the
+   end of the name. */
+.un-desc-linkgroups .un-desc-links a { align-items: flex-start; }
+.un-desc-linkgroups .un-desc-link-t {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  text-overflow: clip;
+}
+.un-desc-linkgroups .un-desc-link-h { padding-top: 1px; }

@@ -1,0 +1,1044 @@
+/* Playlist manager — on-page toolbar above the rows (search + Select + Dedupe + count). */
+/* Two rows, because the bar holds two different kinds of thing: a filter you
+   leave running while you read, and actions you fire once. One flat row of
+   identical pills gave a rarely-used Export the same weight as the select mode
+   that changes what the whole page does. */
+.un-pl-toolbar {
+  padding: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+.un-pl-tb-head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.un-pl-toolbar .un-pl-search {
+  flex: 1;
+  min-width: 180px;
+}
+.un-pl-tb-acts {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.un-pl-tb-btn {
+  flex: none;
+  /* Secondary by default: these are occasional, and a row of filled pills reads
+     as five equally urgent choices. Outline until hovered. */
+  background: transparent;
+  border: 1px solid var(--un-yt-line);
+  border-radius: 999px;
+  color: var(--un-yt-text-dim);
+  padding: 7px 14px;
+  font: 500 13px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.un-pl-tb-btn:hover {
+  background: var(--un-hover-strong, #383838);
+  color: var(--un-yt-text);
+  border-color: var(--un-yt-text-dim);
+}
+/* The one action that changes the mode of the page, so it carries the weight. */
+.un-pl-tb-btn.un-pl-tb-primary {
+  background: var(--un-yt-chip);
+  color: var(--un-yt-text);
+  font-weight: 600;
+}
+/* Select mode changes what the whole page does, so it is the one state loud
+   enough to notice from the corner of your eye. Uses the product accent token
+   rather than a hardcoded hex so it tracks the rest of the UI. */
+.un-pl-tb-btn.on {
+  background: var(--un-accent, #ff5a5f);
+  border-color: var(--un-accent, #ff5a5f);
+  color: #0b0b0b;
+  font-weight: 600;
+}
+/* Sits beside the search field, NOT pushed to the right edge with
+   margin-left:auto. At the right edge it lands under the Forge tab
+   (position:fixed; right:0) and renders as "7 vid" with the tab over it. */
+.un-pl-tb-count {
+  flex: none;
+  color: var(--un-yt-text-dim);
+  font: 12.5px/1 Roboto, Arial, sans-serif;
+  white-space: nowrap;
+}
+
+/* The bulk-select toggle also lives in the YouTube masthead (see .un-plm-select-btn in core.css). */
+
+/* select mode: a full-row click shield + checkmark badge on each thumbnail */
+.un-plm-host {
+  position: relative;
+}
+body.un-plm-selecting .un-plm-host {
+  cursor: pointer;
+}
+/* dim the un-selected rows so selected ones clearly stand out */
+body.un-plm-selecting .un-plm-host:not(.un-plm-on) {
+  opacity: 0.55;
+  transition: opacity 0.12s;
+}
+.un-plm-shield {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: background 0.12s;
+}
+.un-plm-shield:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.un-plm-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  left: auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6);
+}
+.un-plm-tick {
+  color: #0b0b0b;
+  font: 800 17px/1 Roboto, Arial, sans-serif;
+  opacity: 0;
+}
+/* SELECTED state — coral everything, full opacity, ring, filled check */
+.un-plm-host.un-plm-on {
+  opacity: 1;
+  outline: 3px solid #ff5a5f;
+  outline-offset: -3px;
+  border-radius: 12px;
+}
+.un-plm-host.un-plm-on .un-plm-shield {
+  background: rgba(255, 90, 95, 0.22);
+}
+.un-plm-host.un-plm-on .un-plm-badge {
+  background: #ff5a5f;
+  border-color: #ff5a5f;
+}
+.un-plm-host.un-plm-on .un-plm-tick {
+  opacity: 1;
+}
+
+/* floating action bar */
+.un-plm-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--un-z-bulk-bar, 2147483200);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  max-width: 94vw;
+  padding: 9px 10px 9px 16px;
+  background: rgba(20, 20, 24, 0.95);
+  border: 1px solid var(--un-yt-line, #333);
+  border-radius: var(--un-radius-pill, 999px);
+  box-shadow: var(--un-shadow-md, 0 10px 34px rgba(0, 0, 0, 0.66));
+  backdrop-filter: blur(12px);
+  font: var(--un-text-body, 13px)/1 var(--un-font, Roboto, Arial, sans-serif);
+  color: var(--un-on-plate); /* fixed: the plate is dark in both themes (design-tokens.css) */
+}
+.un-plm-grp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.un-plm-div {
+  width: 1px;
+  align-self: stretch;
+  background: #383838;
+}
+.un-plm-count {
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  min-width: 86px;
+}
+.un-plm-link {
+  background: none;
+  border: 0;
+  color: #aab1bd;
+  font-size: 12.5px;
+  cursor: pointer;
+  padding: 4px 2px;
+  transition: color 0.12s;
+}
+.un-plm-link:hover {
+  color: #ff5a5f;
+}
+.un-plm-act {
+  background: var(--un-yt-line, #2a2a2a);
+  color: var(--un-yt-text, #f1f1f1);
+  border: 1px solid transparent;
+  border-radius: var(--un-radius-pill, 999px);
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.un-plm-act:hover:not(:disabled) {
+  background: var(--un-hover-strong, #383838);
+}
+.un-plm-act:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+.un-plm-rm {
+  background: transparent;
+  color: #ff5a5f;
+  border-color: rgba(255, 90, 95, 0.45);
+}
+.un-plm-rm:hover:not(:disabled) {
+  background: rgba(255, 90, 95, 0.14);
+}
+/* A precondition, not an action. Filled bright blue it was the loudest control
+   on a bar whose actual point is the Remove/Move/Add row beside it — it read as
+   the recommended thing to click. Outlined in the same blue it still stands out
+   as the one thing blocking you, without outranking the buttons it unblocks. */
+.un-plm-connect {
+  background: rgba(62, 166, 255, 0.12);
+  border-color: rgba(62, 166, 255, 0.55);
+  color: #9ecfff;
+  font-weight: 700;
+  transition: background 0.12s, border-color 0.12s;
+}
+.un-plm-connect:hover:not(:disabled) {
+  background: rgba(62, 166, 255, 0.22);
+  border-color: rgba(62, 166, 255, 0.85);
+}
+.un-plm-forge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--un-forge-text, #a8f5bc);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  padding: 7px 12px;
+  border-radius: var(--un-radius-sm, 9px);
+  background: var(--un-forge-soft, rgba(110, 231, 135, 0.12));
+  border: 1px solid color-mix(in srgb, var(--un-forge) 28%, transparent);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.un-plm-forge:hover {
+  color: var(--un-forge-light, #8ee9a8);
+  background: color-mix(in srgb, var(--un-forge) 22%, transparent);
+  border-color: color-mix(in srgb, var(--un-forge) 45%, transparent);
+}
+.un-plm-forge-btn {
+  background: var(--un-forge-soft, rgba(110, 231, 135, 0.14)) !important;
+  border: 1px solid color-mix(in srgb, var(--un-forge) 32%, transparent) !important;
+  color: var(--un-forge-text, #a8f5bc) !important;
+  font-weight: 700 !important;
+}
+.un-plm-forge-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--un-forge) 24%, transparent) !important;
+  color: var(--un-forge-light, #8ee9a8) !important;
+}
+.un-plm-toast {
+  color: #6ee787;
+  font-size: 12px;
+  white-space: nowrap;
+  padding-right: 6px;
+}
+
+/* destination picker (move/copy to a playlist) */
+.un-plm-picker {
+  position: fixed;
+  z-index: var(--un-z-menu, 2147483300);
+  width: 320px;
+  max-width: 92vw;
+  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: rgba(22, 22, 28, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--un-radius, 10px);
+  box-shadow: var(--un-shadow, 0 14px 40px rgba(0, 0, 0, 0.7));
+  backdrop-filter: blur(14px);
+  padding: 12px;
+  font: var(--un-text-body, 13px)/1.3 var(--un-font, Roboto, Arial, sans-serif);
+  color: var(--un-on-plate); /* fixed: the plate is dark in both themes (design-tokens.css) */
+  animation: un-pop-fadein 0.16s cubic-bezier(0.2, 0, 0, 1);
+}
+/* Every child sizes against this box, not the browser default content-box —
+   without it .un-plm-pk-row's `width:100% + padding` alone renders ~22px
+   wider than the list, which the browser resolves by adding a HORIZONTAL
+   scrollbar (with its own left/right arrow buttons) to .un-plm-pk-list even
+   though it only ever needed to scroll vertically. Observed live: "Move to…"
+   picker showing a bottom scrollbar on a 3-item list that fit fine
+   vertically. */
+.un-plm-picker,
+.un-plm-picker * {
+  box-sizing: border-box;
+}
+.un-plm-pk-head {
+  font-weight: 700;
+  color: #fff;
+  margin: 2px 2px 10px;
+  flex: none;
+}
+.un-plm-pk-search {
+  width: 100%;
+  box-sizing: border-box;
+  background: #121212;
+  border: 1px solid #3a3a3a;
+  border-radius: 9px;
+  color: #f1f1f1;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  margin-bottom: 8px;
+  flex: none;
+}
+.un-plm-pk-search:focus {
+  outline: none;
+  border-color: #ff5a5f;
+}
+.un-plm-pk-list {
+  max-height: min(360px, 50vh);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.un-plm-pk-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 9px;
+  color: #f1f1f1;
+  padding: 9px 11px;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.un-plm-pk-row:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+/* Read-only preview: shown when the account is connected but without write
+   scope. The playlists are real, they just can't be written to yet, so they
+   read as present-but-inactive rather than as clickable targets. */
+.un-plm-pk-list-ro {
+  max-height: min(220px, 40vh);
+  overflow-x: hidden;
+  margin-top: 8px;
+}
+.un-plm-pk-row-ro {
+  cursor: default;
+  opacity: 0.72;
+}
+.un-plm-pk-row-ro:hover {
+  background: none;
+}
+.un-plm-pk-t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.un-plm-pk-c {
+  color: var(--un-yt-text-dim);
+  font-size: 12px;
+  flex: none;
+}
+/* "already in this playlist" marker */
+.un-plm-pk-in {
+  flex: none;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #6ee787;
+  background: rgba(110, 231, 135, 0.16);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+.un-plm-pk-empty {
+  color: var(--un-yt-text-dim);
+  padding: 10px 4px;
+}
+.un-plm-picker .un-plm-connect {
+  width: 100%;
+  margin-top: 8px;
+}
+/* multi-select destination rows: checkbox + title (grows) + count */
+.un-plm-pk-t {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.un-plm-pk-ck {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #ff5a5f;
+  cursor: pointer;
+}
+.un-plm-pk-row.on {
+  background: rgba(255, 90, 95, 0.16);
+}
+.un-plm-pk-row.on .un-plm-pk-t {
+  color: #fff;
+}
+.un-plm-pk-sec {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--un-yt-text-dim);
+  padding: 8px 6px 2px;
+}
+.un-plm-pk-sec:first-child {
+  padding-top: 2px;
+}
+.un-plm-pk-foot {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.un-plm-pk-apply {
+  width: 100%;
+  border: 0;
+  border-radius: 9px;
+  padding: 10px 12px;
+  font: 700 13.5px/1 var(--un-font, Roboto, Arial, sans-serif);
+  background: #ff5a5f;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.12s, opacity 0.12s;
+}
+.un-plm-pk-apply:hover:not(:disabled) {
+  background: #ff6b70;
+}
+.un-plm-pk-apply:disabled {
+  background: #3a3a3a;
+  color: var(--un-yt-text-dim);
+  cursor: default;
+}
+.un-plm-pk-create-watched {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 9px;
+  padding: 10px 12px;
+  margin: 4px 0 8px;
+  font: 600 13px/1.3 var(--un-font, Roboto, Arial, sans-serif);
+  background: transparent;
+  color: var(--un-yt-text);
+  cursor: pointer;
+  text-align: left;
+}
+.un-plm-pk-create-watched:hover {
+  background: var(--un-hover-strong, #383838);
+  border-style: solid;
+}
+
+/* shared search inputs (playlist page + Save-to-playlist popup) */
+.un-pl-search,
+.un-pl-popup-search {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--un-yt-chip);
+  border: 1px solid var(--un-yt-line);
+  border-radius: 10px;
+  color: var(--un-yt-text);
+  padding: 9px 13px;
+  font: 14px/1.3 Roboto, Arial, sans-serif;
+}
+.un-pl-search:focus,
+.un-pl-popup-search:focus {
+  outline: none;
+  border-color: #ff5a5f;
+}
+.un-pl-popup-search {
+  margin: 4px 16px 8px;
+  width: calc(100% - 32px);
+}
+
+/* Thumbnail overlay. Playlist thumbs are ~200×112. Hover actions are one
+   segmented bar pinned top-right (6px / 28px, same as the watch chip).
+   Select is a checkbox bottom-left. Duration stays YouTube's, bottom-right.
+
+     [ eye                ] [ +Q ▶+ ⋯ ]
+     [                                 ]
+     [ ☐ select           ] [ 3:06    ] */
+.un-plm-rowthumb {
+  position: relative;
+  overflow: hidden;
+  /* A size container so the overlays can respond to the THUMBNAIL, not the
+     viewport. YouTube collapses feed tiles to a compact list at narrow widths —
+     measured 148x95 at 720px and 39x34 at 420px — and a viewport media query
+     cannot see that, because the same viewport serves different tile sizes on
+     different pages. inline-size only, so block layout is untouched. */
+  container-type: inline-size;
+  container-name: unthumb;
+}
+/* YouTube's own top-end hover chrome (watch later / queue) sits in the
+   same corner as our action rail and was intercepting every click —
+   measured: yt-thumbnail-hover-overlay-toggle-actions-view-model ate
+   the ⋯ button. Hide it on decorated thumbs; our rail replaces it. */
+.un-plm-rowthumb yt-thumbnail-hover-overlay-toggle-actions-view-model,
+.un-plm-rowthumb .ytThumbnailHoverOverlayToggleActionsViewModelHost,
+.un-plm-rowthumb ytd-thumbnail-overlay-toggle-button-renderer {
+  visibility: hidden;
+  pointer-events: none;
+}
+.un-plm-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+}
+.un-plm-rowacts:empty,
+.un-plm-feedacts:empty {
+  display: none;
+}
+/* One segmented bar, same 6px / 28px inset as the watch chip, pinned
+   inside the image. Separate floating pills plus a -3px lift were
+   hanging off the thumb into the title. */
+.un-plm-rowacts,
+/* FLUSH: welded to the thumbnail's top-right corner rather than floating 6px
+   inside it. The outer corner takes the thumbnail's own radius and the inner
+   corners square off, so the strip reads as part of the image instead of a
+   chip dropped on top. No border on the edges that meet the frame — a hairline
+   there is what made the old treatment look stuck on. */
+.un-plm-feedacts {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 81;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  height: 28px;
+  max-width: 100%;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0 var(--un-thumb-radius, 12px) 0 7px;
+  background: rgba(10, 10, 13, 0.86);
+  box-shadow: none;
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.13s ease;
+}
+.un-plm-rowthumb:hover .un-plm-rowacts,
+.un-plm-rowacts:focus-within,
+.un-plm-rowthumb:hover .un-plm-feedacts,
+.un-plm-feedacts:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: none) {
+  .un-plm-rowacts,
+  .un-plm-feedacts {
+    opacity: 0.92;
+    pointer-events: auto;
+  }
+}
+/* FLUSH head strip, left half.
+   The eye (.un-watched-mark, core.css), the match badge (.un-taste-badge) and
+   this checkbox are rendered by three different modules into three different
+   parents, so they cannot be one element. They are instead laid end to end
+   along the thumbnail's top edge at a shared 28px height, with the outer
+   corner rounded and the inner edges square, so they read as one strip:
+
+     [ eye ][ ★ 35% ][ ☐ ]                    [ +Q ▶+ ≡+ ]
+     0     28       ~76  104                            right edge
+
+   Offsets live in core.css beside the elements they move, since those files
+   own the eye and the badge. */
+.un-plm-selectbtn {
+  position: absolute;
+  /* Starts after the 28px eye chip, plus the match badge's measured width when
+     one is present (taste-rank.js publishes --un-taste-w on the tile; it sizes
+     to its own text, so "★ 7%" and "★ 100%" are different widths). Falls back
+     to 0 when there is no badge, putting the checkbox straight after the eye. */
+  /* Fallback is 0 only when there is genuinely no badge. When one IS present
+     the checkbox must clear it, so the has-select-btn rule below supplies a
+     safe minimum — without it, a badge whose width has not been published yet
+     (first paint, or a caller that sets the class but not the variable) put
+     the checkbox straight on top of it. */
+  left: calc(var(--un-eye-w, 28px) + var(--un-taste-w, 0px));
+  top: 0;
+  bottom: auto;
+  z-index: 82;
+  /* 0.70 at rest, full on hover, focus and touch (panel ruling 2026-09-23).
+     Interaction and visual review both asked the checkbox to recede: bulk
+     select is occasional, it sat at the same weight as the eye on every tile,
+     and "the two got confused". Accessibility ruled it must stay present and
+     clickable at rest (never hover-gated: that shipped once as an invisible
+     button that swallowed clicks, see e2e/thumbnail-select.spec.js), with the
+     reduction on this element only. 0.70 is the floor that keeps the box
+     outline at 3:1 against its plate over a white thumbnail (WCAG 1.4.11):
+     computed 3.13:1 there, 4.15:1 over black; 0.5 would be 2.06:1. The eye is
+     unchanged: marking watched is the frequent action. */
+  opacity: 0.7;
+  pointer-events: auto;
+  transition: opacity 0.13s ease;
+}
+.un-plm-rowthumb:hover .un-plm-selectbtn,
+.un-plm-selectbtn:hover,
+.un-plm-selectbtn:focus-visible,
+.un-plm-selectbtn:focus-within {
+  opacity: 1;
+}
+/* No hover on touch, so no way to bring it up: full strength there. */
+@media (hover: none) {
+  .un-plm-selectbtn { opacity: 1; }
+}
+/* Square inner edges and a hairline only on the divider side, so the eye,
+   the match badge and this checkbox butt together into one continuous strip
+   instead of three separate chips. */
+.un-plm-select {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0 0 7px 0;
+  background: rgba(10, 10, 13, 0.86);
+  box-shadow: none;
+  backdrop-filter: blur(3px);
+  cursor: pointer;
+  color: var(--un-on-plate); /* fixed: the plate is dark in both themes (design-tokens.css) */
+}
+.un-plm-select:hover,
+.un-plm-select:focus-visible {
+  background: rgba(45, 45, 55, 0.96);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+/* 0.92 white read as the loudest thing in the head strip, brighter than the
+   watched eye beside it. Toned to sit level with the other two segments; the
+   checked state is still full-strength coral, so selection is unmissable. */
+.un-plm-selectbox {
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border: 2px solid rgba(255, 255, 255, 0.62);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.28);
+  position: relative;
+}
+.un-plm-selectbox::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  opacity: 0;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  transition: opacity 0.12s ease;
+}
+.un-plm-select:hover .un-plm-selectbox::after,
+.un-plm-select:focus-visible .un-plm-selectbox::after {
+  opacity: 0.85;
+}
+/* QUEUE PANEL (YouTube's Up next).
+   Measured live: the row is 699px wide but the thumbnail is only 100x56 at its
+   left edge, and everything past x≈2500 is empty. Shrinking the checkbox and
+   tucking it bottom-left still put it ON the artwork — the reported problem.
+   Anchor it to the ROW's empty right side instead, so it never covers the
+   picture. The row is position:static by default, hence the positioning
+   context below; without it this would resolve against the page. */
+.un-plm-qprow {
+  position: relative;
+}
+/* Re-parented onto the row by playlist-bulk.js, so this positions against the
+   row rather than the clipped thumbnail.
+
+   These sit on the LEFT. An earlier version used `right: 10px` on the belief
+   that the space past the title was free. It is not: measured on a live queue,
+   the row is 683px, the title ends at x=2564 and YouTube's own ⋮ occupies
+   2572-2612 with 8px of slack. The checkbox landed at 2582-2610, inside that
+   button, and elementFromPoint() at the ⋮'s centre returned our
+   span.un-plm-selectbox — the menu could not be opened at all.
+
+   In flow rather than absolute, so the row's own flexbox reserves the space
+   and nothing can ever overlap YouTube's controls again. */
+.un-plm-qprow > .un-plm-selectbtn {
+  position: static;
+  left: auto;
+  right: auto;
+  top: auto;
+  bottom: auto;
+  transform: none;
+  z-index: 84;
+  opacity: 1;
+  flex: 0 0 auto;
+  align-self: center;
+  margin: 0 2px 0 0;
+}
+/* Per-row remove. Hidden until the row is hovered or something inside it has
+   keyboard focus, so a resting queue stays quiet — but never display:none,
+   which would take it out of the tab order entirely. */
+.un-plm-qprow > .un-plm-qprm {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 26px;
+  height: 26px;
+  margin: 0 4px 0 0;
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid #35353f;
+  background: #26262f;
+  color: var(--un-danger-text);
+  font: 600 13px/1 Roboto, Arial, sans-serif;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+.un-plm-qprow:hover > .un-plm-qprm,
+.un-plm-qprow:focus-within > .un-plm-qprm {
+  opacity: 1;
+  pointer-events: auto;
+}
+.un-plm-qprow > .un-plm-qprm:hover {
+  background: #3a2429;
+  border-color: #6d3238;
+}
+.un-plm-qprow > .un-plm-qprm:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .un-plm-qprow > .un-plm-qprm {
+    transition: none;
+  }
+}
+.un-plm-qpthumb .un-plm-select {
+  width: 24px;
+  height: 24px;
+}
+.un-plm-qpthumb .un-plm-selectbox {
+  width: 14px;
+  height: 14px;
+}
+body.un-plm-selecting .un-plm-overlay {
+  display: none;
+}
+.un-plm-overlay .un-plm-rowact {
+  flex: 0 0 auto;
+  min-width: 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.un-plm-overlay .un-plm-rowact + .un-plm-rowact {
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+.un-plm-overlay .un-plm-rowact:hover,
+.un-plm-overlay .un-plm-rowact:focus-visible,
+.un-plm-overlay .un-plm-rowact:active {
+  background: rgba(255, 255, 255, 0.1);
+  transform: none;
+}
+.un-plm-feedacts .un-plm-rowact {
+  width: auto;
+  min-width: 28px;
+  padding: 0 8px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.un-plm-queue-menu-item.danger {
+  color: var(--un-accent-light, #ff8a8e);
+}
+.un-plm-rowact {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(12, 12, 15, 0.88);
+  backdrop-filter: blur(10px);
+  color: #f1f1f1;
+  font: 600 13px/1 'YouTube Sans', Roboto, Arial, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease, color 0.14s ease;
+}
+.un-plm-rowact:hover {
+  background: rgba(45, 45, 55, 0.96);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.un-plm-rowact:active {
+  transform: translateY(0) scale(0.96);
+}
+.un-plm-rowact:disabled {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+}
+.un-plm-rowact-rm:hover {
+  background: rgba(255, 90, 95, 0.92);
+  border-color: rgba(255, 90, 95, 0.95);
+  color: #0b0b0b;
+}
+/* standalone flash toast for per-row actions (when the bulk bar isn't shown) */
+.un-plm-flash {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translate(-50%, 12px);
+  z-index: var(--un-z-menu, 2147483300);
+  background: rgba(20, 20, 24, 0.96);
+  border: 1px solid var(--un-yt-line, #333);
+  color: #6ee787;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font: 600 13px/1 Roboto, Arial, sans-serif;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.un-plm-flash.on {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* Keyboard focus rings. */
+.un-plm-shield:focus-visible,
+.un-plm-link:focus-visible,
+.un-plm-act:focus-visible,
+.un-plm-pk-row:focus-visible,
+.un-pl-tb-btn:focus-visible,
+.un-plm-select:focus-visible,
+.un-plm-rowact:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: 2px;
+}
+
+/* Play next / Add to queue popover (local watch queue), matches the visual
+   language of sub-manager.css's .un-home-menu/.un-sub-guide-item. */
+.un-plm-queue-menu {
+  position: fixed;
+  z-index: var(--un-z-menu, 2147483300);
+  background: var(--un-yt-panel, #181818);
+  border: 1px solid var(--un-yt-line, #303030);
+  border-radius: var(--un-radius, 10px);
+  padding: 6px;
+  min-width: 150px;
+  box-shadow: var(--un-shadow-md, 0 8px 28px rgba(0, 0, 0, 0.5));
+  backdrop-filter: blur(12px);
+  animation: un-pop-fadein 0.16s cubic-bezier(0.2, 0, 0, 1);
+}
+.un-plm-queue-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: var(--un-yt-text, #f1f1f1);
+  font: var(--un-text-body, 13px)/1.4 var(--un-font, Roboto, Arial, sans-serif);
+  padding: 8px 10px;
+  border-radius: var(--un-radius-sm, 8px);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.un-plm-queue-menu-item:hover,
+.un-plm-queue-menu-item:focus-visible {
+  background: var(--un-hover, rgba(255, 255, 255, 0.06));
+}
+.un-plm-queue-menu-item:focus-visible {
+  outline: 2px solid var(--un-focus, #3ea6ff);
+  outline-offset: -2px;
+}
+
+/* Shown only when BOTH removes are on the bar at once — on a playlist watch
+   page, where "Remove from queue" (this session's Up next) and "Delete from
+   playlist" (permanent, via the Data API) are both legitimate and are very much
+   not the same action. The destructive one is tinted so the two cannot be
+   confused at a glance; off that surface it is the only Remove and stays
+   neutral. */
+.un-plm-act.un-plm-danger {
+  border-color: rgba(255, 90, 95, 0.55);
+  color: #ffb4b7;
+}
+.un-plm-act.un-plm-danger:hover:not(:disabled) {
+  background: rgba(255, 90, 95, 0.14);
+  border-color: rgba(255, 90, 95, 0.8);
+}
+
+/* ---- overflow menu on the bulk bar ----
+   The bar had 12 equally-weighted pills at 833px, wrapping onto three rows
+   132px tall with labels broken across 2-3 lines ("Add / to / queue"). The
+   frequent actions stay inline; dedupe, copy links and both Forge routes moved
+   in here, turning four controls into one. */
+.un-plm-morewrap {
+  position: relative;
+  display: inline-flex;
+}
+.un-plm-moremenu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: rgba(22, 22, 28, 0.98);
+  border: 1px solid var(--un-yt-line, #333);
+  border-radius: var(--un-radius, 10px);
+  box-shadow: var(--un-shadow-md, 0 10px 34px rgba(0, 0, 0, 0.66));
+  backdrop-filter: blur(12px);
+  z-index: 1;
+}
+.un-plm-moremenu[hidden] {
+  display: none;
+}
+/* Menu rows read as a list, not as more pills: full width, left aligned, no
+   pill border. Overriding .un-plm-act deliberately — they are the same buttons
+   moved into a different context. */
+.un-plm-act.un-plm-moreitem,
+a.un-plm-forge.un-plm-moreitem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border-radius: var(--un-radius-sm, 8px);
+  background: transparent;
+  border-color: transparent;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+.un-plm-act.un-plm-moreitem:hover:not(:disabled),
+a.un-plm-forge.un-plm-moreitem:hover {
+  background: var(--un-hover-strong, #383838);
+}
+
+/* Labels wrapped to two and three lines because the pills had no minimum
+   width and the bar was over-full. With the overflow menu taking four
+   controls out, keeping each label on one line fits comfortably. */
+.un-plm-bar .un-plm-act {
+  white-space: nowrap;
+}
+
+/* Leaving select mode, from the bar itself. The masthead Select button
+   relabels to "Done", but on a wide screen that is ~900px from the bar at the
+   bottom of the page — the opposite corner from where the work is happening.
+
+   Separated from the actions by a rule and styled quietly: it is the way OUT,
+   not another thing to do to the selection, and it must not compete with
+   "Add to queue" for the eye. */
+.un-plm-act.un-plm-done {
+  margin-left: 6px;
+  padding-left: 16px;
+  border-left: 1px solid var(--un-yt-line, #333);
+  border-radius: 0 var(--un-radius-pill, 999px) var(--un-radius-pill, 999px) 0;
+  background: transparent;
+  color: var(--un-yt-text, #cfcfcf);
+  font-weight: 600;
+}
+.un-plm-act.un-plm-done:hover:not(:disabled) {
+  background: var(--un-hover-strong, #383838);
+  color: #fff;
+}
+
+/* Remove is the one destructive row action, so it carries the accent rather
+   than sitting identical to the additive ones beside it. */
+.un-plm-rowact.un-plm-rowact-danger {
+  color: var(--un-danger-text);
+}
+.un-plm-rowact.un-plm-rowact-danger:hover:not(:disabled) {
+  background: rgba(255, 90, 95, 0.18);
+}
+
+/* Queue-panel rows carry a persistent checkbox in their leading gutter, so the
+   select-mode circle badge is a SECOND control for the same job on the same
+   row — reported as dual select buttons. The shield stays (it is what makes
+   the whole row a click target and carries the checkbox semantics); only its
+   redundant badge goes. The checkbox already shows the selected state. */
+.un-plm-qprow > .un-plm-shield > .un-plm-badge {
+  display: none;
+}
+/* Keep the row's selected outline, but drop the shield tint: with the badge
+   gone the tint alone read as a hover state rather than a selection. */
+.un-plm-qprow.un-plm-on > .un-plm-shield {
+  background: rgba(255, 90, 95, 0.12);
+}
+
+/*
+ * The "put back" button, shown beside the toast after a destructive bulk action.
+ *
+ * Deliberately not styled as a danger control: it is the SAFE action, offered
+ * because a confirm dialog before every bulk remove costs a decision on the 99
+ * correct runs to protect the 1 mistake, and trains people to click through it.
+ */
+.un-plm-undo {
+  margin-left: 8px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 1.2rem;
+  color: var(--un-yt-text);
+  background: var(--un-yt-chip);
+  border: 1px solid var(--un-yt-chip-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.un-plm-undo:hover:not(:disabled) {
+  background: var(--un-yt-raised-hover);
+}
+.un-plm-undo:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Below 70px of thumbnail there is no room for an action bar: the bar needs
+   59px of content width and the whole thumbnail is 39px wide at a 420px viewport, so it rendered
+   half-clipped on 30 tiles. Hiding is the honest outcome — a control that
+   cannot be fully drawn cannot be fully used, and the same actions remain in
+   the row overflow menu. The watched marker and select box stay: they are one
+   glyph each and still fit.
+   70px, not 120: measured thumbnail widths are 39px at 420, 93px at 560 and
+   148px from 720 up, and the bar fits at 93. A 120px threshold hid a control
+   that was rendering correctly.
+   AT THE END OF THE FILE ON PURPOSE: @container carries no specificity bonus,
+   so placed earlier it lost to the plain .un-plm-feedacts { display: flex }
+   rule below it and silently did nothing. */
+@container unthumb (max-width: 70px) {
+  .un-plm-feedacts,
+  .un-plm-rowacts {
+    display: none;
+  }
+}
