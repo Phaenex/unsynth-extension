@@ -289,6 +289,8 @@
     if (area === 'local' && (ch.watchStats || ch.searchStats || ch.watchedVideos)) loadAndRender();
   });
   window.addEventListener('message', (e) => {
+    // Only the dashboard that embeds this page (same extension origin) may ask for a refresh.
+    if (e.origin !== location.origin) return;
     if (e.data && e.data.unsynthStatsRefresh) loadAndRender();
   });
 

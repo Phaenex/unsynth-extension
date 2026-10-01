@@ -8,7 +8,7 @@ Unsynth isn't in the Chrome Web Store. You load it yourself, which takes about a
 
 ## Install
 
-1. Download `unsynth-v1.2.0.zip` from the [latest release](https://github.com/Phaenex/unsynth-extension/releases/latest) or from the [setup site](https://unsynth.vercel.app).
+1. Download `unsynth-v1.2.1.zip` from the [latest release](https://github.com/Phaenex/unsynth-extension/releases/latest) or from the [setup site](https://unsynth.vercel.app).
 2. Extract it somewhere permanent. Chrome runs it from that folder, so don't leave it in Downloads if you clean that out.
 3. Open `chrome://extensions` (or `edge://extensions`, `brave://extensions`).
 4. Turn on **Developer mode** and choose **Load unpacked**.

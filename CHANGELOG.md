@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.1] - 2026-10-01
+
+A cleanup of 1.2.0's download removal. Nothing changes in how you use Unsynth.
+
+- **The last of the video-download code is gone.** 1.2.0 removed the download
+  button, its settings and the stream permission, but a small helper that could
+  look up YouTube's raw video-stream addresses was still in the page bridge.
+  Nothing in Unsynth called it anymore, but a script running on a YouTube page
+  could still have asked it. It's deleted now, and a test reads every source
+  file so it can't quietly come back.
 ## [1.2.0] - 2026-09-25
 
 The first public release of this line. Unsynth no longer downloads videos.
