@@ -1,5 +1,47 @@
 # Changelog
 
+## [1.0] - 2026-10-02 (build 1.2.19)
+
+Unsynth 1.0. The version number shown is 1.0; the build number underneath
+(1.2.19) keeps counting so updates from 1.2.1 work as usual.
+
+**Watch guide**
+- The guide sits beside the video, appears once with everything in it, and
+  never shows the previous video's details after you switch.
+- Chapters show their titles even when a creator writes them title first, and
+  the chapter list folds with a click on CHAPTERS.
+- The guide holds still while an ad plays, fits beside the player, and no
+  longer pulls the page back up while you read the comments.
+
+**Audio**
+- Sound presets that do what their names say, matched in loudness so you can
+  compare them fairly: Cinema (weight, width, a gentler top end like a cinema
+  EQ), Vocal (voices pulled to the centre and made clearer), Bass (adds
+  harmonics laptop and phone speakers can play), Night (quiet parts up, loud
+  parts down), Treble, Mono.
+- A ten-band Custom EQ in the toolbar popup, where each fader is exactly what
+  that band gets, and a live meter that says whether the effect is running.
+- Boost up to 600% no longer clips harshly, and presets behave the same at any
+  volume.
+
+**Feeds and thumbnails**
+- Long feeds and channel pages scan only what changed, roughly halving the
+  work while you scroll.
+- One set of line icons everywhere, a cleaner watched-eye corner, and the AI
+  badge no longer covers the thumbnail buttons.
+- The AI filter no longer flags videos that just talk about AI voice tools.
+
+**Privacy and safety**
+- SponsorBlock is asked with a short hash of the video ID, not the full ID.
+- The update download is saved only if it matches the published checksum.
+- PRIVACY.md lists every network call and what it receives. The sync card says
+  exactly what sync sends.
+
+**Help**
+- The in-page tour covers audio, watched videos and the AI filter. SUPPORT.md
+  explains the audio meter's messages. Updates keep your settings when you
+  unzip into the same folder.
+
 ## [1.2.1] - 2026-10-01
 
 A cleanup of 1.2.0's download removal. Nothing changes in how you use Unsynth.
