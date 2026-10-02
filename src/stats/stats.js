@@ -288,9 +288,12 @@
   chrome.storage.onChanged.addListener((ch, area) => {
     if (area === 'local' && (ch.watchStats || ch.searchStats || ch.watchedVideos)) loadAndRender();
   });
+  // The only sender is the dashboard, which embeds this page in an iframe
+  // (dashboard-stats.js). So the message must come from our parent, on the
+  // extension's own origin. Checking e.source === window, as the content-script
+  // listeners do, would reject the real sender and silently break the refresh.
   window.addEventListener('message', (e) => {
-    // Only the dashboard that embeds this page (same extension origin) may ask for a refresh.
-    if (e.origin !== location.origin) return;
+    if (e.source !== window.parent || e.origin !== location.origin) return;
     if (e.data && e.data.unsynthStatsRefresh) loadAndRender();
   });
 
@@ -607,7 +610,7 @@
   function renderSuggest(ws, ss) {
     const sec = section('Playlist ideas from your history', 'Suggest playlists from your stats. Create on YouTube (Account OAuth) or review on Forge.');
     const summary = buildSummary(ws, ss);
-    const btn = h('button', { class: 'primary sug-go', text: '✨ Suggest playlists for me' });
+    const btn = h('button', { class: 'primary sug-go', text: 'Suggest playlists for me' });
     const status = h('span', { class: 'sug-status' });
     sec.appendChild(h('div', { class: 'sug-bar' }, [btn, status]));
     const grid = h('div', { class: 'sug-grid' });

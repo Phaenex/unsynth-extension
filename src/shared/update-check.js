@@ -5,7 +5,9 @@
 (function (g) {
   'use strict';
 
-  const REPO = 'Phaenex/unsynth';
+  // The PUBLIC repo: the private one 404s for everyone else (release audit,
+  // 2026-10-02). Its main branch carries the released manifest.json.
+  const REPO = 'Phaenex/unsynth-extension';
   const MANIFEST_API = 'https://api.github.com/repos/' + REPO + '/contents/manifest.json?ref=main';
   const RELEASE_MANIFEST_URL = 'https://unsynth.vercel.app/downloads/update.json';
   const RELEASE_DOWNLOAD_URL = 'https://unsynth.vercel.app/downloads/unsynth-latest.zip';
@@ -14,9 +16,13 @@
     if (!data || !/^\d+\.\d+\.\d+$/.test(String(data.version || ''))) throw new Error('no_version');
     const downloadUrl = String(data.downloadUrl || RELEASE_DOWNLOAD_URL);
     if (downloadUrl !== RELEASE_DOWNLOAD_URL) throw new Error('bad_download_url');
+    // versionName: the release's public name ("1.0"). Display only; every
+    // comparison stays on the numeric version.
+    const versionName = /^\d+(\.\d+){0,2}$/.test(String(data.versionName || '')) ? String(data.versionName) : '';
     return {
       ok: true,
       remoteVersion: String(data.version),
+      remoteVersionName: versionName,
       downloadUrl,
       sha256: /^[a-f0-9]{64}$/i.test(String(data.sha256 || '')) ? String(data.sha256).toLowerCase() : '',
       source: 'deployment'
@@ -152,6 +158,22 @@
     return 'cd ' + dir + ' && npm run update && echo "Reload extension at ' + extUrl + '"';
   }
 
+  /**
+   * PUBLIC NAME OVER BUILD NUMBER (2026-10-01). The public release is named
+   * "1.0" while its manifest version stays a build number (1.2.2) that sorts
+   * above every earlier public build, so installs keep updating, and below
+   * the maintainer's own local builds. Users see the name; the build sits
+   * beside it for support.
+   * @param {string} version numeric manifest version
+   * @param {string} [name] manifest version_name
+   */
+  function displayVersion(version, name) {
+    const v = String(version || '');
+    const n = String(name || '');
+    if (n && n !== v) return n + ' · build ' + v;
+    return v ? 'v' + v : '';
+  }
+
   function genericUpdateCommand() {
     return 'git pull';
   }
@@ -169,7 +191,8 @@
     detectPlatform,
     extensionsReloadUrl,
     updateCommand,
-    genericUpdateCommand
+    genericUpdateCommand,
+    displayVersion
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (g) g.UNUpdateCheck = api;

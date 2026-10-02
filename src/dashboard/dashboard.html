@@ -265,6 +265,8 @@
               <option value="below">Under the video, above the description</option>
             </select>
           </label>
+          <label class="row"><input type="checkbox" id="guide-tour-btn" /> Show the Tour button in the guide</label>
+          <p class="hint">Turn it off once you know your way round. The popup's Feature tour link still starts the tour.</p>
         </div>
 
         <div class="dash-card">
@@ -361,7 +363,7 @@
       <section class="panel" data-panel="filter" role="tabpanel" id="panel-filter" aria-labelledby="tab-filter">
         <div id="filter-panel-root" class="filter-panel">
           <h2>AI content filter</h2>
-          <p class="hint">Not anti-AI — just filters the channels with awful synthetic narration and robot voices. Your subs and whitelist stay visible. Everything runs on-device.</p>
+          <p class="hint">Hides videos that look AI-made, using YouTube's own AI label, the community AiSList and AI-voice keywords. You choose hide, blur or label, and how strict. Your subs and whitelist stay visible. Everything runs on-device.</p>
 
           <div class="filter-section">
             <h3>Master controls</h3>
@@ -573,7 +575,7 @@
               <div class="ytm-top">
                 <span class="ytm-logo">▶ YouTube</span>
                 <span class="ytm-search"></span>
-                <span class="ytm-bell">🔔</span>
+                <span class="ytm-bell un-ico" data-ico="bell" aria-hidden="true"></span>
                 <span class="ytm-ava"></span>
               </div>
               <div class="ytm-banner">Try YouTube Premium</div>
@@ -643,7 +645,7 @@
           <input type="file" id="import-backup-file" accept=".json,application/json" class="hidden-file" />
           <button id="export-backup">Export backup</button>
           <button id="export-watchmarker" type="button" title="Watchmarker .database format">Export Watchmarker…</button>
-          <button id="view-stats" disabled>📊 View your stats</button>
+          <button id="view-stats" disabled><span class="un-ico" data-ico="chart" aria-hidden="true"></span><span class="un-ico-label">View your stats</span></button>
           <span class="status" id="watched-status" aria-live="polite"></span>
         </div>
         <p class="hint mt-14">
@@ -669,9 +671,10 @@
         <div class="dash-card" id="dash-history-sync">
           <h3>Sync across devices</h3>
           <p class="hint">
-            Optional. Sends only your watched-video IDs and progress percentages to your Unsynth deployment, keyed to your Google account.
-            Never sends titles, channels, or timestamps. Requires the Google OAuth setup on the Account tab to be completed on <b>each</b>
-            device you want synced.
+            Optional. Sends your watched-video IDs, how far you got (percent), and the date you watched each one to the Unsynth sync
+            server (unsynth.vercel.app). Never sends titles or channels. To know it is you, each sync also sends your Google sign-in token;
+            the server only uses it to ask Google which channel is yours, does not store it, and files your data under a one-way hash of that
+            channel. Requires the Google OAuth setup on the Account tab on <b>each</b> device you want synced.
           </p>
           <label class="row"><input type="checkbox" id="history-sync-enabled" /> Sync watch history across my devices</label>
           <p class="acct-line" id="history-sync-status">Checking sync…</p>
@@ -703,7 +706,7 @@
           Mix and match. Badges won't show on hidden tiles. Uses <b>Unsynth's tracker</b> (not YouTube's red progress bars).
         </p>
         <div class="wd-panel" id="watched-display">
-          <label class="row"><input type="checkbox" id="wd-badges" /> Show badges (✓ watched / % in progress)</label>
+          <label class="row"><input type="checkbox" id="wd-badges" /> Show the watched eye and % in progress on thumbnails</label>
           <label class="wd-lbl">Finished videos (75%+)</label>
           <select id="wd-finished" class="wd-select">
             <option value="show">Show normally</option>
@@ -1161,8 +1164,9 @@
         <div class="dash-card" id="updates">
           <h2>Updates</h2>
           <p class="hint">
-            Unsynth is loaded unpacked from git — Chrome cannot pull updates for you. Push from your dev machine, run
-            <code>git pull</code> on other computers, then reload the extension and YouTube tabs.
+            Unsynth is installed from a ZIP, so Chrome cannot update it for you. Check below; when a new release is out,
+            follow the steps. Your settings and watch history are kept as long as you unzip into the <b>same folder</b>
+            (Chrome ties them to the folder's location).
           </p>
           <p class="acct-line">Installed version: <b id="update-local-version">—</b></p>
           <p class="acct-line" id="update-remote-line" hidden>Published release: <b id="update-remote-version">—</b></p>
@@ -1182,7 +1186,7 @@
           </div>
 
           <div class="field">
-            <label>GitHub token <span class="muted">(repo scope — private repo only; public repos work without a token; stored locally)</span></label>
+            <label>GitHub token <span class="muted">(optional, for developers working from a private fork; not needed to update; stored locally)</span></label>
             <input id="github-pat" type="password" placeholder="ghp_… or github_pat_…" autocomplete="off" />
           </div>
           <div class="bar">
@@ -1191,19 +1195,19 @@
             <span class="status" id="update-check-status" aria-live="polite"></span>
           </div>
           <p class="hint" id="update-no-pat-hint" hidden>
-            The deployed release check needs no token. If that service is unavailable, add a GitHub token above to use private <code>main</code> on
-            <a href="https://github.com/Phaenex/unsynth" target="_blank" rel="noopener">Phaenex/unsynth</a>.
-            You can always update manually — see below.
+            The release check needs no token. If it is unavailable, Unsynth checks the public repository
+            <a href="https://github.com/Phaenex/unsynth-extension" target="_blank" rel="noopener">Phaenex/unsynth-extension</a> instead.
+            You can always update manually; see below.
           </p>
 
           <details class="update-manual" open>
             <summary class="hint" style="cursor: pointer">Manual update steps</summary>
             <ol class="hint update-steps">
-              <li>On the machine where you develop: commit and <code>git push</code>.</li>
-              <li>On this machine: open a terminal in your clone folder and run the command below (edit the path).</li>
+              <li>Click <b>Fetch latest ZIP</b> below, or download it from <a href="https://unsynth.vercel.app" target="_blank" rel="noopener">unsynth.vercel.app</a>.</li>
+              <li>Unzip it over your existing Unsynth folder, the one that holds <code>manifest.json</code>. Keep the same folder so your settings stay.</li>
               <li>Click <b>Reload Unsynth</b>, then <b>Reload YouTube tabs</b>.</li>
             </ol>
-            <p class="hint">Git clone? Run <code>npm run update</code> from the repo root (Windows / Mac / Linux) — use <b>Copy update command</b> below.</p>
+            <p class="hint">Working from a git clone instead? Run <code>npm run update</code> from the repo root; <b>Copy update command</b> below has it.</p>
           </details>
 
           <div class="bar update-actions">

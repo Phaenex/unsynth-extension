@@ -1265,7 +1265,7 @@ async function callLLM(req) {
     const endpoint = UNLLMRequest.llmEndpoint(provider);
     const headers = { Authorization: 'Bearer ' + key, 'content-type': 'application/json' };
     if (provider === 'openrouter') {
-      headers['HTTP-Referer'] = 'https://github.com/Phaenex/unsynth';
+      headers['HTTP-Referer'] = 'https://github.com/Phaenex/unsynth-extension';
       headers['X-Title'] = 'Unsynth';
     }
     const r = await fetchWithTimeout(endpoint, {
@@ -1323,7 +1323,7 @@ async function streamLLM(req, port) {
       ? { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true', 'content-type': 'application/json' }
       : { Authorization: 'Bearer ' + key, 'content-type': 'application/json' };
     if (provider === 'openrouter') {
-      headers['HTTP-Referer'] = 'https://github.com/Phaenex/unsynth';
+      headers['HTTP-Referer'] = 'https://github.com/Phaenex/unsynth-extension';
       headers['X-Title'] = 'Unsynth';
     }
     const body = JSON.stringify(UNLLMRequest.buildLLMBody({ provider, model, maxTokens: req.max_tokens, system: req.system, messages: req.messages, stream: true }));
@@ -2458,6 +2458,7 @@ function onMessage(msg, sender, sendResponse) {
 
           const remoteVersion = fetched.remoteVersion;
           await UNStore.setLocal('updateRemoteVersion', remoteVersion);
+          await UNStore.setLocal('updateRemoteVersionName', fetched.remoteVersionName || '');
           const status = UNSemver.isNewer(remoteVersion, localVersion) ? 'available' : 'up_to_date';
           if (status === 'available') {
             applyUpdateBadge(remoteVersion, localVersion).catch(() => {});
@@ -2468,6 +2469,7 @@ function onMessage(msg, sender, sendResponse) {
             ok: true,
             localVersion,
             remoteVersion,
+            remoteVersionName: fetched.remoteVersionName || '',
             status,
             checkedAt,
             source: fetched.source || 'github',
@@ -2519,27 +2521,21 @@ function onMessage(msg, sender, sendResponse) {
                 sha256: got.sha256 || ''
               });
             }
-            // Any other offscreen failure (unsupported API, transient network)
-            // falls through to the unverified path below, flagged as such.
           }
 
-          try {
-            const downloadId = await chrome.downloads.download(
-              Object.assign({ url: UNUpdateCheck.RELEASE_DOWNLOAD_URL }, saveArgs)
-            );
-            return sendResponse({
-              ok: true,
-              downloadId,
-              remoteVersion: fetched.remoteVersion,
-              sha256: expectedSha,
-              // No checksum published, or the verifying path was unavailable —
-              // say so instead of implying the archive was checked.
-              verified: false,
-              unverifiedReason: expectedSha ? 'verify_unavailable' : 'no_published_checksum'
-            });
-          } catch (e) {
-            return sendResponse({ ok: false, error: 'download_failed', message: (e && e.message) || String(e) });
-          }
+          // NO UNVERIFIED SAVES (release audit, 2026-10-02). This file gets
+          // sideloaded as the extension itself, with the same ID and access to
+          // every stored key and token. Every release publishes a checksum, so a
+          // download that cannot be checked is refused rather than saved with a
+          // warning; the dashboard points to the manual download and its hash.
+          return sendResponse({
+            ok: false,
+            error: expectedSha ? 'verify_unavailable' : 'no_published_checksum',
+            message: expectedSha
+              ? 'Could not verify the download in this browser, so nothing was saved. Download the ZIP from unsynth.vercel.app and compare its SHA-256 with the one shown here.'
+              : 'This release has no published checksum, so nothing was saved. Download the ZIP from unsynth.vercel.app instead.',
+            sha256: expectedSha
+          });
         }
 
         case UNMSG.DISCOVER_CANDIDATES: {
@@ -3344,6 +3340,7 @@ async function refreshUpdateBadge() {
 
   const remoteVersion = fetched.remoteVersion;
   await UNStore.setLocal('updateRemoteVersion', remoteVersion);
+  await UNStore.setLocal('updateRemoteVersionName', fetched.remoteVersionName || '');
   if (UNSemver.isNewer(remoteVersion, localVersion)) {
     await applyUpdateBadge(remoteVersion, localVersion);
   } else {

@@ -53,6 +53,7 @@
   let chapterStyleEl = null;
   let chapterTitleEl = null;
 
+  function unIco(name) { var s = document.createElement('span'); s.className = 'un-ico'; s.setAttribute('data-ico', name); s.setAttribute('aria-hidden', 'true'); return s; }
   function el(tag, cls, text) { return window.UNSYNTH.el(tag, cls, text); }
 
   const isWatch = () => window.UNSYNTH.isWatch();
@@ -163,10 +164,13 @@
       const actions = segApi.categoriesParam(segApi.ACTION_TYPES);
       const prefix = (await sha256hex(vid)).slice(0, 4);
       const r = await sbFetch(API + '/api/skipSegments/' + prefix + '?categories=' + q + '&actionTypes=' + actions);
-      if (r.ok && r.data) {
-        const segs = segApi.parseCommunityHashResponse(r.data, vid);
-        if (segs.length) return segs;
-      }
+      // The prefix answer is authoritative: a reply (even with no segments for
+      // this video) or a 404 means there are none. Only a FAILED prefix call
+      // falls back to the direct query, which sends the full video ID. It used
+      // to re-query on every empty answer, i.e. on most videos, which undid the
+      // privacy of the hash-prefix lookup (release audit, 2026-10-02).
+      if (r.ok && r.data) return segApi.parseCommunityHashResponse(r.data, vid);
+      if (r.status === 404) return [];
       if (cfg().communityDirect !== false) {
         const r2 = await sbFetch(API + '/api/skipSegments?videoID=' + encodeURIComponent(vid) + '&categories=' + q + '&actionTypes=' + actions);
         if (r2.ok && r2.data) return segApi.parseCommunityDirectResponse(r2.data);
@@ -405,11 +409,10 @@
       wrap.classList.add('is-quiet');
       var q = document.createElement('p');
       q.className = 'un-sb-rt-quiet';
-      var qv = document.createElement('span');
-      qv.className = 'un-sb-rt-val';
-      qv.textContent = fmtClock(dur);
-      q.appendChild(qv);
-      q.appendChild(document.createTextNode(' · Nobody has reported skip segments for this video. Unreported is not the same as checked.'));
+      // No figure in front (2026-10-01): with nothing to skip it was the full
+      // length, unlabelled, and at the start of a video the same number as
+      // "4:33 left" right above it (user report: "why is there like repeats").
+      q.textContent = 'Nobody has reported skip segments yet, which is not the same as checked.';
       wrap.appendChild(q);
       slot.appendChild(wrap);
       if (deck.syncEmpty) deck.syncEmpty(document); if (deck.syncCollapse) deck.syncCollapse(document);
@@ -1047,10 +1050,12 @@
     const label = isPersonal ? 'Skipped personal segment' : 'Skipped ' + (CAT_SHORT[seg.category] || seg.category);
     notice.appendChild(el('span', 'un-sb-txt', label));
     if (!isPersonal) {
-      const up = el('button', 'un-sb-btn', '👍');
+      const up = el('button', 'un-sb-btn', '');
+      up.appendChild(unIco('thumb-up'));
       up.title = 'This skip was correct';
       up.setAttribute('aria-label', 'This skip was correct');
-      const down = el('button', 'un-sb-btn', '👎');
+      const down = el('button', 'un-sb-btn', '');
+      down.appendChild(unIco('thumb-down'));
       down.title = 'Wrong — bring it back';
       down.setAttribute('aria-label', 'Wrong skip — bring the segment back');
       up.addEventListener('click', () => {

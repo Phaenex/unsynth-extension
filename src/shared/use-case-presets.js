@@ -109,7 +109,7 @@
     {
       id: 'ai-filter',
       label: 'AI filter',
-      desc: 'Hide synthetic narration and robot-voice channels only',
+      desc: 'Hide AI-made videos: the YouTube AI label, the AiSList, AI-voice keywords',
       dashTab: 'filter',
       modules: {
         aiFilter: true,

@@ -2036,11 +2036,10 @@
     var grid = root.querySelector('.un-hub-feedpage-grid');
     if (!titleEl || !subEl || !grid) return;
 
-    var iconPrefix =
-      feedPageKind === 'suggested' ? '★ ' :
-      feedPageKind === 'news' ? '📰 ' :
-      feedPageKind === 'catchup' ? '⏱ ' : '✦ ';
-    titleEl.textContent = iconPrefix + (feedPageKind === 'catchup' ? 'Catch up: ' + feedPageTitle : feedPageTitle);
+    // One icon set (DESIGN-STANDARD 11): a line icon, not ★ 📰 ⏱ ✦ glyphs.
+    var kindIco = feedPageKind === 'suggested' ? 'suggest' : feedPageKind === 'news' ? 'news' : feedPageKind === 'catchup' ? 'clock' : 'discover';
+    titleEl.textContent = '';
+    titleEl.append(unIco(kindIco), labelSpan(feedPageKind === 'catchup' ? 'Catch up: ' + feedPageTitle : feedPageTitle));
 
     var searchInput = root.querySelector('.un-hub-feedpage-search');
     if (searchInput && document.activeElement !== searchInput) {
@@ -2084,10 +2083,7 @@
       empty.className = 'un-hub-feedpage-empty';
       var emptyIcon = document.createElement('div');
       emptyIcon.className = 'un-hub-feedpage-empty-icon';
-      emptyIcon.textContent =
-        feedPageKind === 'news' ? '📰' :
-        feedPageKind === 'discover' ? '✦' :
-        feedPageKind === 'catchup' ? '✅' : '★';
+      emptyIcon.appendChild(unIco(feedPageKind === 'news' ? 'news' : feedPageKind === 'discover' ? 'discover' : feedPageKind === 'catchup' ? 'check' : 'suggest'));
       var emptyTitle = document.createElement('div');
       emptyTitle.className = 'un-hub-feedpage-empty-title';
       var emptyDesc = document.createElement('div');
@@ -2466,7 +2462,7 @@
     var pinned = PF.isPinned(plPins, item.id);
     pin.className = 'un-hub-panel-pin' + (pinned ? ' on' : '');
     pin.setAttribute('aria-label', pinned ? 'Unpin from sidebar' : 'Pin to sidebar');
-    pin.textContent = '📌';
+    pin.appendChild(unIco('pin'));
     pin.addEventListener('click', function (e) {
       e.stopPropagation();
       if (PF.isPinned(plPins, item.id)) plPins = PF.unpinPlaylist(plPins, item.id);
@@ -3818,8 +3814,9 @@
     main.type = 'button';
     main.className = 'un-hub-row-main';
     var ico = document.createElement('span');
-    ico.className = 'un-hub-row-ico';
-    ico.textContent = '📁';
+    ico.className = 'un-hub-row-ico un-ico';
+    ico.setAttribute('data-ico', 'folder');
+    ico.setAttribute('aria-hidden', 'true');
     main.appendChild(ico);
     var label = document.createElement('span');
     label.className = 'un-hub-row-label';
@@ -4229,6 +4226,8 @@
     return wrap;
   }
 
+  function unIco(name) { var s = document.createElement('span'); s.className = 'un-ico'; s.setAttribute('data-ico', name); s.setAttribute('aria-hidden', 'true'); return s; }
+  function labelSpan(text) { var s = document.createElement('span'); s.className = 'un-ico-label'; s.textContent = text; return s; }
   var HUB_ROW_ICONS = {
     'All subscriptions': 'subs',
     'Suggested': 'suggest',
@@ -4259,6 +4258,11 @@
       var named = HUB_ROW_ICONS[label];
       if (named) {
         ico.setAttribute('data-ico', named);
+        ico.setAttribute('aria-hidden', 'true');
+      } else if (/^[a-z-]+$/.test(icon)) {
+        // An icon NAME from the shared set (core.css .un-ico), never an emoji.
+        ico.className += ' un-ico';
+        ico.setAttribute('data-ico', icon);
         ico.setAttribute('aria-hidden', 'true');
       } else {
         ico.textContent = icon;
@@ -4405,7 +4409,7 @@
       subSec.appendChild(
         mkSimpleRow('News', smartNewsVideos.length, false, function () {
           openFeedPage('news', 'News', smartNewsVideos);
-        }, '📰')
+        }, 'news')
       );
       subSec.appendChild(
         mkSimpleRow('Discover', smartVideos.length, false, function () {
@@ -4473,7 +4477,7 @@
             ? location.pathname.indexOf('/feed/history') === 0
             : location.pathname.indexOf('/playlist') === 0 &&
               new RegExp('[?&]list=' + (b.id === 'liked' ? 'LL' : 'WL') + '(&|$)').test(location.search);
-        var ico = b.id === 'history' ? '🕒' : b.id === 'liked' ? '👍' : '⏱';
+        var ico = b.id === 'history' ? 'clock' : b.id === 'liked' ? 'thumb-up' : 'clock';
         plSec.appendChild(
           mkSimpleRow(b.label, null, active, function () {
             setPlActive('');

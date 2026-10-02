@@ -199,7 +199,16 @@
   function currentTileSel() {
     return onPlaylistPage() ? rowSel() : feedTileSel();
   }
-  function allRows() {
+  // dirtyOk: only the per-row decoration pass may take just the changed tiles
+  // (core DIRTY-TILE SCANNING); every other caller counts, selects or searches
+  // rows and must see the whole page.
+  function allRows(dirtyOk) {
+    if (!onPlaylistPage() && YT && YT.forEachFeedTile) {
+      // Same selector set as feedTileSel(); this reuses the scan's one walk.
+      const rows = [];
+      YT.forEachFeedTile((t) => rows.push(t), { root: document, dirtyOk: !!dirtyOk });
+      return rows;
+    }
     return Array.prototype.slice.call(document.querySelectorAll(currentTileSel()));
   }
   function hasTiles() {
@@ -2443,7 +2452,7 @@
         });
       }
     } else {
-      rows = allRows();
+      rows = allRows(true);
     }
     const isQueuePanelRow = (row) => !!(panelRowSet && panelRowSet.has(row));
     rows.forEach((row) => {

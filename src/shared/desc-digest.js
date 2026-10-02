@@ -47,6 +47,27 @@
     return h ? h + ':' + String(mm).padStart(2, '0') + ':' + ss : mm + ':' + ss;
   }
 
+  function cleanChapterTitle(label, title) {
+    let out = String(title || '').trim();
+    const time = String(label || '').trim();
+    if (!out) return '';
+    if (time) {
+      const escaped = time.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      out = out
+        .replace(new RegExp('^' + escaped + '\\s*[-–—:|]*\\s*', 'i'), '')
+        .replace(new RegExp('\\s*[-–—:|]*\\s*' + escaped + '$', 'i'), '')
+        .trim();
+    }
+    const words = out.split(/\s+/);
+    if (words.length % 2 === 0) {
+      const half = words.length / 2;
+      if (words.slice(0, half).join(' ').toLowerCase() === words.slice(half).join(' ').toLowerCase()) {
+        out = words.slice(0, half).join(' ');
+      }
+    }
+    return out;
+  }
+
   /**
    * The chapter's name: the rest of the line the timestamp sits on.
    *
@@ -63,6 +84,16 @@
     if (lineEnd === -1) lineEnd = text.length;
     const before = text.slice(lineStart, idx).trim();
     let after = text.slice(idx + len, lineEnd);
+    // TITLE FIRST, TIME LAST (2026-10-01). Some creators write the list the
+    // other way round, "INTRO        :  0:00", and every chapter came out as a
+    // bare time (measured on pSvdn_xbgJ0: 13 chapters, no titles). A line that
+    // ENDS at the timestamp, with a separator between title and time, is that
+    // form. The separator is required: "skip to 5:31" is prose.
+    if (!after.trim()) {
+      const head = before.replace(/^[\s\-–—•*·|(\[]+/, '');
+      const m = /^(.*?[A-Za-z\u00C0-\uFFFD].*?)\s*[:\-–—|•>]+$/.exec(head);
+      if (m && m[1].length <= 60 && !/https?:\/\//.test(m[1])) return m[1].replace(/\s+/g, ' ').trim();
+    }
     // A timestamp that is not at the start of its line (after list markers) is
     // a reference inside prose, not a chapter heading.
     if (before.replace(/^[\s\-–—•*·|(\[]+/, '').length > 0) return '';
@@ -77,8 +108,8 @@
   /**
    * WHAT A LINK IS FOR (2026-09-24).
    *
-   * Owner request: list every link and what it is for, and summarize
-   * anything important. A row of hostnames says where a link goes,
+   * User report: "should include all links they have and what they are for and any
+   * thing important as a summary". A row of hostnames says where a link goes,
    * not why it is there. The description usually says why, on the same line
    * ("Patreon: https://...", "Use code MIKE for 20% off: https://...") or on
    * the line above a bare URL. That text is the label; the host is secondary.
@@ -198,6 +229,11 @@
       if (!line) return;
       const words = line.replace(/\bhttps?:\/\/\S+/gi, '');
       if (/\b(correction|erratum|errata|clarification)\b|^\s*(update|edit)\s*:/i.test(line)) add('correction', 'Correction', clipLine(line, 140));
+      const verd = line.match(/^[\s\-\u2022*]*(verdict|conclusion|summary|tl;?dr|takeaway|final (?:thoughts|verdict)|score|rating|is it (?:good|worth it)|recommendation)\b\s*[:\-\u2013]\s*(.+)$/i);
+      if (verd) {
+        const vLabel = verd[1].charAt(0).toUpperCase() + verd[1].slice(1).toLowerCase().replace(/;/g, '');
+        add('verdict', vLabel, clipLine(verd[2], 160));
+      }
       if (/\b(not (?:financial|legal|medical|investment) advice|disclaimer|for (?:educational|entertainment) purposes)\b/i.test(line)) add('disclaimer', 'Disclaimer', clipLine(line, 140));
       if (/\b(affiliate links?|earn (?:a )?(?:small )?commission|paid (?:partnership|promotion)|contains (?:paid|sponsored))\b|#ad\b|#sponsored\b/i.test(line)) {
         add('disclosure', 'Disclosure', clipLine(line, 140));
@@ -220,8 +256,8 @@
   }
 
   /**
-   * The quick description, whole (2026-09-24). Owner request: show it in full,
-   * never cut off and nothing to expand. The first prose paragraph is
+   * The quick description, whole (2026-09-24). User report: it "needs to be there
+   * with out needed to expande or be cut off". The first prose paragraph is
    * kept entire up to 600 characters; past that it ends at the last full
    * sentence inside the limit rather than mid-word with an ellipsis.
    */
@@ -300,7 +336,7 @@
       if (sec == null || seenSec[sec]) continue;
       seenSec[sec] = true;
       stamps.push({ label: tsLabel(sec), sec: sec, title: stampTitle(text, m.index, m[0].length) });
-      if (stamps.length >= 16) break;
+      if (stamps.length >= 100) break;
     }
 
     // THE BLURB IS PROSE, NOT A LINK LIST (2026-09-24). A paragraph where
@@ -327,11 +363,96 @@
       .map((p) => ({ id: p.id, label: p.label, links: links.filter((l) => l.purpose === p.id) }))
       .filter((grp) => grp.links.length);
 
+    // RANKED LIST DETECTION (2026-09-30). "Top 10", "10 BIGGEST Changes",
+    // "Best X" videos often list their items in the description with numbers
+    // (#1, 1., 10.) and optional timestamps. The current parser finds the
+    // timestamps but misses items that have no timestamp, and it cannot tell
+    // which lines form a ranked list vs. inline references ("at 3:35 he
+    // says…"). A ranked list is: 3+ consecutive lines each starting with a
+    // recognisable ordinal (digit(s) followed by . / ) / : / - / #N, or a
+    // medal emoji), with monotonically increasing (or decreasing) numbers.
+    // For each item: the title is the rest of the line after the ordinal and
+    // any separator; the timestamp is the first timestamp on that line (or
+    // null); the context is the first prose sentence immediately following,
+    // stripped of URLs and list-marker noise. This lets the side panel render
+    // the full list without requiring chapters to be set by the creator.
+    const ranked = [];
+    (function () {
+      const lines = text.split('\n');
+      // Ordinal patterns: "1.", "1)", "1:", "#1", "01 -", "10.", emoji medals
+      const ordRe = /^(?:[#\u2022]?\s*(\d{1,3})[.):|\-\s]|(\d{1,3})[.):]\s|\u{1F947}|\u{1F948}|\u{1F949}|\u{1F3C6})/u;
+      // Timestamp anywhere on the line
+      const tOnLine = /(?:^|[\s(])(\d{1,2}:\d{2}(?::\d{2})?)(?=[\s).,:]|$)/;
+      // Collect candidate lines with their ordinal numbers
+      const cands = [];
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        // A chapter line ("1:43 Welcome to Rogue Ops") is not a ranked item.
+        // The ordinal pattern allows ":" after the number, so it read the
+        // minutes as a rank and "43 Welcome to Rogue Ops" as the title, and
+        // every chaptered video showed its chapters twice, the first copy
+        // garbled (2026-10-01, zQlckRHjkpA).
+        if (/^\d{1,2}:\d{2}/.test(line)) continue;
+        const mo = ordRe.exec(line);
+        if (!mo) continue;
+        const num = parseInt(mo[1] || mo[2] || '0', 10);
+        // Title: everything after the ordinal+separator, before any URL
+        let rest = line.slice(mo[0].length).replace(/\bhttps?:\/\/\S+/gi, '').trim();
+        // Strip leading separators (- – — | : )
+        rest = rest.replace(/^[\s\-\u2013\u2014:|]+/, '').trim();
+        const tm = tOnLine.exec(lines[i]);
+        const sec = tm ? secondsFromTs(tm[1]) : null;
+        // Remove the timestamp itself from the title text
+        if (tm) rest = rest.replace(tm[0].trim(), '').replace(/^[\s\-\u2013\u2014:|]+/, '').trim();
+        if (!rest || rest.length < 2) continue;
+        cands.push({ lineIdx: i, num: num, title: rest.length > 60 ? rest.slice(0, 60).replace(/\s+\S*$/, '') + '\u2026' : rest, sec: sec });
+      }
+      // Require at least 3 items with monotonic ordinals (ascending or descending)
+      if (cands.length < 3) return;
+      const nums = cands.map((c) => c.num);
+      // Strictly: a countdown never repeats a rank. Repeats (2, 2, 3, 3, 3)
+      // are what minutes look like, not a list.
+      const ascending = nums.slice(1).every((n, i) => n > nums[i]);
+      const descending = nums.slice(1).every((n, i) => n < nums[i]);
+      if (!ascending && !descending) return;
+      // Context: the first non-empty, non-list, non-URL prose line after the item
+      cands.forEach(function (c, ci) {
+        let ctx = '';
+        const nextItemLine = ci + 1 < cands.length ? cands[ci + 1].lineIdx : lines.length;
+        for (let li = c.lineIdx + 1; li < Math.min(c.lineIdx + 5, nextItemLine); li++) {
+          const ln = (lines[li] || '').trim();
+          if (!ln || /\bhttps?:\/\//i.test(ln) || ordRe.exec(ln) || tOnLine.exec(ln)) continue;
+          const clean = ln.replace(/\bhttps?:\/\/\S+/gi, '').replace(/^[\s\-\u2013\u2014*\u2022:|>]+/, '').trim();
+          if (clean.length > 10 && /[A-Za-z\u00C0-\uFFFD]/.test(clean)) {
+            ctx = clean.length > 100 ? clean.slice(0, 100).replace(/\s+\S*$/, '') + '\u2026' : clean;
+            break;
+          }
+        }
+        ranked.push({ num: c.num, title: c.title, sec: c.sec, context: ctx });
+      });
+    })();
+
     // text: the whole description, for opening it in place in the guide.
-    return { empty: false, blurb: blurb, links: links, stamps: stamps, highlights: highlightsOf(text), linkGroups: linkGroups, text: trimmed };
+    return { empty: false, blurb: blurb, links: links, stamps: stamps, ranked: ranked, highlights: highlightsOf(text), linkGroups: linkGroups, text: trimmed };
   }
 
-  const api = { parseWatchDescription, secondsFromTs, clipBlurb, aboutText, tsLabel, purposeOf, highlightsOf, PURPOSES };
+  /**
+   * Whether a ranked list adds anything the chapter list does not. When every
+   * ranked item has a timestamp that is already a chapter, the chapter list is
+   * that navigation and drawing both repeats the same rows (2026-10-01, user report:
+   * "why is there like repeats"). Within 2 s counts as the same moment.
+   */
+  function rankedAddsToChapters(ranked, stamps) {
+    if (!ranked || !ranked.length) return false;
+    if (!stamps || !stamps.length) return true;
+    return ranked.some(function (item) {
+      if (item.sec == null) return true;
+      return !stamps.some(function (s) { return Math.abs(s.sec - item.sec) <= 2; });
+    });
+  }
+
+  const api = { parseWatchDescription, rankedAddsToChapters, secondsFromTs, clipBlurb, aboutText, tsLabel, cleanChapterTitle, purposeOf, highlightsOf, PURPOSES };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (g) g.UNDescDigest = api;
 })(typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : null);

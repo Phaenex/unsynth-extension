@@ -20,6 +20,8 @@
   // Default Off — Web Audio graphs are expensive; only wire when the user picks
   // an EQ preset or boosts past 100%. Stored host presets still win on load.
   let activePreset = 'normal';
+  // Why the last Web Audio attach failed, for the popup's status line.
+  let lastAttachError = '';
   let lastVolMedia = null;
   let uiRoot = null; // the player-bar toggle button itself (id un-vol-btn)
   let popRoot = null; // the slider/preset popover — a separate, body-level element
@@ -275,122 +277,402 @@
     }
   }
 
+  /**
+   * MAKEUP GAIN, MEASURED (2026-10-02). Chrome's DynamicsCompressorNode adds
+   * automatic makeup gain derived from threshold, knee and ratio. Measured live
+   * on a real video, every compressor preset was simply LOUDER than Off: Night
+   * +6.8 dB flat across every band (the opposite of a night mode), Cinema
+   * +5.6, Vocal +5.2, Smart +3.4. Louder always wins a quick A/B, so the
+   * presets sounded better for the wrong reason.
+   *
+   * The makeup gain is a fixed function of those settings, so measure it the
+   * way Chrome computes it: render a -60 dBFS tone (far below every threshold,
+   * so nothing is compressed) through a compressor with the same settings, and
+   * the output level IS the makeup gain. The trim node after the compressor
+   * applies the inverse. Quiet passages then come out at the level they went
+   * in, and the compressor only does its job: bringing loud passages down.
+   */
+  const makeupCache = new Map();
+  function makeupGainFor(c) {
+    const key = [c.threshold, c.ratio, c.knee].join('/');
+    if (makeupCache.has(key)) return makeupCache.get(key);
+    const job = new Promise(function (resolve) {
+      try {
+        const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+        if (!OAC) { resolve(1); return; }
+        const rate = 48000;
+        const off = new OAC(1, Math.round(rate * 0.3), rate);
+        const osc = off.createOscillator();
+        osc.frequency.value = 1000;
+        const level = off.createGain();
+        level.gain.value = 0.001; // -60 dBFS peak
+        const comp = off.createDynamicsCompressor();
+        comp.threshold.value = c.threshold;
+        comp.ratio.value = c.ratio;
+        comp.knee.value = c.knee;
+        comp.attack.value = c.attack;
+        comp.release.value = c.release;
+        osc.connect(level); level.connect(comp); comp.connect(off.destination);
+        osc.start(0);
+        off.startRendering().then(function (buf) {
+          const d = buf.getChannelData(0);
+          const from = Math.round(rate * 0.2);
+          let sum = 0;
+          for (let k = from; k < d.length; k++) sum += d[k] * d[k];
+          const rms = Math.sqrt(sum / (d.length - from));
+          const g = rms / (0.001 / Math.SQRT2);
+          resolve(isFinite(g) && g > 0 ? g : 1);
+        }, function () { resolve(1); });
+      } catch (e) {
+        resolve(1);
+      }
+    });
+    makeupCache.set(key, job);
+    return job;
+  }
+
+  /* ==========================================================================
+     THE AUDIO CHAIN, v2 (2026-10-02)
+
+     User report on v1: it changed the sound a little, and not for the
+     better. v1 was one or two biquads and a compressor per preset. Measured
+     honestly (make-up gain cancelled) it changed little, and what it changed
+     was not what commercial enhancers do. v2 follows the established designs:
+
+     - DIALOGUE comes from the centre of the stereo image. TV clear-voice modes
+       lift the centre (mid) against the sides and add ~2.85 kHz presence
+       (US8238560; EUSIPCO 2015 dialogue enhancement). A mid/side matrix here
+       turns the sides down for Vocal and up (wider) for Cinema.
+     - BASS ON SMALL SPEAKERS is psychoacoustic. Laptop drivers cannot play
+       40-120 Hz, so a shelf there is inaudible on them. A virtual-bass branch
+       generates harmonics of the low band (the "missing fundamental") that
+       small drivers can play, and the ear hears the bass note.
+     - NIGHT raises quiet passages and lowers loud ones around the average.
+       The leveller's trim pivots at -20 dBFS pink noise, so the average stays
+       put, quiet dialogue comes up and explosions come down.
+     - EVERY PRESET IS LOUDNESS-MATCHED to Off: an offline copy of this exact
+       chain renders K-weighted pink noise and the output trim cancels the
+       difference. What changes is the sound, not the volume, so an A/B
+       comparison is fair.
+     - A LIMITER at the very end catches the 150-600% boost before it clips.
+
+     Graph: src -> 10-band graphic EQ (31 Hz-16 kHz) -> sum
+            (+ low band -> rectifier -> highpass -> virtual-bass gain -> sum)
+            -> stereo up-mix -> mid/side (side split at 150 Hz) -> leveller -> trim
+            -> mono -> boost gain -> limiter -> limiter trim -> speakers
+     ========================================================================== */
+  // TONE IS A 10-BAND GRAPHIC EQ (2026-10-02), at the ISO octave centres every
+  // graphic equaliser uses (Equalizer APO / Peace, hardware 1/1-octave EQs),
+  // so each preset is a curve that can be read and compared like one, and the
+  // Custom preset uses the same engine. Peaking bands, one octave wide.
+  //
+  // Presets were checked against how real gear sets these modes:
+  // - Cinema follows THX Re-EQ / Denon Cinema EQ: home rooms make film mixes
+  //   bright, so it CUTS the top (-2 at 8 kHz, -3 at 16 kHz). The v2 chain
+  //   boosted it, the opposite of every cinema mode in a receiver.
+  // - Width only above 150 Hz when widening: the side signal is split by a
+  //   Linkwitz-Riley crossover and only the top is widened, so bass stays
+  //   mono (the standard mono-compatibility rule for wideners).
+  // - Dialogue: sides down (centre focus), mud cut, 2-4 kHz up (TV clear-voice).
+  // - Night: strong levelling around a pivot (Dolby volume leveller idea).
+  const EQ_FREQS = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+  const EQ_Q = 1.41; // one octave
+  const FLAT = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  // vb: a half-wave rectifier turns ~0.21 of a low note into its 2nd
+  // harmonic, so vb 2.4 puts that harmonic near -6 dB of the low band, the
+  // usual virtual-bass design point (2nd -6, 3rd -12, 4th -18 dB).
+  // eq: dB per band; width: side gain (above 150 Hz when > 1, all bands when
+  // < 1); vb: virtual-bass level; lev: leveller (null = off).
+  const PRESETS = {
+    normal: { eq: FLAT, width: 1, vb: 0, lev: null },
+    cinematic: { eq: [3, 4, 3, 0, -1, 0, 1, 0, -2, -3], width: 1.35, vb: 0.9,
+      lev: { threshold: -24, ratio: 2.5, knee: 12, attack: 0.020, release: 0.300 } },
+    'smart-enhance': { eq: [1, 1, 1, -1, -1, 0, 1, 1, 0, 0], width: 1.1, vb: 0.45,
+      lev: { threshold: -22, ratio: 2, knee: 18, attack: 0.030, release: 0.400 } },
+    'bass-boost': { eq: [5, 6, 5, 2, 0, 0, 0, 0, 0, 0], width: 1, vb: 2.4,
+      lev: { threshold: -18, ratio: 2, knee: 12, attack: 0.030, release: 0.300 } },
+    'vocal-boost': { eq: [-6, -4, -2, -2, 0, 1, 3, 4, 2, 0], width: 0.45, vb: 0,
+      lev: { threshold: -24, ratio: 2, knee: 12, attack: 0.015, release: 0.300 } },
+    'treble-boost': { eq: [0, 0, 0, 0, 0, 0, 1, 3, 5, 6], width: 1, vb: 0, lev: null },
+    compressor: { eq: [-3, -2, -1, 0, 0, 0, 1, 1, 0, 0], width: 0.85, vb: 0,
+      lev: { threshold: -38, ratio: 8, knee: 20, attack: 0.004, release: 0.500 } },
+    mono: { eq: FLAT, width: 1, vb: 0, lev: null, mono: true },
+    custom: { eq: FLAT, width: 1, vb: 0, lev: null }
+  };
+  const LEV_BYPASS = { threshold: 0, ratio: 1, knee: 0, attack: 0.003, release: 0.250 };
+  // -2 dBFS: at -1 the attack overshot to a 1.026 peak on a hot tone at 600%.
+  const LIMITER = { threshold: -2, ratio: 20, knee: 0, attack: 0.002, release: 0.100 };
+  // The Custom curve, from settings (volumeMaster.customEq), clamped to ±12 dB.
+  function customCurve() {
+    const raw = (core && core.settings && core.settings.volumeMaster && core.settings.volumeMaster.customEq) ||
+      (globalSettings && globalSettings.customEq) || FLAT;
+    return EQ_FREQS.map(function (_, i) { const v = Number(raw[i]); return isFinite(v) ? Math.max(-12, Math.min(12, v)) : 0; });
+  }
+  function presetOf(name) {
+    if (name === 'custom') return Object.assign({}, PRESETS.custom, { eq: customCurve() });
+    return PRESETS[name] || PRESETS.normal;
+  }
+  // What identifies a preset's sound: Custom changes with its curve.
+  function presetKey(name) { return name === 'custom' ? 'custom:' + customCurve().join(',') : name; }
+
+  // Half-wave rectifier: positively homogeneous, so the harmonics it makes
+  // track the input level linearly (no level-dependent distortion). It makes
+  // even harmonics only: strong for 75-120 Hz notes, weak for 60 Hz.
+  let rectCurve = null;
+  function rectifierCurve() {
+    if (rectCurve) return rectCurve;
+    const n = 2049;
+    rectCurve = new Float32Array(n);
+    for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1; rectCurve[i] = x > 0 ? x : 0; }
+    return rectCurve;
+  }
+
+  /**
+   * WHAT YOU SET IS WHAT YOU GET (2026-10-02). Octave-wide bands overlap, so
+   * setting neighbours to 5, 6, 5 dB measured +7.7 and +10 dB (bands add up;
+   * every graphic EQ has this interaction). The curve a preset or the Custom
+   * sliders ask for is the RESPONSE wanted at each centre frequency, so solve
+   * for the band gains that produce it: measure the summed response with the
+   * biquads' own maths and correct, a few damped passes. Cached per curve.
+   */
+  const solveCache = new Map();
+  let solveCtx = null;
+  function solveEq(target) {
+    const key = target.join(',');
+    if (solveCache.has(key)) return solveCache.get(key);
+    let gains = target.slice();
+    try {
+      const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      if (!solveCtx) solveCtx = new OAC(1, 128, 48000);
+      const freqs = new Float32Array(EQ_FREQS);
+      const bands = EQ_FREQS.map(function (f) {
+        const b = solveCtx.createBiquadFilter(); b.type = 'peaking'; b.frequency.value = f; b.Q.value = EQ_Q; return b;
+      });
+      const mag = new Float32Array(freqs.length);
+      const ph = new Float32Array(freqs.length);
+      for (let pass = 0; pass < 12; pass++) {
+        const resp = new Float32Array(freqs.length);
+        bands.forEach(function (b, j) {
+          b.gain.value = gains[j];
+          b.getFrequencyResponse(freqs, mag, ph);
+          for (let k = 0; k < freqs.length; k++) resp[k] += 20 * Math.log10(mag[k]);
+        });
+        let worst = 0;
+        gains = gains.map(function (gj, j) {
+          const err = target[j] - resp[j];
+          worst = Math.max(worst, Math.abs(err));
+          return Math.max(-18, Math.min(18, gj + 0.7 * err));
+        });
+        if (worst < 0.05) break;
+      }
+    } catch (e) { gains = target.slice(); }
+    solveCache.set(key, gains);
+    return gains;
+  }
+
+  // LOWPASS/HIGHPASS Q IS IN DECIBELS in Web Audio (measured: Q = 0.707 put a
+  // +0.71 dB bump at the cutoff). A Butterworth section is -3.0103 dB; with
+  // 0.707 the crossover halves did not sum flat and Cinema's widening leaked
+  // +1.8 dB of side into the bass it promises to keep mono. Peaking Q is the
+  // ordinary bandwidth Q and is unaffected.
+  const BUTTERWORTH_Q_DB = 20 * Math.log10(Math.SQRT1_2);
+
+  function biquad(ctx, type, f, q) {
+    const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b;
+  }
+
+  /** Builds the preset-dependent part of the chain on any BaseAudioContext. */
+  function buildChain(ctx) {
+    const n = {};
+    n.eq = EQ_FREQS.map(function (f) { return biquad(ctx, 'peaking', f, EQ_Q); });
+    for (let i = 0; i < n.eq.length - 1; i++) n.eq[i].connect(n.eq[i + 1]);
+    const eqOut = n.eq[n.eq.length - 1];
+    n.sum = ctx.createGain();
+    n.vbLp = biquad(ctx, 'lowpass', 120, BUTTERWORTH_Q_DB);
+    n.vbShape = ctx.createWaveShaper(); n.vbShape.curve = rectifierCurve();
+    n.vbHp = biquad(ctx, 'highpass', 150, BUTTERWORTH_Q_DB);
+    n.vbGain = ctx.createGain(); n.vbGain.gain.value = 0;
+    eqOut.connect(n.sum);
+    eqOut.connect(n.vbLp); n.vbLp.connect(n.vbShape); n.vbShape.connect(n.vbHp); n.vbHp.connect(n.vbGain); n.vbGain.connect(n.sum);
+    // Stereo up-mix, then mid/side: M = (L+R)/2, S = (L-R)/2.
+    n.up = ctx.createGain(); n.up.channelCount = 2; n.up.channelCountMode = 'explicit'; n.up.channelInterpretation = 'speakers';
+    n.split = ctx.createChannelSplitter(2);
+    n.sum.connect(n.up); n.up.connect(n.split);
+    const g = function (v) { const x = ctx.createGain(); x.gain.value = v; return x; };
+    n.mid = g(1); n.side = g(1);
+    const mL = g(0.5); const mR = g(0.5); const sL = g(0.5); const sR = g(-0.5);
+    n.split.connect(mL, 0); n.split.connect(mR, 1); n.split.connect(sL, 0); n.split.connect(sR, 1);
+    mL.connect(n.mid); mR.connect(n.mid); sL.connect(n.side); sR.connect(n.side);
+    // Three side paths: direct (Off, narrowing), and a Linkwitz-Riley 4th-order
+    // split at 150 Hz for widening only the top. LR4 low + high sum flat.
+    n.sDirect = g(1);
+    n.sLow = g(0); n.sHigh = g(0);
+    const lp1 = biquad(ctx, 'lowpass', 150, BUTTERWORTH_Q_DB); const lp2 = biquad(ctx, 'lowpass', 150, BUTTERWORTH_Q_DB);
+    const hp1 = biquad(ctx, 'highpass', 150, BUTTERWORTH_Q_DB); const hp2 = biquad(ctx, 'highpass', 150, BUTTERWORTH_Q_DB);
+    n.side.connect(n.sDirect);
+    n.side.connect(lp1); lp1.connect(lp2); lp2.connect(n.sLow);
+    n.side.connect(hp1); hp1.connect(hp2); hp2.connect(n.sHigh);
+    n.sideOut = g(1);
+    n.sDirect.connect(n.sideOut); n.sLow.connect(n.sideOut); n.sHigh.connect(n.sideOut);
+    // L' = M + S', R' = M - S'.
+    n.outL = g(1); n.outR = g(1);
+    const negS = g(-1);
+    n.mid.connect(n.outL); n.mid.connect(n.outR);
+    n.sideOut.connect(n.outL); n.sideOut.connect(negS); negS.connect(n.outR);
+    n.merge = ctx.createChannelMerger(2);
+    n.outL.connect(n.merge, 0, 0); n.outR.connect(n.merge, 0, 1);
+    // The leveller has a real dry path. Chrome's compressor is not transparent
+    // even at ratio 1 / threshold 0 (an impulse came out 14 dB down through
+    // the "bypassed" node), so presets without levelling skip it entirely.
+    n.lev = ctx.createDynamicsCompressor();
+    n.levWet = g(0); n.levDry = g(1);
+    n.trim = ctx.createGain();
+    n.merge.connect(n.lev); n.lev.connect(n.levWet); n.levWet.connect(n.trim);
+    n.merge.connect(n.levDry); n.levDry.connect(n.trim);
+    n.input = n.eq[0]; n.output = n.trim;
+    return n;
+  }
+
+  function setP(param, value, t, ramp) {
+    if (!param) return;
+    if (ramp) rampParam(param, value, t);
+    else { try { param.setValueAtTime(value, t); } catch (e) { param.value = value; } }
+  }
+  /** Sets a chain's parameters for a preset (trim excluded: see loudnessTrimFor). */
+  function configureChain(n, name, t, ramp) {
+    const p = presetOf(name);
+    const gains = solveEq(EQ_FREQS.map(function (_, i) { return p.eq[i] || 0; }));
+    for (let i = 0; i < n.eq.length; i++) setP(n.eq[i].gain, gains[i], t, ramp);
+    setP(n.vbGain.gain, p.vb, t, ramp);
+    // Widening keeps the bass mono; narrowing narrows every band.
+    if (p.width > 1) {
+      setP(n.sDirect.gain, 0, t, ramp); setP(n.sLow.gain, 1, t, ramp); setP(n.sHigh.gain, p.width, t, ramp);
+    } else {
+      setP(n.sDirect.gain, p.width, t, ramp); setP(n.sLow.gain, 0, t, ramp); setP(n.sHigh.gain, 0, t, ramp);
+    }
+    setP(n.levWet.gain, p.lev ? 1 : 0, t, ramp);
+    setP(n.levDry.gain, p.lev ? 0 : 1, t, ramp);
+    const c = p.lev || LEV_BYPASS;
+    setP(n.lev.threshold, c.threshold, t, ramp);
+    setP(n.lev.ratio, c.ratio, t, false); setP(n.lev.knee, c.knee, t, false);
+    setP(n.lev.attack, c.attack, t, false); setP(n.lev.release, c.release, t, false);
+  }
+
+  // K-weighting approximation (BS.1770 pre-filter + RLB), so the loudness match
+  // follows what the ear hears rather than raw energy, which bass dominates.
+  function kWeight(ctx) {
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 60; hp.Q.value = 20 * Math.log10(0.5); // Q 0.5, in dB
+    const sh = ctx.createBiquadFilter(); sh.type = 'highshelf'; sh.frequency.value = 1500; sh.gain.value = 4;
+    hp.connect(sh);
+    return { input: hp, output: sh };
+  }
+  let pinkBuf = null;
+  function pinkNoise(ctx) {
+    // Stereo pink noise (Kellet filter), mostly correlated between channels
+    // like programme material, scaled to about -20 dBFS RMS.
+    const len = ctx.sampleRate * 3;
+    const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+    const gen = function () {
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      const out = new Float32Array(len);
+      for (let i = 0; i < len; i++) {
+        const w = Math.random() * 2 - 1;
+        b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759; b2 = 0.96900 * b2 + w * 0.1538520;
+        b3 = 0.86650 * b3 + w * 0.3104856; b4 = 0.55000 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.0168980;
+        out[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362; b6 = w * 0.115926;
+      }
+      return out;
+    };
+    const centre = gen(); const l = gen(); const r = gen();
+    const L = buf.getChannelData(0); const R = buf.getChannelData(1);
+    let sum = 0;
+    for (let i = 0; i < len; i++) { L[i] = centre[i] + 0.4 * l[i]; R[i] = centre[i] + 0.4 * r[i]; sum += L[i] * L[i]; }
+    const scale = 0.1 / Math.sqrt(sum / len); // 0.1 RMS = -20 dBFS
+    for (let i = 0; i < len; i++) { L[i] *= scale; R[i] *= scale; }
+    return buf;
+  }
+  async function renderLoudness(name) {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const rate = 48000;
+    const off = new OAC(2, rate * 3, rate);
+    if (!pinkBuf) pinkBuf = pinkNoise(off);
+    const src0 = off.createBufferSource(); src0.buffer = pinkBuf;
+    // Programme material carries more low end and less top than pink noise
+    // (measured on a trailer: matching on plain pink left Treble 2.5 dB quiet
+    // and Bass 1.9 dB loud), so tilt the reference toward it.
+    const tLo = off.createBiquadFilter(); tLo.type = 'lowshelf'; tLo.frequency.value = 150; tLo.gain.value = 3;
+    const tHi = off.createBiquadFilter(); tHi.type = 'highshelf'; tHi.frequency.value = 3000; tHi.gain.value = -6;
+    src0.connect(tLo); tLo.connect(tHi);
+    const src = { connect: function (d) { tHi.connect(d); }, start: function (t) { src0.start(t); } };
+    const k = kWeight(off);
+    if (name === null) {
+      src.connect(k.input);
+    } else {
+      const n = buildChain(off);
+      configureChain(n, name, 0, false);
+      src.connect(n.input); n.output.connect(k.input);
+    }
+    k.output.connect(off.destination);
+    src.start(0);
+    const out = await off.startRendering();
+    let sum = 0;
+    let cnt = 0;
+    for (let ch = 0; ch < 2; ch++) {
+      const d = out.getChannelData(ch);
+      for (let i = rate; i < d.length; i++) { sum += d[i] * d[i]; cnt++; } // skip the leveller's first second
+    }
+    return Math.sqrt(sum / cnt);
+  }
+  /**
+   * The trim that makes a preset as loud as Off on K-weighted pink noise at
+   * -20 dBFS: for the levelled presets this is also the pivot, so passages
+   * quieter than that come up and louder ones come down.
+   */
+  const trimCache = new Map();
+  function loudnessTrimFor(name) {
+    const key = presetKey(name);
+    if (trimCache.has(key)) return trimCache.get(key);
+    const job = (async function () {
+      try {
+        if (!(window.OfflineAudioContext || window.webkitOfflineAudioContext)) return 1;
+        const ref = await renderLoudness(null);
+        const got = await renderLoudness(name);
+        const t = ref / got;
+        return isFinite(t) && t > 0 ? Math.min(4, Math.max(0.25, t)) : 1;
+      } catch (e) { return 1; }
+    })();
+    trimCache.set(key, job);
+    return job;
+  }
+
+  // For the live tests: lets e2e render each preset offline through the real
+  // chain and measure its response (ISOLATED world, invisible to the page).
+  try {
+    window.__unsynthAudioChain = { EQ_FREQS: EQ_FREQS, PRESETS: PRESETS, presetOf: presetOf, buildChain: buildChain, solveEq: solveEq,
+      configureChain: configureChain, loudnessTrimFor: loudnessTrimFor, makeupGainFor: makeupGainFor, LIMITER: LIMITER };
+  } catch (e) { /* no window */ }
+
   function applyPresetToGraph(entry, preset) {
-    if (!entry || !entry.ctx) return;
-    // Only reconfigure when the preset actually changed. syncAllVideos calls this
-    // on every scan; re-running setValueAtTime on the compressor/EQ each pass
-    // re-triggers the dynamics envelope and pumps the audio up and down ("a filter
-    // getting applied and unapplied"). Skip when nothing changed.
-    if (entry._unPreset === preset) return;
-    entry._unPreset = preset;
-    const ctx = entry.ctx;
-    const t = ctx.currentTime;
-
-    // 1. Configure filterLow (lowshelf EQ)
-    if (entry.filterLow) {
-      if (preset === 'smart-enhance') {
-        entry.filterLow.type = 'lowshelf';
-        entry.filterLow.frequency.setValueAtTime(120, t);
-        rampParam(entry.filterLow.gain, 2.5, t);   // reduced from 3.5 to avoid muddiness
-      } else if (preset === 'bass-boost') {
-        entry.filterLow.type = 'lowshelf';
-        entry.filterLow.frequency.setValueAtTime(150, t);
-        rampParam(entry.filterLow.gain, 8, t);
-      } else if (preset === 'cinematic') {
-        // Cinematic: a wide "smile" curve — weight under the dialogue and air
-        // above it — plus levelling that keeps quiet dialogue audible without
-        // flattening the loud moments. Shelf sits at 90Hz rather than 150 so
-        // it lifts the body of the mix instead of only the sub, which is what
-        // makes a boost sound boomy on speakers with a real low end.
-        entry.filterLow.type = 'lowshelf';
-        entry.filterLow.frequency.setValueAtTime(90, t);
-        rampParam(entry.filterLow.gain, 5.5, t);
-      } else {
-        // Bypass
-        rampParam(entry.filterLow.gain, 0, t);
-      }
+    if (!entry || !entry.ctx || !entry.chain) return;
+    // Only reconfigure when the preset actually changed: syncAllVideos runs on
+    // every scan, and re-setting the leveller each pass re-triggers its
+    // envelope and pumps the audio.
+    const key = presetKey(preset);
+    if (entry._unPreset === key) return;
+    entry._unPreset = key;
+    const t = entry.ctx.currentTime;
+    configureChain(entry.chain, preset, t, true);
+    if (preset === 'normal' || preset === 'mono') {
+      rampParam(entry.chain.trim.gain, 1, t);
+    } else {
+      loudnessTrimFor(preset).then(function (g) {
+        // A late answer must still belong to the preset on screen.
+        if (entry._unPreset !== key) return;
+        rampParam(entry.chain.trim.gain, g, entry.ctx.currentTime);
+      });
     }
-
-    // 2. Configure filterMid (peaking / highshelf EQ)
-    if (entry.filterMid) {
-      if (preset === 'smart-enhance') {
-        entry.filterMid.type = 'peaking';
-        entry.filterMid.frequency.setValueAtTime(3000, t);  // boosted to presence range instead of 2kHz
-        entry.filterMid.Q.setValueAtTime(0.7, t);           // wider Q — less harsh
-        rampParam(entry.filterMid.gain, 3.5, t);            // reduced from 4.5
-      } else if (preset === 'vocal-boost') {
-        entry.filterMid.type = 'peaking';
-        entry.filterMid.frequency.setValueAtTime(2000, t);
-        entry.filterMid.Q.setValueAtTime(1.0, t);
-        rampParam(entry.filterMid.gain, 6, t);
-      } else if (preset === 'treble-boost') {
-        entry.filterMid.type = 'highshelf';
-        entry.filterMid.frequency.setValueAtTime(3000, t);
-        rampParam(entry.filterMid.gain, 6, t);
-      } else if (preset === 'cinematic') {
-        // Presence lift at 2.8kHz keeps dialogue intelligible over the bigger
-        // low end. Kept moderate and wide (low Q) so it adds clarity rather
-        // than the harsh edge a narrow boost up here produces.
-        entry.filterMid.type = 'peaking';
-        entry.filterMid.frequency.setValueAtTime(2800, t);
-        entry.filterMid.Q.setValueAtTime(0.6, t);
-        rampParam(entry.filterMid.gain, 3, t);
-      } else {
-        // Bypass
-        rampParam(entry.filterMid.gain, 0, t);
-      }
-    }
-
-    // 3. Configure compressorNode.
-    // CRITICAL: always set attack + release explicitly. Chrome's defaults (3ms attack,
-    // 250ms release) cause audible pumping on transients — especially noticeable when
-    // quality changes, buffering events, or frequent updates trigger gain swings.
-    // Slower attack (30ms+) lets transients through naturally; slower release (400ms+)
-    // prevents the "breathing" artifact between quiet and loud sections.
-    if (entry.compressor) {
-      if (preset === 'smart-enhance') {
-        // Gentle levelling — high threshold so it only catches the loudest spikes.
-        // Fast enough to smooth peaks, slow enough not to pump on normal speech.
-        rampParam(entry.compressor.threshold, -14, t);       // raised from -24 to only catch true peaks
-        entry.compressor.ratio.setValueAtTime(2.5, t);       // gentle ratio
-        entry.compressor.knee.setValueAtTime(18, t);         // wide soft knee — smooth onset
-        entry.compressor.attack.setValueAtTime(0.040, t);    // 40ms — lets transients through
-        entry.compressor.release.setValueAtTime(0.500, t);   // 500ms — slow fade-back, no pumping
-      } else if (preset === 'vocal-boost') {
-        rampParam(entry.compressor.threshold, -18, t);
-        entry.compressor.ratio.setValueAtTime(2.5, t);
-        entry.compressor.knee.setValueAtTime(10, t);
-        entry.compressor.attack.setValueAtTime(0.020, t);    // 20ms — tighter for speech
-        entry.compressor.release.setValueAtTime(0.350, t);   // 350ms
-      } else if (preset === 'cinematic') {
-        // Film mixes have a huge dynamic range — whispered dialogue then an
-        // explosion. Moderate levelling pulls the quiet parts up without
-        // squashing the peaks flat, which is the whole point of the mode.
-        rampParam(entry.compressor.threshold, -22, t);
-        entry.compressor.ratio.setValueAtTime(3, t);
-        entry.compressor.knee.setValueAtTime(24, t);
-        entry.compressor.attack.setValueAtTime(0.025, t);
-        entry.compressor.release.setValueAtTime(0.450, t);
-      } else if (preset === 'compressor') {
-        // "Night mode" — aggressive levelling for late-night watching
-        rampParam(entry.compressor.threshold, -35, t);
-        entry.compressor.ratio.setValueAtTime(10, t);        // reduced from 12 (less clamp)
-        entry.compressor.knee.setValueAtTime(30, t);
-        entry.compressor.attack.setValueAtTime(0.005, t);    // 5ms — catches peaks fast
-        entry.compressor.release.setValueAtTime(0.600, t);   // 600ms — very slow release to prevent pumping
-      } else {
-        // Bypass compressor — set to values that have no effect
-        rampParam(entry.compressor.threshold, 0, t);
-        entry.compressor.ratio.setValueAtTime(1, t);
-        entry.compressor.knee.setValueAtTime(0, t);
-        entry.compressor.attack.setValueAtTime(0.003, t);    // Chrome default
-        entry.compressor.release.setValueAtTime(0.250, t);   // Chrome default
-      }
-    }
-
-    // 4. Configure monoNode
     if (entry.mono) {
-      if (preset === 'mono') {
+      if (presetOf(preset).mono) {
         entry.mono.channelCount = 1;
         entry.mono.channelCountMode = 'explicit';
       } else {
@@ -410,35 +692,56 @@
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const src = ctx.createMediaElementSource(video);
 
-      const filterLow = ctx.createBiquadFilter();
-      const filterMid = ctx.createBiquadFilter();
-      const compressor = ctx.createDynamicsCompressor();
+      const chain = buildChain(ctx);
       const mono = ctx.createGain();
       const gain = ctx.createGain();
+      const limiter = ctx.createDynamicsCompressor();
+      const limTrim = ctx.createGain();
+      limiter.threshold.value = LIMITER.threshold; limiter.ratio.value = LIMITER.ratio; limiter.knee.value = LIMITER.knee;
+      limiter.attack.value = LIMITER.attack; limiter.release.value = LIMITER.release;
+      // The limiter only acts above -1 dBFS; cancel its own make-up gain so it
+      // is transparent below that.
+      makeupGainFor(LIMITER).then(function (g) { if (g > 0) limTrim.gain.value = 1 / g; });
 
       gain.gain.value = gainValue(gainPct);
 
-      // Connect pipeline
-      src.connect(filterLow);
-      filterLow.connect(filterMid);
-      filterMid.connect(compressor);
-      compressor.connect(mono);
+      // YouTube's own volume is applied BEFORE this graph (measured: the chain's
+      // input dropped 5.5-6 dB going from 100% to 50%, twice over). Levelling
+      // and the loudness match then depended on where the volume slider sat.
+      // volIn undoes it on the way in and volOut re-applies it on the way out,
+      // so the chain always works on the programme at its real level and Off
+      // sounds exactly as before.
+      const volIn = ctx.createGain();
+      const volOut = ctx.createGain();
+      src.connect(volIn);
+      volIn.connect(chain.input);
+      chain.output.connect(volOut);
+      volOut.connect(mono);
       mono.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(limiter);
+      limiter.connect(limTrim);
+      limTrim.connect(ctx.destination);
+      // The popup's level meter reads the real output here (after every stage).
+      const meter = ctx.createAnalyser();
+      meter.fftSize = 2048;
+      limTrim.connect(meter);
 
       const onPlay = function () {
         if (ctx.state === 'suspended') ctx.resume().catch(function () {});
       };
       const entry = {
         ctx: ctx,
-        filterLow: filterLow,
-        filterMid: filterMid,
-        compressor: compressor,
+        chain: chain,
+        volIn: volIn,
+        volOut: volOut,
+        limiter: limiter,
+        meter: meter,
         mono: mono,
         gain: gain,
         onPlay: onPlay
       };
       applyPresetToGraph(entry, activePreset);
+      syncVolumeNorm(video, entry);
 
       graphs.set(video, entry);
       liveGraphs.set(video, entry);
@@ -446,6 +749,7 @@
       video.dataset.unVolGraph = '1';
       video.addEventListener('play', onPlay, { once: false });
     } catch (e) {
+      lastAttachError = (e && (e.name ? e.name + ': ' : '') + (e.message || '')) || 'unknown error';
       /* createMediaElementSource failed (element already wired) — no graph, so
          native volume is the only control. Only impose it once we've adopted a
          real level (mirrors syncAllVideos); never force 0 on a fresh/muted load. */
@@ -461,9 +765,26 @@
 
   // Listen for native volume changes once per element (works whether or not a
   // Web Audio graph was built). Handler kept on the element for teardown.
+  // Keeps volIn * volOut == 1 with volIn = 1 / element volume. Below 1% the
+  // element is effectively silent anyway, so the undo stops there rather than
+  // multiplying noise by 100+.
+  function syncVolumeNorm(v, entry) {
+    const g = entry || graphs.get(v);
+    if (!g || !g.volIn || !g.volOut) return;
+    const vol = Math.max(0.01, Math.min(1, Number(v.volume) || 0));
+    const t = g.ctx.currentTime;
+    try {
+      g.volIn.gain.setTargetAtTime(1 / vol, t, 0.015);
+      g.volOut.gain.setTargetAtTime(vol, t, 0.015);
+    } catch (e) {
+      g.volIn.gain.value = 1 / vol;
+      g.volOut.gain.value = vol;
+    }
+  }
+
   function ensureVolListener(v) {
     if (v._unVolH) return;
-    const h = function () { syncFromNative(v); };
+    const h = function () { syncVolumeNorm(v); syncFromNative(v); };
     v._unVolH = h;
     v.addEventListener('volumechange', h);
     listenedMedia.add(v);
@@ -531,6 +852,38 @@
    * Prefer the real watch/shorts/music player — never wire Web Audio onto every
    * hover-preview / related / ad <video>, which are short-lived and expensive.
    */
+  /**
+   * WHAT IS THE AUDIO ACTUALLY DOING (2026-10-02). A user could not hear the
+   * presets or the boost change anything, and nothing on screen could say
+   * whether the audio was even going through Unsynth. The popup polls this
+   * and shows it as a live meter plus one line of status:
+   *   on         processing, with the measured output level (dBFS)
+   *   suspended  Chrome has not let the page start audio yet
+   *   bypass     Off at 100% or less: YouTube plays the audio directly
+   *   failed     an effect is wanted but the audio chain could not attach
+   *   no-video   nothing to process on this page
+   */
+  function audioStatus() {
+    const v = document.querySelector('#movie_player video') || mediaTargets()[0] || null;
+    if (!v) return { state: 'no-video' };
+    const base = { preset: activePreset, gain: gainPct, nativeVol: Math.round((v.volume || 0) * 100), muted: !!v.muted, paused: !!v.paused };
+    const g = graphs.get(v);
+    if (!g) {
+      const wanted = gainPct > 100 || (activePreset && activePreset !== 'normal');
+      return Object.assign(base, { state: wanted ? 'failed' : 'bypass', error: wanted ? (lastAttachError || 'not attached yet') : '' });
+    }
+    let levelDb = null;
+    if (g.meter) {
+      const buf = new Float32Array(g.meter.fftSize);
+      g.meter.getFloatTimeDomainData(buf);
+      let sum = 0;
+      for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+      const rms = Math.sqrt(sum / buf.length);
+      levelDb = rms > 1e-5 ? Math.round(20 * Math.log10(rms) * 10) / 10 : -99;
+    }
+    return Object.assign(base, { state: g.ctx.state === 'running' ? 'on' : 'suspended', levelDb: levelDb, applied: String(g._unPreset || 'normal').split(':')[0] });
+  }
+
   function mediaTargets() {
     if (isYouTubeHost()) {
       const seen = new Set();
@@ -851,7 +1204,7 @@
   const EQ_PRESETS = [
     ['cinematic', 'Cinema'], ['smart-enhance', 'Smart'], ['bass-boost', 'Bass'],
     ['vocal-boost', 'Vocal'], ['treble-boost', 'Treble'], ['compressor', 'Night'],
-    ['mono', 'Mono'], ['normal', 'Off']
+    ['mono', 'Mono'], ['custom', 'Custom'], ['normal', 'Off']
   ];
 
   // Always-visible volume bar baked into the watch page, just under the video.
@@ -1052,6 +1405,10 @@
         sendResponse({ ok: true, preset: activePreset });
         return false;
       }
+      if (msg.type === 'unsynth-vol-status') {
+        sendResponse(audioStatus());
+        return false;
+      }
     });
   }
 
@@ -1142,6 +1499,10 @@
       if (msg.type === 'unsynth-preset-set') {
         setPreset(msg.preset);
         sendResponse({ ok: true, preset: activePreset });
+        return false;
+      }
+      if (msg.type === 'unsynth-vol-status') {
+        sendResponse(audioStatus());
         return false;
       }
     },

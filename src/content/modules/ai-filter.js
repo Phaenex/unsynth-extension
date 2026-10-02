@@ -187,7 +187,9 @@
       YT.forEachFeedTile(fn, { root: root });
       return;
     }
-    YT.forEachFeedTile(fn);
+    // Per-tile scoring and hiding: changed tiles are enough (core DIRTY-TILE
+    // SCANNING). pageHidden counts up in hideEl, so it stays whole.
+    YT.forEachFeedTile(fn, { dirtyOk: true });
   }
   function ytTitle(tile) {
     return YT ? YT.tileTitle(tile) : '';
@@ -309,12 +311,24 @@
       } catch (e) {}
       container.appendChild(badge);
     }
+    publishBadgeWidth(tile, badge);
+  }
+  // The head strip's checkbox starts where this badge ends (playlist-bulk.css),
+  // and the badge sizes to its text ("AI 30%" vs "AI 100%"). Same contract as
+  // --un-taste-w: measured after paint, set on the TILE, the nearest element
+  // both the badge and the checkbox's overlay inherit from.
+  function publishBadgeWidth(tile, badge) {
+    requestAnimationFrame(() => {
+      const w = Math.round(badge.getBoundingClientRect().width);
+      if (w > 0 && badge.isConnected) tile.style.setProperty('--un-ai-w', w + 'px');
+    });
   }
   function unlabelTile(tile) {
     if (tile.dataset.unsynthLabel !== '1') return;
     delete tile.dataset.unsynthLabel;
     tile.classList.remove('unsynth-labeled');
     tile.querySelectorAll('.unsynth-ai-badge').forEach((b) => b.remove());
+    tile.style.removeProperty('--un-ai-w');
   }
   // Route a matched tile to the configured display mode.
   function applyTileAction(tile, info) {

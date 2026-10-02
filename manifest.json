@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "minimum_chrome_version": "120",
   "name": "Unsynth — YouTube Power Suite",
-  "version": "1.2.1",
+  "version": "1.2.19",
   "description": "Filter AI-generated narration on YouTube — subscriptions, playlists, stats, creator tools, and analytics in one suite.",
   "permissions": [
     "storage",
@@ -130,6 +130,7 @@
         "src/shared/discover.js",
         "src/shared/volume-level.js",
         "src/shared/browser-env.js",
+        "src/shared/guided-tour.js",
         "src/content/core.js",
         "src/content/boot.js"
       ],
@@ -139,7 +140,8 @@
         "src/content/side-dock.css",
         "src/content/media-tools.css",
         "src/content/watch-deck.css",
-        "src/content/side-panel.css"
+        "src/content/side-panel.css",
+        "src/content/guided-tour.css"
       ],
       "run_at": "document_idle",
       "all_frames": false
@@ -186,5 +188,6 @@
       "run_at": "document_idle",
       "all_frames": false
     }
-  ]
+  ],
+  "version_name": "1.0"
 }

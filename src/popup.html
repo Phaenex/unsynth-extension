@@ -48,12 +48,17 @@
     <div class="pop-pane" id="pop-pane-now" role="tabpanel" aria-labelledby="pop-tab-now">
       <section class="pop-card pop-audio-panel" id="pop-audio-panel">
         <div class="pop-audio-header">
-          <span class="pop-audio-title"><span class="pop-audio-icon">🔊</span>Audio &amp; Booster</span>
+          <span class="pop-audio-title"><span class="pop-audio-icon un-ico" data-ico="vol-high" aria-hidden="true"></span>Audio &amp; Booster</span>
           <span id="pop-audio-badge" class="pop-audio-badge">100%</span>
         </div>
 
         <div class="pop-audio-slider-container">
           <input id="pop-audio-slider" class="pop-audio-slider" type="range" min="0" max="600" step="5" value="100" aria-label="Volume level" />
+        </div>
+
+        <div class="pop-audio-meter" id="pop-audio-meter" role="status" aria-live="off">
+          <span class="pop-audio-meter-bar" aria-hidden="true"><span class="pop-audio-meter-fill" id="pop-audio-meter-fill"></span></span>
+          <span class="pop-audio-meter-txt" id="pop-audio-meter-txt">Checking the audio…</span>
         </div>
 
         <div class="pop-audio-presets">
@@ -71,7 +76,7 @@
           <div class="pop-audio-enhancements">
             <label for="pop-audio-eq">Enhance:</label>
             <select id="pop-audio-eq" class="pop-select">
-              <option value="cinematic">Cinematic (Default)</option>
+              <option value="cinematic">Cinema (Default)</option>
               <option value="smart-enhance">Smart Enhancer</option>
               <option value="normal">Normal (Bypass)</option>
               <option value="bass-boost">Bass Boost (Deep/Warm)</option>
@@ -79,7 +84,17 @@
               <option value="treble-boost">Treble Boost (Crisp)</option>
               <option value="compressor">Night Mode (Loudness Equalizer)</option>
               <option value="mono">Mono Downmix (One-Ear Fix)</option>
+              <option value="custom">Custom EQ (your own curve)</option>
             </select>
+          </div>
+
+          <div class="pop-eq" id="pop-eq" hidden>
+            <div class="pop-eq-head">
+              <span class="pop-eq-title">Custom EQ</span>
+              <span class="pop-eq-hint">what you set is what you get</span>
+              <button type="button" class="pop-eq-flat" id="pop-eq-flat">Flat</button>
+            </div>
+            <div class="pop-eq-bands" id="pop-eq-bands"></div>
           </div>
 
           <div class="pop-audio-options">
@@ -125,6 +140,7 @@
       </p>
 
       <div class="links">
+        <a id="open-tour" href="#">Feature tour</a>
         <a id="open-updates" href="#">Updates</a>
         <a id="open-options" href="#">Filter word list</a>
         <a id="open-support" href="#" title="Tips optional — Ko-fi: phaenex">Support Phaenex</a>

@@ -365,4 +365,4 @@ html.un-sp-present .un-watch-deck .un-vid-stats-panel { display: none !important
 /* The AI door is in the guide; the masthead AI chip only ever worked on
    watch pages, so while the guide is present it would be a second door to
    the same room. Forge keeps its chip: it is the door on every other page. */
-html:has(#un-watch-deck.is-side:not(.is-empty)) .un-ai-tab { display: none !important; }
+html.un-has-side-guide .un-ai-tab { display: none !important; }

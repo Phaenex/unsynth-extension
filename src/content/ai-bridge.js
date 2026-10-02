@@ -32,6 +32,7 @@
   const BRIDGE_LIMITS = {
     UN_AI_REQ_TRACKS: [8, 1000],
     UN_STATS_REQ: [30, 1000],
+    UN_DL_REQ: [3, 10000],
     UN_AI_GET_TRANSCRIPT: [2, 10000],
     UN_CHANNEL_NAMES_REQ: [2, 10000],
     UN_VOL_SET: [90, 1000],
@@ -263,6 +264,176 @@
   }
 
   /** Count formats with a direct (non-cipher) URL — modern WEB player often has none. */
+  function countDirectUrls(streamingData) {
+    if (!streamingData) return 0;
+    return []
+      .concat(streamingData.formats || [], streamingData.adaptiveFormats || [])
+      .filter(function (f) {
+        return f && f.url;
+      }).length;
+  }
+
+  /**
+   * Mobile Innertube clients return direct playback URLs (downloader-site pattern).
+   * Note: clientVersion strings below are fixed pins of unverified freshness that
+   * should be periodically checked against current mobile releases if mobile
+   * streaming endpoints change.
+   */
+  const INNERTUBE_DL_CLIENTS = [
+    {
+      clientName: 'ANDROID',
+      clientVersion: '20.10.38',
+      androidSdkVersion: 30,
+      hl: 'en',
+      gl: 'US',
+      platform: 'MOBILE'
+    },
+    {
+      clientName: 'IOS',
+      clientVersion: '19.45.4',
+      deviceModel: 'iPhone14,3',
+      hl: 'en',
+      gl: 'US'
+    }
+  ];
+
+  async function fetchPlayerViaInnertubeClient(videoId, clientSpec) {
+    const key = ytConfig('INNERTUBE_API_KEY');
+    if (!key || !videoId || !clientSpec) return null;
+    try {
+      const res = await fetch('https://www.youtube.com/youtubei/v1/player?key=' + encodeURIComponent(key), {
+        method: 'POST',
+        credentials: 'omit',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          context: { client: clientSpec },
+          videoId: videoId,
+          contentCheckOk: true,
+          racyCheckOk: true
+        })
+      });
+      if (!res.ok) return null;
+      const json = await res.json();
+      if (!json || countDirectUrls(json.streamingData) === 0) return null;
+      return json;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  async function fetchDirectStreaming(videoId) {
+    for (let i = 0; i < INNERTUBE_DL_CLIENTS.length; i++) {
+      const json = await fetchPlayerViaInnertubeClient(videoId, INNERTUBE_DL_CLIENTS[i]);
+      if (json) {
+        return {
+          json: json,
+          source: 'innertube-' + String(INNERTUBE_DL_CLIENTS[i].clientName).toLowerCase()
+        };
+      }
+    }
+    return null;
+  }
+
+  function mergeVideoDetails(target, source) {
+    const vd = (source && source.videoDetails) || {};
+    if (!target.videoId && vd.videoId) target.videoId = vd.videoId;
+    if (!target.title && vd.title) target.title = vd.title;
+    if (!target.author && vd.author) target.author = vd.author;
+    if (!target.lengthSeconds && vd.lengthSeconds) target.lengthSeconds = Number(vd.lengthSeconds) || 0;
+  }
+
+  async function fetchPlayerViaInnertube(videoId) {
+    const ctx = ytConfig('INNERTUBE_CONTEXT');
+    const key = ytConfig('INNERTUBE_API_KEY');
+    if (!ctx || !videoId) return null;
+    const endpoints = [
+      '/youtubei/v1/player?prettyPrint=false',
+      '/youtubei/v1/player?key=' + encodeURIComponent(key || '')
+    ];
+    for (let i = 0; i < endpoints.length; i++) {
+      try {
+        const res = await fetch(endpoints[i], {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            context: ctx,
+            videoId: videoId,
+            contentCheckOk: true,
+            racyCheckOk: true
+          })
+        });
+        if (!res.ok) continue;
+        const json = await res.json();
+        if (json && (json.streamingData || json.videoDetails)) return json;
+      } catch (err) {
+        /* try next endpoint */
+      }
+    }
+    return null;
+  }
+
+  /** /watch?v= or /shorts/<id> — Shorts SPA often omits videoDetails until Innertube. */
+  function videoIdFromLocation() {
+    try {
+      const sm = String(location.pathname || '').match(/^\/shorts\/([\w-]{11})/);
+      if (sm) return sm[1];
+      const q = new URLSearchParams(location.search).get('v');
+      return q && /^[\w-]{11}$/.test(q) ? q : '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  async function getDownloadPayload() {
+    const pr = getPlayerResponse();
+    const vd = (pr && pr.videoDetails) || {};
+    let videoId = vd.videoId || videoIdFromLocation();
+    let streamingData = pr && pr.streamingData;
+    let source = countDirectUrls(streamingData) > 0 ? 'player' : '';
+    let title = vd.title || '';
+    let author = vd.author || '';
+    let lengthSeconds = Number(vd.lengthSeconds) || 0;
+    if (countDirectUrls(streamingData) === 0 && videoId) {
+      const direct = await fetchDirectStreaming(videoId);
+      if (direct) {
+        streamingData = direct.json.streamingData;
+        source = direct.source;
+        mergeVideoDetails({ videoId: videoId, title: title, author: author, lengthSeconds: lengthSeconds }, direct.json);
+        videoId = videoId || direct.json.videoDetails?.videoId || '';
+        title = title || direct.json.videoDetails?.title || '';
+        author = author || direct.json.videoDetails?.author || '';
+        lengthSeconds = lengthSeconds || Number(direct.json.videoDetails?.lengthSeconds) || 0;
+      } else if (!streamingData) {
+        const fresh = await fetchPlayerViaInnertube(videoId);
+        if (fresh) {
+          if (fresh.streamingData) {
+            streamingData = fresh.streamingData;
+            source = countDirectUrls(streamingData) > 0 ? 'innertube-web' : 'innertube';
+          }
+          mergeVideoDetails({ videoId: videoId, title: title, author: author, lengthSeconds: lengthSeconds }, fresh);
+          if (!videoId && fresh.videoDetails?.videoId) videoId = fresh.videoDetails.videoId;
+          if (!title && fresh.videoDetails?.title) title = fresh.videoDetails.title;
+          if (!author && fresh.videoDetails?.author) author = fresh.videoDetails.author;
+          if (!lengthSeconds && fresh.videoDetails?.lengthSeconds) {
+            lengthSeconds = Number(fresh.videoDetails.lengthSeconds) || 0;
+          }
+        }
+      }
+    }
+    const playability = (pr && pr.playabilityStatus) || {};
+    return {
+      videoId: videoId,
+      title: title,
+      author: author,
+      lengthSeconds: lengthSeconds,
+      streamingData: streamingData || null,
+      source: source,
+      playable: playability.status === 'OK' || !!streamingData,
+      status: playability.status || (streamingData ? 'OK' : 'UNKNOWN')
+    };
+  }
+
   // Video stats straight from the page's player response — zero API quota.
   function getStats() {
     try {
@@ -318,6 +489,19 @@
 
     if (e.data.type === 'UN_STATS_REQ') {
       window.postMessage({ type: 'UN_STATS', reqId: e.data.reqId, ...getStats() }, location.origin);
+      return;
+    }
+
+    if (e.data.type === 'UN_DL_REQ') {
+      let payload = { type: 'UN_DL_RES', reqId: e.data.reqId, ok: false, formats: [] };
+      try {
+        const dl = await getDownloadPayload();
+        payload = Object.assign(payload, dl);
+        payload.ok = !!(dl.streamingData && dl.playable !== false);
+      } catch (dlErr) {
+        payload.error = String(dlErr);
+      }
+      window.postMessage(payload, location.origin);
       return;
     }
 

@@ -527,17 +527,32 @@
 
   // Watch guide position. The guide listens for this key and moves in open
   // tabs, so no reload is asked for.
+  // Both controls write the whole object from what is on screen: saving one
+  // with D.watchGuide as the base would reset the other to its default.
   if ($('guide-placement')) {
     chrome.storage.sync.get({ watchGuide: D.watchGuide }, (s) => {
       const g = Object.assign({}, D.watchGuide, s.watchGuide || {});
       $('guide-placement').value = g.placement === 'below' ? 'below' : 'side';
+      if ($('guide-tour-btn')) $('guide-tour-btn').checked = g.showTourButton !== false;
+    });
+    const gatherGuide = () => ({
+      placement: $('guide-placement').value === 'below' ? 'below' : 'side',
+      showTourButton: $('guide-tour-btn') ? $('guide-tour-btn').checked : true
     });
     $('guide-placement').addEventListener('change', () => {
-      const placement = $('guide-placement').value === 'below' ? 'below' : 'side';
-      chrome.storage.sync.set({ watchGuide: Object.assign({}, D.watchGuide, { placement }) }, () => {
-        flash($('modules-status'), placement === 'below' ? 'Watch guide moves under the video.' : 'Watch guide moves beside the video.');
+      const g = gatherGuide();
+      chrome.storage.sync.set({ watchGuide: g }, () => {
+        flash($('modules-status'), g.placement === 'below' ? 'Watch guide moves under the video.' : 'Watch guide moves beside the video.');
       });
     });
+    if ($('guide-tour-btn')) {
+      $('guide-tour-btn').addEventListener('change', () => {
+        const g = gatherGuide();
+        chrome.storage.sync.set({ watchGuide: g }, () => {
+          flash($('modules-status'), g.showTourButton ? 'Tour button shown in the guide.' : 'Tour button hidden. The popup still has Feature tour.');
+        });
+      });
+    }
   }
   ['ryd-watch-buttons', 'ryd-watch-meta', 'ryd-feed-tiles', 'ryd-show-ratio', 'ryd-show-views', 'ryd-show-date', 'ryd-stats-factcheck', 'ryd-stats-position', 'ryd-stats-style'].forEach((id) => {
     if ($(id)) {

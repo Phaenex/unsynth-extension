@@ -930,7 +930,88 @@
       return Array.prototype.some.call(record.addedNodes || [], (node) => !isUnsynthNode(node));
     });
   }
+  /* ==========================================================================
+     DIRTY-TILE SCANNING (2026-10-01)
+
+     Every scan used to revisit every tile on the page: ~720 on a long channel
+     /videos page, about 2.7 scans a second while scrolling, 2.0-2.2 s of scan
+     time per 30 s. Most of those tiles had not changed since the last scan.
+
+     The mutation records that trigger a scan say which tiles changed, so a
+     scan can hand modules just those (yt-dom forEachFeedTile, callers that
+     pass dirtyOk). Measured before building: across scrolling, in-page search
+     and channel switches and related clicks, every tile YouTube reused for a
+     different video also changed children inside the tile (14 of 14), which
+     this sees; attribute-only reuse was never observed.
+
+     A scan is FULL instead when it was not started by mutations (navigation,
+     settings, a module or timer asking, the tab becoming visible), after a
+     hidden spell, when more than DIRTY_LIMIT tiles changed, and at least every
+     FULL_SCAN_EVERY_MS regardless: a missed case is stale for 4 s at most.
+     ========================================================================== */
+  let dirtyTiles = new Set();
+  let forceFullScan = true;
+  let lastFullScanAt = 0;
+  const FULL_SCAN_EVERY_MS = 4000;
+  const DIRTY_LIMIT = 300;
+  function noteDirty(records) {
+    if (forceFullScan) return;
+    const yd = window.UNYtDom;
+    const sel = yd && yd.feedTileSelector ? yd.feedTileSelector() : '';
+    if (!sel) { forceFullScan = true; return; }
+    // The changed element's tile and every tile that encloses it (a lockup
+    // inside a rich item is two tiles to the modules).
+    const addEnclosing = (el) => {
+      let t = el && el.closest ? el.closest(sel) : null;
+      while (t) {
+        dirtyTiles.add(t);
+        t = t.parentElement ? t.parentElement.closest(sel) : null;
+      }
+    };
+    try {
+      for (const r of records) {
+        // A record is ours only when every node it added or removed is ours.
+        // Its target is often a YouTube element we merely TAGGED with an un-
+        // class (un-sub-hidden on the tile, un-watched-host on the thumbnail,
+        // un-plm-host on a playlist row); isUnsynthNode counts those as ours,
+        // which hid every YouTube change inside such a tile from the dirty set.
+        let foreign = false;
+        const added = r.addedNodes || [];
+        const removed = r.removedNodes || [];
+        for (let i = 0; i < added.length && !foreign; i++) foreign = !isOwnNode(added[i]);
+        for (let i = 0; i < removed.length && !foreign; i++) foreign = !isOwnNode(removed[i]);
+        if (!foreign) continue;
+        addEnclosing(r.target && r.target.nodeType === 1 ? r.target : r.target && r.target.parentElement);
+        for (let i = 0; i < added.length; i++) {
+          const n = added[i];
+          if (n.nodeType !== 1 || isOwnNode(n)) continue;
+          addEnclosing(n);
+          if (n.querySelectorAll) n.querySelectorAll(sel).forEach((t) => dirtyTiles.add(t));
+        }
+        if (dirtyTiles.size > DIRTY_LIMIT) {
+          forceFullScan = true;
+          dirtyTiles.clear();
+          return;
+        }
+      }
+    } catch (e) {
+      // A missed tile would stay stale until the next full scan; make it now.
+      forceFullScan = true;
+      dirtyTiles.clear();
+    }
+  }
+  // Nodes Unsynth created: their own id or FIRST class is un-*, or they sit
+  // inside one. Unlike isUnsynthNode this does not count YouTube elements that
+  // only carry an added un- class (classList.add appends after YouTube's own).
+  function isOwnNode(node) {
+    const el = node && (node.nodeType === 1 ? node : node.parentElement);
+    if (!el || !el.closest) return false;
+    const match = el.closest('[id^="un-"], #unsynth-scan, [class^="un-"]');
+    return !!match && match !== document.documentElement && match !== document.body;
+  }
   function scheduleScan(records) {
+    if (!records) forceFullScan = true;
+    else noteDirty(records);
     if (!hasRelevantMutation(records)) return;
     // Fullscreen playback covers the whole page with the player: no feed tile,
     // sidebar row or masthead control is on screen, so every module's scan is
@@ -985,10 +1066,23 @@
       armHiddenScanRetry();
       return;
     }
+    if (pendingScanWhileHidden) forceFullScan = true;
     pendingScanWhileHidden = false;
     clearHiddenScanRetry();
     if (observer) observer.disconnect();
     const startedAt = performance.now();
+    const ytd = window.UNYtDom;
+    const scanNow = Date.now();
+    const fullScan = forceFullScan || scanNow - lastFullScanAt > FULL_SCAN_EVERY_MS;
+    // Document order, as a full scan walks: outer tile before the lockup
+    // inside it, so callers that keep the first tile per host keep the same one.
+    const dirtyList = fullScan ? null : [...dirtyTiles].filter((t) => t.isConnected)
+      .sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+    dirtyTiles = new Set();
+    forceFullScan = false;
+    if (fullScan) lastFullScanAt = scanNow;
+    core._scanKind = fullScan ? 'full' : 'dirty';
+    if (ytd && ytd.beginScan) ytd.beginScan(dirtyList);
     try {
       for (const mod of core.modules) {
         if (mod.scan && core.isModuleEnabled(mod)) {
@@ -1015,6 +1109,7 @@
         }
       }
     } finally {
+      if (ytd && ytd.endScan) ytd.endScan();
       const elapsed = performance.now() - startedAt;
       core._scanSamples.push(elapsed);
       if (core._scanSamples.length > 120) core._scanSamples.splice(0, core._scanSamples.length - 120);

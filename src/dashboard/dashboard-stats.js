@@ -3,7 +3,8 @@
     const fr = $('stats-frame');
     if (!fr || !fr.contentWindow) return;
     try {
-      fr.contentWindow.postMessage({ unsynthStatsRefresh: true }, '*');
+      // Same-extension iframe: address it by our own origin, never '*'.
+      fr.contentWindow.postMessage({ unsynthStatsRefresh: true }, location.origin);
     } catch (e) {
       /* ignore */
     }

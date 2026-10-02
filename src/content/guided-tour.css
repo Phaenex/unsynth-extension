@@ -1,0 +1,221 @@
+/* Unsynth — Guided Tour & Feature Bubbles */
+:root {
+  --un-tour-bg: #141418;
+  --un-tour-ink: #ececf1;
+  --un-tour-muted: #8b8b96;
+  --un-tour-muted-strong: #b9b9c2;
+  --un-tour-line: #2a2a32;
+  /* Brand red #ff5a5f measured 3.05:1 under white text and 2.67:1 as badge
+     text on light (2026-10-01). These clear 4.5:1 in their theme. */
+  --un-tour-cta: #c4252b;
+  --un-tour-cta-hover: #b3261e;
+  --un-tour-badge-ink: #ff8a8d;
+  --un-tour-badge-bg: rgba(255, 138, 141, 0.14);
+}
+
+html:not([dark]) {
+  --un-tour-bg: #ffffff;
+  --un-tour-ink: #0f0f12;
+  --un-tour-muted: #606060;
+  --un-tour-muted-strong: #333336;
+  --un-tour-line: #e0e0e6;
+  --un-tour-badge-ink: #b3261e;
+  --un-tour-badge-bg: rgba(179, 38, 30, 0.08);
+}
+
+.un-tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+.un-tour-overlay.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.un-tour-highlight {
+  position: relative !important;
+  z-index: 99999 !important;
+  outline: 2px solid var(--un-accent, #ff5a5f) !important;
+  outline-offset: 4px !important;
+  box-shadow: 0 0 20px rgba(255, 90, 95, 0.45) !important;
+  border-radius: 6px;
+  transition: outline 0.2s ease, box-shadow 0.2s ease;
+}
+
+.un-tour-bubble {
+  position: fixed;
+  z-index: 100000;
+  max-width: 380px;
+  width: calc(100vw - 32px);
+  background: var(--un-tour-bg);
+  color: var(--un-tour-ink);
+  border: 1px solid var(--un-tour-line);
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  font-family: var(--un-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-size: 14px;
+  line-height: 1.5;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.un-tour-bubble.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+html:not([dark]) .un-tour-bubble {
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.un-tour-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.un-tour-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--un-tour-badge-ink);
+  background: var(--un-tour-badge-bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.un-tour-close {
+  background: transparent;
+  border: none;
+  color: var(--un-tour-muted);
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.un-tour-close:hover {
+  color: var(--un-tour-ink);
+  background: rgba(255, 255, 255, 0.08);
+}
+html:not([dark]) .un-tour-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.un-tour-title {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--un-tour-ink);
+  line-height: 1.35;
+}
+
+.un-tour-body {
+  margin: 0 0 16px;
+  font-size: 13.5px;
+  color: var(--un-tour-muted-strong);
+  line-height: 1.55;
+}
+
+.un-tour-body kbd {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--un-tour-ink);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+html:not([dark]) .un-tour-body kbd {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #111;
+}
+
+.un-tour-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.un-tour-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.un-tour-btn {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.un-tour-btn-primary {
+  background: var(--un-tour-cta);
+  color: #ffffff;
+}
+.un-tour-btn-primary:hover {
+  background: var(--un-tour-cta-hover);
+}
+
+.un-tour-btn-ghost {
+  background: transparent;
+  color: var(--un-tour-muted);
+  border-color: var(--un-tour-line);
+}
+.un-tour-btn-ghost:hover {
+  color: var(--un-tour-ink);
+  background: rgba(255, 255, 255, 0.06);
+}
+html:not([dark]) .un-tour-btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Header affordance on the Watch Guide */
+/* Guide tokens, not the brand red: #ff5a5f on the light guide measured 2.45:1
+   (watch-deck-contrast.spec, 2026-10-01). --un-guide-action is the guide's
+   "an Unsynth action you can take" colour, AA in both themes. */
+.un-deck-tour-btn {
+  background: transparent;
+  color: var(--un-guide-action, #8a3d0b);
+  border: 1px solid var(--un-guide-line, #d8dbe2);
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s ease;
+}
+.un-deck-tour-btn:hover {
+  background: var(--un-guide-hover, #e3e6ec);
+}
+.un-deck-tour-btn:focus-visible {
+  outline: 2px solid var(--un-guide-focus, #8a3d0b);
+  outline-offset: 1px;
+}
+.un-deck-tour-btn[hidden] { display: none; }

@@ -66,7 +66,8 @@
     const bytes = await bytesInUse();
 
     push('# Unsynth storage diagnostics');
-    push('version        : ' + chrome.runtime.getManifest().version);
+    push('version        : ' + chrome.runtime.getManifest().version +
+      (chrome.runtime.getManifest().version_name ? ' (' + chrome.runtime.getManifest().version_name + ')' : ''));
     push('generated      : ' + new Date().toISOString());
     push('storage.local  : ' + (bytes == null ? 'unknown' : nf(bytes) + ' bytes') + ' across ' + storeKeys.length + ' keys');
     push('');

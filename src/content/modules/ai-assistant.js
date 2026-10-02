@@ -934,7 +934,7 @@
     if (deck && deck.slot && deck.setLauncher) {
       deck.slot('ai');
       deck.setLauncher('ai', function () { sp.toggle('ai'); });
-      if (deck.setSummary) deck.setSummary('ai', 'Summarize, find chapters, ask anything');
+      if (deck.setSummary) deck.setSummary('ai', 'Summarize or ask anything about this video');
       if (deck.syncEmpty) deck.syncEmpty();
       if (deck.syncCollapse) deck.syncCollapse();
     }

@@ -28,7 +28,7 @@
 
 .un-watch-deck,
 ytd-watch-metadata:has(#un-watch-deck:not(.is-empty)),
-html:has(#un-watch-deck.is-side:not(.is-empty)) ytd-watch-metadata {
+html.un-has-side-guide ytd-watch-metadata {
   --un-guide-bg: #16171b;
   --un-guide-raised: #202228;
   --un-guide-hover: #272a31;
@@ -54,7 +54,7 @@ html:has(#un-watch-deck.is-side:not(.is-empty)) ytd-watch-metadata {
 }
 html:not([dark]) .un-watch-deck,
 html:not([dark]) ytd-watch-metadata:has(#un-watch-deck:not(.is-empty)),
-html:not([dark]):has(#un-watch-deck.is-side:not(.is-empty)) ytd-watch-metadata {
+html:not([dark]).un-has-side-guide ytd-watch-metadata {
   --un-guide-bg: #f7f7f9;
   --un-guide-raised: #eceef2;
   --un-guide-hover: #e3e6ec;
@@ -262,6 +262,12 @@ ytd-watch-metadata:has(#un-watch-deck:not(.is-empty)) #top-row > #actions {
   grid-template-columns: 18px auto minmax(0, 1fr) auto auto;
   column-gap: 10px;
 }
+/* Fixed columns. A row with no action hides .un-deck-head-a, and its caret
+   then slid into the action column, leaving an empty last column and its gap
+   behind it: three carets sat 9px left of Fact check's (measured 2026-10-01). */
+.un-deck-slot.is-launcher > .un-deck-head .un-deck-head-s { grid-column: 3; }
+.un-deck-slot.is-launcher > .un-deck-head .un-deck-head-a { grid-column: 4; }
+.un-deck-slot.is-launcher > .un-deck-head .un-deck-caret { grid-column: 5; }
 .un-deck-slot.is-launcher > .un-deck-head .un-deck-head-s {
   justify-self: end;
   max-width: 100%;
@@ -559,12 +565,12 @@ a.un-deck-chip:focus-visible, button.un-deck-chip:focus-visible {
    scoped to watch pages carrying the guide (since 2026-09-22 the guide may
    sit beside the video, outside this block, so the scope is the page, not
    the container) — no other YouTube surface changes. */
-html[dark]:has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata :is(#subscribe-button, yt-subscribe-button-view-model) button,
-html[dark]:has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata :is(#subscribe-button, yt-subscribe-button-view-model) button :is(span, .ytSpecButtonShapeNextButtonTextContent) {
+html[dark].un-has-guide ytd-watch-metadata :is(#subscribe-button, yt-subscribe-button-view-model) button,
+html[dark].un-has-guide ytd-watch-metadata :is(#subscribe-button, yt-subscribe-button-view-model) button :is(span, .ytSpecButtonShapeNextButtonTextContent) {
   color: #0f0f0f !important;
 }
-html:not([dark]):has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata :is(#subscribe-button, yt-subscribe-button-view-model) button,
-html:not([dark]):has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata :is(#subscribe-button, yt-subscribe-button-view-model) button :is(span, .ytSpecButtonShapeNextButtonTextContent) {
+html:not([dark]).un-has-guide ytd-watch-metadata :is(#subscribe-button, yt-subscribe-button-view-model) button,
+html:not([dark]).un-has-guide ytd-watch-metadata :is(#subscribe-button, yt-subscribe-button-view-model) button :is(span, .ytSpecButtonShapeNextButtonTextContent) {
   color: #f1f1f1 !important;
 }
 /* The watch-page Block channel control, under the subscriber count. It was
@@ -572,7 +578,7 @@ html:not([dark]):has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata :is(#subs
    text as the channel name), and rendered at 0.35 opacity. Working, it is a
    quiet secondary text button: the creator row's primary control is
    YouTube's Subscribe, not ours. */
-html:has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata .un-watch-blockbtn {
+html.un-has-guide ytd-watch-metadata .un-watch-blockbtn {
   margin-top: 6px;
   padding: 4px 10px 4px 8px;
   min-height: 26px;
@@ -581,8 +587,8 @@ html:has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata .un-watch-blockbtn {
   color: var(--un-guide-muted);
   font: 500 12px/1 Roboto, Arial, sans-serif;
 }
-html:has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata .un-watch-blockbtn:hover:not(:disabled) { color: var(--un-guide-ink); }
-html:has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata #un-sub-blockbtn:not(:disabled) {
+html.un-has-guide ytd-watch-metadata .un-watch-blockbtn:hover:not(:disabled) { color: var(--un-guide-ink); }
+html.un-has-guide ytd-watch-metadata #un-sub-blockbtn:not(:disabled) {
   opacity: 1;
   color: var(--un-guide-muted);
   background: transparent;
@@ -594,8 +600,9 @@ html:has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata #un-sub-blockbtn:not(
 /* ==========================================================================
    THE GUIDE BESIDE THE VIDEO (2026-09-22, .is-side)
 
-   Owner request: move the guide beside the video so nobody has to scroll to
-   reach it, and make the menus one clean, simple system. Under the player
+   User report: "make the underbar thing a side thing so it prevents people from
+   needing to scroll", then "reorganize and restructure how all these menus
+   and systems work so it looks more clean and elegant". Under the player
    the guide began at y≈650 on a 900px window. In the related column it
    begins beside the player at the top of the page.
 
@@ -668,32 +675,107 @@ html:has(#un-watch-deck:not(.is-empty)) ytd-watch-metadata #un-sub-blockbtn:not(
 .un-watch-deck.is-side > .un-deck-desc > .un-deck-body { display: none; }
 /* Nothing to view (desc-digest off, or a video with no chapters or links):
    the rule above leaves only the top hairline, a divider over nothing.
-   Seen in the owner's browser on /@LofiGirl/live, 2026-09-23 (13px, is-empty). */
+   Seen in a user browser on /@LofiGirl/live, 2026-09-23 (13px, is-empty). */
 /* ...unless the digest has something of its own (a quick description, what
    is worth knowing): that is content, not a divider over nothing. */
 .un-watch-deck.is-side > .un-deck-desc:not(.has-preview):not(:has(.un-desc-digest)) { display: none; }
 .un-watch-deck.is-side .un-deck-preview { gap: 12px; }
-.un-watch-deck.is-side .un-deck-pv-row { flex-direction: column; align-items: stretch; gap: 6px; }
+.un-watch-deck.is-side .un-deck-pv-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.un-watch-deck.is-side .un-deck-pv-heading {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* The guide's surface, not YouTube's page colour: --un-yt-bg painted a band
+     of a different shade behind the heading in both themes. */
+  background: var(--un-guide-bg);
+  min-height: 32px;
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--un-guide-line);
+}
 .un-watch-deck.is-side .un-deck-pv-lab {
   width: auto;
-  padding: 0 2px;
-  font: 600 12px/1.2 Roboto, Arial, sans-serif;
-  letter-spacing: 0.04em;
+  padding: 0;
+  font: 650 13px/1.2 Roboto, Arial, sans-serif;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
+  color: var(--un-guide-ink);
 }
+.un-watch-deck.is-side .un-deck-pv-count {
+  min-width: 20px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--un-guide-raised);
+  color: var(--un-guide-muted);
+  font: 600 11px/1.4 Roboto, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.un-watch-deck.is-side .un-deck-pv-list { width: 100%; }
+/* A foldable group heading (2026-10-01): the whole bar is the toggle, with the
+   rows' caret at its end. Button chrome reset so it reads as the same heading. */
+.un-watch-deck.is-side .un-deck-pv-heading.is-toggle {
+  width: 100%;
+  margin: 0;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.un-watch-deck.is-side .un-deck-pv-heading.is-toggle .un-deck-caret {
+  margin-left: auto;
+  /* Same right edge as the rows' carets above (measured 4 px short). */
+  margin-right: -1px;
+  transform: translateY(2px) rotate(-135deg);
+}
+.un-watch-deck.is-side .un-deck-pv-row.is-folded > .un-deck-pv-heading.is-toggle .un-deck-caret {
+  transform: translateY(-2px) rotate(45deg);
+}
+.un-watch-deck.is-side .un-deck-pv-heading.is-toggle:hover .un-deck-caret { color: var(--un-guide-ink); }
+.un-watch-deck.is-side .un-deck-pv-heading.is-toggle:focus-visible {
+  outline: 2px solid var(--un-guide-focus);
+  outline-offset: -2px;
+}
+.un-watch-deck.is-side .un-deck-pv-row.is-folded > .un-deck-pv-list { display: none; }
+/* Folded, what follows (the description's MERCH / SOCIALS groups) sat 10 px
+   under the rule and read as the fold's own contents. */
+.un-watch-deck.is-side .un-deck-pv-row.is-folded { margin-bottom: 8px; }
 /* Chapters read as a table of contents: time, then title, one per line. */
 .un-watch-deck.is-side .un-deck-pv-list[aria-label="Chapters"] { flex-direction: column; flex-wrap: nowrap; gap: 0; }
 .un-watch-deck.is-side .un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip {
   max-width: none;
   width: 100%;
   min-height: 32px;
-  padding: 5px 8px;
-  gap: 12px;
+  padding: 7px 10px;
+  gap: 10px;
   background: transparent;
-  border-radius: 6px;
+  border: 0;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  text-align: left;
+  transition: background-color 120ms ease, color 120ms ease;
 }
 .un-watch-deck.is-side .un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip:hover { background: var(--un-guide-hover); border-color: transparent; }
-.un-watch-deck.is-side .un-deck-pv-list[aria-label="Chapters"] .un-deck-chip-t { min-width: 42px; }
+.un-watch-deck.is-side .un-deck-pv-list[aria-label="Chapters"] .un-deck-chip-t {
+  min-width: 44px;
+  color: var(--un-guide-muted);
+  font: 600 12px/1.2 Roboto, Arial, sans-serif;
+}
+.un-watch-deck.is-side .un-deck-pv-list[aria-label="Chapters"] .un-deck-chip-s {
+  flex: 1 1 auto;
+  color: var(--un-guide-ink);
+  font-size: 13px;
+  font-weight: 500;
+}
 .un-watch-deck.is-side .un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip-more { width: auto; align-self: flex-start; margin: 4px 0 0 8px; border-color: var(--un-guide-line); }
 /* A door is open: its content takes the view area. */
 .un-watch-deck.is-side:has(> #un-side-panel.is-open:not(.is-popped)) > .un-deck-desc { display: none; }
@@ -805,7 +887,7 @@ ytd-watch-flexy:not([theater]) #un-theater-col { display: none !important; }
    Now: the chapter you are in, what is left at your speed and when it ends,
    one line at the top with a hairline progress track under it.
    More tools: every watch-page feature that is switched off, named, said in
-   one line, and one press from on. The owner's profile had most modules off and
+   one line, and one press from on. One profile had most modules off and
    the guide showed only Stats, with nothing saying the rest existed.
    ========================================================================== */
 .un-deck-runtime,
@@ -813,8 +895,8 @@ ytd-watch-flexy:not([theater]) #un-theater-col { display: none !important; }
 
 .un-deck-now {
   display: grid;
-  grid-template-columns: 8px minmax(0, 1fr) auto;
-  grid-template-areas: "dot ch t" "bar bar bar";
+  grid-template-columns: 8px minmax(0, 1fr) auto auto auto;
+  grid-template-areas: "dot ch nav t tour" "bar bar bar bar bar";
   align-items: center;
   column-gap: 8px;
   row-gap: 8px;
@@ -824,6 +906,46 @@ ytd-watch-flexy:not([theater]) #un-theater-col { display: none !important; }
   border-bottom: 1px solid var(--un-guide-line);
   font: 500 13px/1.3 Roboto, Arial, sans-serif;
   color: var(--un-guide-ink);
+}
+.un-deck-now .un-deck-tour-btn {
+  grid-area: tour;
+  margin-left: 4px;
+}
+.un-deck-now-nav {
+  grid-area: nav;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.un-deck-now-nav[hidden] { display: none; }
+.un-deck-now-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--un-guide-muted);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+.un-deck-now-step:hover:not(:disabled) {
+  background: var(--un-guide-hover);
+  color: var(--un-guide-ink);
+  border-color: var(--un-guide-line);
+}
+.un-deck-now-step:focus-visible {
+  outline: 2px solid var(--un-guide-focus);
+  outline-offset: 1px;
+}
+.un-deck-now-step:disabled {
+  opacity: 0.25;
+  cursor: default;
 }
 .un-deck-now[hidden] { display: none; }
 .un-deck-now-dot {
@@ -943,14 +1065,20 @@ ytd-watch-flexy:not([theater]) #un-theater-col { display: none !important; }
 /* Compact keeps Now to one tight line: no track, no rule. The compact guide
    has a 200px budget so the playlist queue stays near the top of the column
    (side-panel.spec.js); the full Now row pushed it to 221px. */
+/* The Tour button needs its own column here too: without a `tour` area it
+   took an implicit second row, Now went 22px to 43px and the guide 196 to
+   217px, over the budget (measured 2026-10-01). */
 .un-watch-deck.is-side.is-compact > .un-deck-now {
-  grid-template-areas: "dot ch t";
+  grid-template-columns: 8px minmax(0, 1fr) auto auto auto;
+  grid-template-areas: "dot ch nav t tour";
   row-gap: 0;
   margin: 0;
   padding: 0 4px 4px;
   border-bottom: 0;
 }
 .un-watch-deck.is-side.is-compact > .un-deck-now .un-deck-now-bar { display: none; }
+/* Fit inside the one Now line rather than set its height (21px stretched it). */
+.un-watch-deck.is-side.is-compact > .un-deck-now .un-deck-tour-btn { padding: 0 6px; line-height: 16px; }
 /* The fold button exists only in compact; the full guide lists every row. */
 .un-deck-more-toggle { display: none; }
 .un-watch-deck.is-side.is-compact .un-deck-more { margin-top: 4px; padding-top: 6px; }
@@ -981,7 +1109,7 @@ ytd-watch-flexy:not([theater]) #un-theater-col { display: none !important; }
    The side guide hid the description body (above: head + body display:none)
    because the body only repeated YouTube's own description. It now carries
    what YouTube does not show: what each link is for, grouped, and the lines
-   worth knowing (a code, a disclosure, a correction, the credits). The owner asked
+   worth knowing (a code, a disclosure, a correction, the credits). A user asked
    for exactly that, and it was rendering into a hidden box (measured: the
    digest was in the DOM at height 0). Beside the video the body shows,
    minus the chapter buttons the preview above already lists; the bare
@@ -992,8 +1120,8 @@ ytd-watch-flexy:not([theater]) #un-theater-col { display: none !important; }
 .un-watch-deck.is-side:not(.is-compact) > .un-deck-desc .un-desc-stamps { display: none; }
 .un-watch-deck.is-side:not(.is-compact) > .un-deck-desc:has(.un-desc-linkgroups) .un-deck-pv-row:has(> .un-deck-pv-list[aria-label="Links"]) { display: none; }
 .un-watch-deck.is-side:not(.is-compact) > .un-deck-desc .un-desc-digest { padding: 10px 2px 0; }
-/* Whole, not clamped (owner request, 2026-09-24: never cut off, nothing
-   to expand). The parser already ends it at a sentence within 600 chars. */
+/* Whole, not clamped (user report, 2026-09-24: "with out needed to expande or be
+   cut off"). The parser already ends it at a sentence within 600 chars. */
 .un-watch-deck.is-side:not(.is-compact) > .un-deck-desc .un-desc-blurb {
   display: block;
   -webkit-line-clamp: unset;
@@ -1010,12 +1138,22 @@ ytd-watch-flexy:not([theater]) #un-theater-col { display: none !important; }
    instead, the way YouTube's own playlist panel does: the doors stay put, the
    guide ends near the bottom of the player, nothing is hidden. */
 .un-watch-deck.is-side:not(.is-compact) > .un-deck-desc {
-  max-height: 520px;
+  max-height: 800px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
+  scrollbar-color: var(--un-guide-muted) transparent;
+  scroll-padding-top: 38px;
 }
 .un-watch-deck.is-side:not(.is-compact) > .un-deck-desc { overflow-x: hidden; }
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc::-webkit-scrollbar { width: 8px; }
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc::-webkit-scrollbar-track { background: transparent; }
+.un-watch-deck.is-side:not(.is-compact) > .un-deck-desc::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--un-guide-muted);
+  background-clip: padding-box;
+}
 
 /* ABOUT FIRST (2026-09-24). The quick description rendered under the chapter
    list and started below the view's edge (screenshot), so it still took a
@@ -1027,6 +1165,10 @@ ytd-watch-flexy:not([theater]) #un-theater-col { display: none !important; }
 .un-watch-deck.is-side:not(.is-compact) > .un-deck-desc:is(.has-preview, :has(.un-desc-digest)) {
   display: flex;
   flex-direction: column;
+  /* The base rule's align-items: start (for the two-column grid under the
+     video) carried over, so the chapter list shrank to its widest title:
+     a 209px column in a 512px guide (user screenshot, 2026-10-01). */
+  align-items: stretch;
 }
 .un-watch-deck.is-side:not(.is-compact) > .un-deck-desc > .un-deck-body,
 .un-watch-deck.is-side:not(.is-compact) > .un-deck-desc > .un-deck-body > .un-desc-digest { display: contents; }
@@ -1042,13 +1184,107 @@ ytd-watch-flexy:not([theater]) #un-theater-col { display: none !important; }
 /* The chapter you are in (renderNow marks it as the video plays). A warm
    rule and full ink, never a fill that could read as a hover. */
 .un-watch-deck .un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip.is-current {
-  box-shadow: inset 2px 0 0 var(--un-guide-action);
+  background: var(--un-guide-raised);
+  box-shadow: inset 3px 0 0 var(--un-guide-action);
   color: var(--un-guide-ink);
 }
 .un-watch-deck .un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip.is-current .un-deck-chip-t { color: var(--un-guide-action); }
+/* The trace is drawn inside its chip in every layout. Only the side layout
+   made chips position: relative, so under the video it anchored to the
+   guide's corner: a short orange line on the card's bottom edge (review,
+   2026-10-01). */
+.un-watch-deck .un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip { position: relative; }
+.un-watch-deck .un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip.is-current::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  bottom: 0;
+  width: var(--un-chapter-progress, 0%);
+  height: 2px;
+  background: var(--un-guide-action);
+  opacity: 0.8;
+}
+@media (prefers-reduced-motion: reduce) {
+  .un-watch-deck.is-side .un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip { transition: none; }
+}
 
 /* More below: fade the bottom edge of the scrolling view (see syncViewFade). */
 .un-watch-deck.is-side:not(.is-compact) > .un-deck-desc.has-more-below {
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
 }
+
+/* LOADING WITHOUT JUMPS OR STALE CONTENT (2026-10-01): see watch-deck.js.
+   Pending: out of the layout until the description is ready, so the guide
+   appears once at its full size. Switching: same height, and nothing that
+   belongs to the previous video stays readable or clickable. */
+.un-watch-deck.is-pending { display: none !important; }
+.un-watch-deck.is-switching { position: relative; }
+.un-watch-deck.is-switching .un-deck-head-s,
+.un-watch-deck.is-switching .un-deck-head-a,
+.un-watch-deck.is-switching > .un-deck-now > :not(.un-deck-tour-btn),
+.un-watch-deck.is-switching > .un-deck-desc > *,
+.un-watch-deck.is-switching > .un-deck-runtime > * {
+  visibility: hidden;
+}
+/* The hidden content still has height: no scrollbar for a view showing nothing. */
+.un-watch-deck.is-switching > .un-deck-desc { overflow: hidden !important; }
+/* Shown while switching even though it is empty for that moment: the rule
+   that hides an empty view would otherwise take the placeholder with it and
+   leave the held height as a blank block under the doors. */
+.un-watch-deck.is-side.is-switching:not(.is-compact) > .un-deck-desc { display: block !important; }
+/* The message goes where the eye starts, in the band the runtime line just
+   emptied; the view below gets still placeholder bars, so the frame reads as
+   "the next video is loading", not as a half-drawn panel (independent review,
+   2026-10-01). Still on purpose: nothing here needs motion to be understood. */
+.un-watch-deck.is-switching > .un-deck-runtime { position: relative; min-height: 22px; }
+.un-watch-deck.is-switching > .un-deck-runtime::before {
+  content: "Loading this video\2026";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+  font: 500 13px/1.4 Roboto, Arial, sans-serif;
+  color: var(--un-guide-muted);
+}
+.un-watch-deck.is-switching > .un-deck-desc::before {
+  content: "";
+  display: block;
+  height: 84px;
+  margin: 4px 2px 0;
+  background:
+    linear-gradient(var(--un-guide-raised), var(--un-guide-raised)) 0 0 / 88% 12px no-repeat,
+    linear-gradient(var(--un-guide-raised), var(--un-guide-raised)) 0 24px / 72% 12px no-repeat,
+    linear-gradient(var(--un-guide-raised), var(--un-guide-raised)) 0 48px / 80% 12px no-repeat,
+    linear-gradient(var(--un-guide-raised), var(--un-guide-raised)) 0 72px / 40% 12px no-repeat;
+}
+
+/* UNDER THE VIDEO, NOTHING TO SKIP (2026-10-01). With a quiet runtime (one
+   line: nobody reported segments) the runtime column held that line and then
+   ~200px of nothing beside four stacked doors. Same answer as no runtime at
+   all: the line spans the guide and the doors take the width in two columns. */
+.un-watch-deck:not(.is-side):has(> .un-deck-runtime .un-sb-rt.is-quiet) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 28px;
+}
+.un-watch-deck:not(.is-side):has(> .un-deck-runtime .un-sb-rt.is-quiet) > .un-deck-runtime {
+  grid-column: 1 / -1;
+  grid-row: auto;
+  border-right: 0;
+  padding-right: 0;
+}
+.un-watch-deck:not(.is-side):has(> .un-deck-runtime .un-sb-rt.is-quiet) > :is(.un-deck-stats, .un-deck-fact, .un-deck-ai, .un-deck-forge) {
+  grid-column: auto;
+}
+.un-watch-deck:not(.is-side):has(> .un-deck-runtime .un-sb-rt.is-quiet) > .un-deck-slot.is-launcher:not(.is-empty) {
+  border-top: 1px solid var(--un-guide-line);
+}
+/* Under the video every chapter is a visible chip, so the count repeats what
+   is on screen, and it rendered flush against the label as "Chapters7". */
+.un-watch-deck:not(.is-side) .un-deck-pv-count { display: none; }
+
+/* Compact keeps the chapter name readable: with the Tour button on its one
+   line the name truncated to "In..." (review, 2026-10-01). The tour stays in
+   the full guide and the popup's Feature tour. */
+.un-watch-deck.is-side.is-compact > .un-deck-now .un-deck-tour-btn { display: none; }

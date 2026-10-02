@@ -12,44 +12,44 @@
       playlistManager: true, // legacy — mirrored by playlistFolders + playlistBulk
       aiFilter: true,
       uiTune: true,
-      aiAssistant: false,
-      subManager: false,
-      playlistFolders: false,
-      playlistBulk: false,
-      forgeLink: false,
-      tasteRank: false,
-      queueAdvance: false,
+      aiAssistant: true,
+      subManager: true,
+      playlistFolders: true,
+      playlistBulk: true,
+      forgeLink: true,
+      tasteRank: true,
+      queueAdvance: true,
       dislikeRestore: true,
-      volumeMaster: false,
-      popoutPlayer: false,
-      scrollMiniplayer: false,
-      factCheck: false,
-      descDigest: false,
-      analytics: false,
+      volumeMaster: true,
+      popoutPlayer: true,
+      scrollMiniplayer: true,
+      factCheck: true,
+      descDigest: true,
+      analytics: true,
       sponsorBlock: true,
       discoverShelf: false,
       watchHistory: true,
-      crossTabPlayback: false,
+      crossTabPlayback: true,
       qualityLock: true,
-      speedChip: false,
-      screenshot: false,
+      speedChip: true,
+      screenshot: true,
       titleCleaner: false, // off by default — opt in; rewrites feed titles
       ambientMode: false,
       adSkip: true,
       deArrow: false,
-      shortcuts: false,
-      transcriptExport: false,
-      abLoop: false,
+      shortcuts: true,
+      transcriptExport: true,
+      abLoop: true,
       tabTitle: false,
-      chapters: false,
-      searchFilters: false,
+      chapters: true,
+      searchFilters: true,
       commentFilter: false,
-      playlistDebt: false,
-      channelCompletion: false,
-      clipCapture: false,
-      skipSeconds: false,
-      liveNow: false,
-      quickSwitcher: false
+      playlistDebt: true,
+      channelCompletion: true,
+      clipCapture: true,
+      skipSeconds: true,
+      liveNow: true,
+      quickSwitcher: true
       // @unsynth-codegen-modules-end
     },
 
@@ -255,6 +255,9 @@
       // the shift+arrow shortcuts. Re-enable in Settings › Volume master.
       showPlayerControl: false,
       inlineBar: true, // always-visible volume + EQ bar under the video
+      // The Custom preset's 10-band curve in dB (31 Hz to 16 kHz), set in the
+      // toolbar popup. Flat until changed.
+      customEq: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       rememberLevel: true,
       // Starting level for a video when there's no remembered level to restore
       // (rememberLevel off, or the first video of a fresh profile). YouTube
@@ -308,9 +311,13 @@
 
     // Where the watch guide sits on a two-column watch page: 'side' (top of the
     // related column, beside the video) or 'below' (under the player, above
-    // the description). The owner asked for it to be a choice, 2026-09-24.
+    // the description). Users asked for it to be a choice, 2026-09-24.
+    // showTourButton: the guide's Tour button is for finding your way round;
+    // once you have, it can go (dashboard Watch guide, or the tour itself).
+    // The popup's Feature tour link still starts the tour either way.
     watchGuide: {
-      placement: 'side'
+      placement: 'side',
+      showTourButton: true
     },
 
     // Percent watched to count as "finished" (badge, dim, hide rules).

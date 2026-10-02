@@ -63,5 +63,19 @@
     if (dis > 0 && Number(s) >= 100) s = Math.min(r, 99.9).toFixed(1);
     return s + '%';
   }
-  g.UNRyd = { fmt, likeRatio, ratioLabel, relativeAge };
+  /**
+   * Whether a like count can be shown as a number (2026-10-01). Seen live on
+   * two-hour-old videos: "▲0 ▼27 0%" on 40K views, "▲0 ▼92 0%" on 249K. The
+   * source had not caught up with the likes yet, and a 0 next to real dislikes
+   * or real views reads as "nobody liked this", which is false. Zero likes is
+   * only believed on a video with no dislikes and under 1,000 views.
+   */
+  function likesKnown(likes, dislikes, views) {
+    if (likes == null) return false;
+    const l = Number(likes) || 0;
+    if (l > 0) return true;
+    return !(Number(dislikes) > 0) && !(Number(views) >= 1000);
+  }
+
+  g.UNRyd = { fmt, likeRatio, ratioLabel, relativeAge, likesKnown };
 })(typeof self !== 'undefined' ? self : window);

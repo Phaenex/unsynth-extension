@@ -18,7 +18,10 @@
   let lastVid = '';
   // Video we deliberately rendered no card for (no timestamps, no links).
   let suppressedVid = '';
+  let staleVid = '';
+  let staleTries = 0;
   let fetchGen = 0;
+  let lastParsed = null;
 
   // Chapters and links are precisely what collapsing this row hides, so they are
   // what the collapsed row should report.
@@ -50,45 +53,125 @@
    */
   function deckPreview() {
     var root = document.querySelector('.un-desc-digest');
-    if (!root) return null;
     var items = [];
 
-    // Timestamps first: they are the denser, more scannable value, and they
-    // act on THIS page (seek) rather than navigating away.
-    var stamps = root.querySelectorAll('.un-desc-stamp');
-    for (var i = 0; i < stamps.length; i++) {
-      (function (btn) {
-        var label = (btn.textContent || '').trim();
-        if (!label) return;
-        items.push({
-          label: label,
-          // The chapter's NAME, when the description gives one: "1:07" is an
-          // address, "1:07 Neurons" is the value.
-          sub: (btn.dataset && btn.dataset.sub) || '',
-          group: 'Chapters',
-          title: btn.title || ('Jump to ' + label),
-          // Click the real body control rather than re-deriving the seconds:
-          // one seek implementation, so a chip and the body button can never
-          // drift to different times.
-          onClick: function () { btn.click(); }
-        });
-      })(stamps[i]);
+    function cleanChapterTitle(label, title) {
+      var digest = DD();
+      return digest && digest.cleanChapterTitle
+        ? digest.cleanChapterTitle(label, title)
+        : String(title || '').trim();
     }
 
-    // ONE CHIP PER HOST. The parser keeps two youtube.com links apart because
-    // their labels differ by video id, but a glance chip is labelled by host,
-    // so the deck printed "youtube.com youtube.com" side by side (observed
-    // 2026-09-22, jNQXAC9IVRw). The body keeps every link; the glance names
-    // each destination once.
+    function addChapter(label, title, sec, onClick, tooltip) {
+      var clean = cleanChapterTitle(label, title);
+      items.push({
+        label: label,
+        sub: clean,
+        sec: typeof sec === 'number' ? sec : null,
+        group: 'Chapters',
+        title: tooltip || (clean ? (label + ' · ' + clean) : ('Jump to ' + label)),
+        onClick: onClick
+      });
+    }
+
+    // 1. Direct parsed timestamps: captures ALL chapters in the video without
+    // any DOM cap or element-read delay.
+    var stampList = (lastParsed && lastParsed.stamps && lastParsed.stamps.length)
+      ? lastParsed.stamps
+      : [];
+    if (stampList.length) {
+      for (var s = 0; s < stampList.length; s++) {
+        (function (st) {
+          addChapter(st.label, st.title, st.sec, function () { seekTo(st.sec); });
+        })(stampList[s]);
+      }
+    } else if (root) {
+      var stamps = root.querySelectorAll('.un-desc-stamp');
+      for (var i = 0; i < stamps.length; i++) {
+        (function (btn) {
+          var label = (btn.textContent || '').trim();
+          if (!label) return;
+          var sec = DD() && DD().secondsFromTs ? DD().secondsFromTs(label) : null;
+          addChapter(label, (btn.dataset && btn.dataset.sub) || '', sec, function () { btn.click(); }, btn.title || '');
+        })(stamps[i]);
+      }
+    }
+
+    // 2. Native YouTube chapters from the page when description had none
+    if (!items.some(function (it) { return it.group === 'Chapters'; })) {
+      var yd = YD();
+      var nativeChaps = (yd && yd.nativeChapters) ? yd.nativeChapters(document) : [];
+      if (nativeChaps && nativeChaps.length) {
+        for (var nc = 0; nc < nativeChaps.length; nc++) {
+          (function (c) {
+            var sec = DD() && DD().secondsFromTs ? DD().secondsFromTs(c.label) : null;
+            addChapter(c.label, c.title, sec, function () {
+                if (c.el && c.el.click) { c.el.click(); }
+                else if (sec != null) { seekTo(sec); }
+              });
+          })(nativeChaps[nc]);
+        }
+      }
+    }
+
+    // 3. Ranked list items (Top 10, N Biggest Changes)
+    if (!items.some(function (it) { return it.group === 'Chapters'; })) {
+      var rankedList = (lastParsed && lastParsed.ranked && lastParsed.ranked.length)
+        ? lastParsed.ranked
+        : [];
+      if (rankedList.length) {
+        for (var rk = 0; rk < rankedList.length; rk++) {
+          (function (item) {
+            var fmtTs = DD() && DD().tsLabel ? DD().tsLabel : function (sec) {
+              var m = Math.floor(sec / 60), ss = String(sec % 60).padStart(2, '0');
+              return m + ':' + ss;
+            };
+            var label = item.sec != null ? fmtTs(item.sec) : '#' + item.num;
+            var sub = item.sec != null ? ('#' + item.num + ' ' + item.title) : item.title;
+            addChapter(label, sub, item.sec, item.sec != null ? function () { seekTo(item.sec); } : null,
+              '#' + item.num + ' ' + item.title + (item.sec != null ? ' (' + label + ')' : ''));
+          })(rankedList[rk]);
+        }
+      } else if (root) {
+        var rankedRows = root.querySelectorAll('.un-desc-ranked-row');
+        for (var r = 0; r < rankedRows.length; r++) {
+          (function (row) {
+            var numEl = row.querySelector('.un-desc-ranked-n');
+            var nameEl = row.querySelector('.un-desc-ranked-name');
+            var tsEl = row.querySelector('.un-desc-ranked-ts');
+            var num = numEl ? numEl.textContent.trim() : '';
+            var name = nameEl ? nameEl.textContent.trim() : '';
+            var ts = tsEl ? tsEl.textContent.trim() : '';
+            var isClick = row.classList.contains('is-clickable');
+            var label = ts || num;
+            var sub = ts ? (num ? num + ' ' + name : name) : name;
+            var sec = DD() && DD().secondsFromTs && ts ? DD().secondsFromTs(ts) : null;
+            addChapter(label, sub, sec, isClick ? function () { row.click(); } : null,
+              (num ? num + ' ' : '') + name + (ts ? ' (' + ts + ')' : ''));
+          })(rankedRows[r]);
+        }
+      }
+    }
+
+    // 4. Outbound link hosts
     var seenHost = {};
-    var links = root.querySelectorAll('.un-desc-link > a');
-    for (var j = 0; j < links.length; j++) {
-      var a = links[j];
-      var host = '';
-      try { host = new URL(a.href).hostname.replace(/^www\./, ''); } catch (e) { host = ''; }
-      if (!host || seenHost[host]) continue;
-      seenHost[host] = true;
-      items.push({ label: host, group: 'Links', title: a.title || a.href, href: a.href });
+    if (root) {
+      var links = root.querySelectorAll('.un-desc-link > a');
+      for (var j = 0; j < links.length; j++) {
+        var a = links[j];
+        var host = '';
+        try { host = new URL(a.href).hostname.replace(/^www\./, ''); } catch (e) { host = ''; }
+        if (!host || seenHost[host]) continue;
+        seenHost[host] = true;
+        items.push({ label: host, group: 'Links', title: a.title || a.href, href: a.href });
+      }
+    } else if (lastParsed && lastParsed.links) {
+      for (var l = 0; l < lastParsed.links.length; l++) {
+        var lnk = lastParsed.links[l];
+        if (!lnk.host || seenHost[lnk.host]) continue;
+        seenHost[lnk.host] = true;
+        items.push({ label: lnk.host, group: 'Links', title: lnk.label || lnk.url, href: lnk.url });
+      }
     }
 
     return items.length ? items : null;
@@ -103,12 +186,15 @@
     if (!window.UNWatchDeck) return;
     var items = deckPreview();
     if (items && window.UNWatchDeck.setPreview) {
-      // CAP 8: measured at 1840px the header fits ~10 chips beside the "Explore
-      // this video" label before wrapping to a second row. 8 leaves room for
-      // the +N chip and for longer hostnames without a wrap on the common case.
-      // Per-group caps: chapters now carry their titles, so fewer fit a row
-      // (6 at the 1179px column); links stay short hosts.
-      window.UNWatchDeck.setPreview('desc', items, { caps: { Chapters: 6, Links: 5 } });
+      // SIDE MODE: ALL CHAPTERS AND LINKS VISIBLE (2026-09-30). In side mode
+      // the desc slot is a scrollable full-height column — show every chapter
+      // and every link host so the user can click straight to any section or
+      // destination without a "+N" step. Caps are kept for the under-video /
+      // compact chip-row layout where wrapping costs vertical space.
+      var inSide = window.UNWatchDeck.isSide && window.UNWatchDeck.isSide();
+      var chapCap = inSide ? Infinity : 6;
+      var linkCap = inSide ? Infinity : 5;
+      window.UNWatchDeck.setPreview('desc', items, { caps: { Chapters: chapCap, Links: linkCap } });
       return;
     }
     if (window.UNWatchDeck.setSummary) window.UNWatchDeck.setSummary('desc', deckSummary());
@@ -169,6 +255,10 @@
         resolve(null);
       }, 2500);
     }).then(function (data) {
+      // The player still describing the PREVIOUS video is "not yet", not
+      // "empty": the caller retries instead of falling back to page text that
+      // cannot be proven to belong to this video (DESIGN-STANDARD section 8).
+      if (data && data.videoId && data.videoId !== vid) return { description: '', title: '', author: '', stale: true };
       if (!data || data.videoId !== vid) return { description: '', title: '', author: '' };
       return {
         description: String(data.description || ''),
@@ -249,8 +339,8 @@
   /**
    * OPEN THE FULL DESCRIPTION WHERE YOU ARE (2026-09-24).
    *
-   * Owner request: open the full description in place, or at least jump to
-   * YouTube's own description fully expanded. Beside
+   * User report: "if they choose to open the full description is there a way it can
+   * open it there? or at least jump to a fully expanded description". Beside
    * the video, YouTube's own description is under the player, a scroll away,
    * so the button used to send you down the page. It now opens the whole text
    * inside the guide, right under the quick description: line breaks kept,
@@ -503,7 +593,7 @@
         panel.appendChild(row);
       }
 
-      // WORTH KNOWING (2026-09-24). Owner request: summarize what matters.
+      // WORTH KNOWING (2026-09-24). User report: "any thing important as a summary".
       // The description's own words for a sponsor and its code, a paid or
       // affiliate disclosure, a disclaimer, a correction, the credits.
       if (parsed.highlights && parsed.highlights.length) {
@@ -520,8 +610,8 @@
         panel.appendChild(box);
       }
 
-      // EVERY LINK, AND WHAT IT IS FOR (2026-09-24). Owner request: list every
-      // link and what it is for. Grouped by purpose, each named
+      // EVERY LINK, AND WHAT IT IS FOR (2026-09-24). User report: "should include all
+      // links they have and what they are for". Grouped by purpose, each named
       // by the description's own words, with the site beside it. No cap: the
       // old one showed four hostnames and hid the rest behind "+N".
       const groups = parsed.linkGroups && parsed.linkGroups.length
@@ -552,12 +642,51 @@
       }
     }
 
-    // With the duplicated title/channel/blurb gone, a description carrying no
-    // timestamps and no links leaves nothing but a label and a button that
-    // opens what is already on screen. Render nothing at all rather than a card
-    // whose whole content is its own heading.
+      // RANKED LIST (2026-09-30). "Top 10 / Best X / N BIGGEST Changes" type
+      // videos. When the parser detected a numbered list the items are the
+      // primary navigation value — more useful than bare timestamps. Show them
+      // as a table-of-contents with number, title, optional timestamp, and a
+      // one-sentence context snippet from the following text.
+      // Only when it adds to the chapter list (see rankedAddsToChapters).
+      const rankedAdds = parsed.ranked && parsed.ranked.length &&
+        (!DD() || !DD().rankedAddsToChapters || DD().rankedAddsToChapters(parsed.ranked, parsed.stamps));
+      if (rankedAdds) {
+        const fmtTs = DD() && DD().tsLabel ? DD().tsLabel : function (s) {
+          var m = Math.floor(s / 60), ss = String(s % 60).padStart(2, '0');
+          return m + ':' + ss;
+        };
+        const box = el('div', 'un-desc-ranked');
+        box.setAttribute('aria-label', 'Video list');
+        parsed.ranked.forEach(function (item) {
+          const row = el('div', 'un-desc-ranked-row');
+          if (item.sec != null) {
+            row.classList.add('is-clickable');
+            row.addEventListener('click', function () { seekTo(item.sec); });
+            row.setAttribute('role', 'button');
+            row.setAttribute('tabindex', '0');
+            row.title = 'Jump to ' + fmtTs(item.sec);
+            row.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); seekTo(item.sec); }
+            });
+          }
+          const num = el('span', 'un-desc-ranked-n', '#' + item.num);
+          const body = el('div', 'un-desc-ranked-body');
+          const titleLine = el('div', 'un-desc-ranked-t');
+          titleLine.appendChild(el('span', 'un-desc-ranked-name', item.title));
+          if (item.sec != null) {
+            titleLine.appendChild(el('span', 'un-desc-ranked-ts', fmtTs(item.sec)));
+          }
+          body.appendChild(titleLine);
+          if (item.context) body.appendChild(el('p', 'un-desc-ranked-ctx', item.context));
+          row.appendChild(num);
+          row.appendChild(body);
+          box.appendChild(row);
+        });
+        panel.appendChild(box);
+      }
     const hasSubstance = !parsed.empty && (parsed.stamps.length > 0 || parsed.links.length > 0 ||
-      (parsed.highlights && parsed.highlights.length > 0));
+      (parsed.highlights && parsed.highlights.length > 0) ||
+      (parsed.ranked && parsed.ranked.length > 0) || !!parsed.blurb);
     if (!hasSubstance) {
       // Drop the node directly rather than via removePanel(): that also clears
       // lastVid, and ensure() re-runs refresh() whenever the panel is absent —
@@ -566,7 +695,11 @@
       // treated as handled.
       const stale = document.getElementById('un-desc-digest');
       if (stale) stale.remove();
-      suppressedVid = vid;
+      // ONLY suppress if we actually received text and verified there is nothing to show.
+      // If text was empty, the description hasn't arrived yet — don't suppress!
+      if (parsed.text && parsed.text.length > 0) {
+        suppressedVid = vid;
+      }
       return null;
     }
 
@@ -588,14 +721,24 @@
     watchNativeDescription();
     syncMoreButton(more);
 
-    if (!panel.isConnected) insertPanel(panel);
+    if (!panel.isConnected) {
+      insertPanel(panel);
+    } else {
+      applyDeckHeader();
+      if (window.UNWatchDeck && window.UNWatchDeck.syncEmpty) window.UNWatchDeck.syncEmpty();
+    }
     return panel;
   }
 
   function removePanel() {
     const panel = document.getElementById('un-desc-digest');
     if (panel) panel.remove();
+    // The chapter rows live in the deck's preview, not in the panel: without
+    // this the previous video's chapters stayed listed and clickable under
+    // the next video for ~1.4 s (measured 2026-10-01).
+    if (window.UNWatchDeck && window.UNWatchDeck.setPreview) window.UNWatchDeck.setPreview('desc', []);
     lastVid = '';
+    lastParsed = null;
     // Clear the suppression marker with lastVid, so leaving and returning to a
     // watch page re-evaluates rather than staying silent on a stale decision.
     suppressedVid = '';
@@ -625,13 +768,27 @@
     }
     if (gen !== fetchGen) return;
     if (currentVideoId() !== vid) return;
+    if (payload.stale) {
+      // Retry while the player catches up (measured: under a second); after
+      // ~3 s give up, release the guide and let the next scan try again.
+      staleTries = (staleVid === vid ? staleTries : 0) + 1;
+      staleVid = vid;
+      if (staleTries <= 12) {
+        setTimeout(function () { if (gen === fetchGen && currentVideoId() === vid) refresh(); }, 250);
+      } else if (window.UNWatchDeck && window.UNWatchDeck.contentReady) {
+        window.UNWatchDeck.contentReady();
+      }
+      return;
+    }
     let raw = payload.description || '';
     if (!raw) raw = domDescription();
     if (currentVideoId() !== vid) return;
 
     const parsed = DD() && DD().parseWatchDescription ? DD().parseWatchDescription(raw) : { empty: !raw, blurb: raw.slice(0, 280), links: [], stamps: [] };
+    lastParsed = parsed;
     lastVid = vid;
     render(vid, payload.title || title, payload.author || channel, parsed);
+    if (window.UNWatchDeck && window.UNWatchDeck.contentReady) window.UNWatchDeck.contentReady();
     try {
       document.documentElement.setAttribute('data-unsynth-desc-id', vid);
     } catch (e) {
@@ -666,7 +823,9 @@
       fetchGen += 1;
       lastVid = '';
       removePanel();
-      setTimeout(ensure, 400);
+      // Straight away: a stale player answer now retries on its own, so the
+      // fixed 400 ms head start only delayed every navigation.
+      setTimeout(ensure, 0);
     },
     teardown: function () {
       fetchGen += 1;
@@ -676,5 +835,11 @@
 
   if (typeof window !== 'undefined' && window.UNSYNTH) {
     window.UNSYNTH.register(mod);
+    // Re-render chip caps when the deck moves between side and under-video
+    // (e.g. page loads in 1-column mode then expands to 2-column). The event
+    // bubbles from the deck; we listen on document to avoid needing a reference.
+    document.addEventListener('un-placement-change', function () {
+      applyDeckHeader();
+    });
   }
 })();

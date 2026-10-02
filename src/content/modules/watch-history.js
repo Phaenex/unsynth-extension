@@ -209,7 +209,9 @@
       addLine(manual
         ? '<b>Marked manually</b> — adds to distinct count, not play count.'
         : '<b>Fully watched</b> — you reached ' + fullPct() + '%+ or imported this from history.');
-      addLine('Badge: red ✓ on feed tiles.');
+      // The badge has been an open eye since the checkmark was retired (core.css,
+      // 'watched — an OPEN eye'); this line still described a red check.
+      addLine('Feed tiles show it with an open eye.');
     } else {
       addLine('<b>In progress</b> — ' + part + '% watched so far.');
       addLine('Finish past ' + fullPct() + '% to mark fully watched.');
@@ -907,10 +909,9 @@
         const root = YT.watchRelatedRoot && YT.watchRelatedRoot();
         if (!root) return;
         YT.forEachFeedTile(cb, { root: root });
-        return;
+        return 'full';
       }
-      YT.forEachFeedTile(cb);
-      return;
+      return YT.forEachFeedTile(cb, { dirtyOk: true });
     }
     document.querySelectorAll(YT ? YT.feedTileSelector() : 'none').forEach(cb);
   }
@@ -1240,6 +1241,28 @@
     var w = Math.round(mk.getBoundingClientRect().width);
     if (w > 0) tile.style.setProperty('--un-eye-w', w + 'px');
   }
+  // Calling publishMarkWidth on every tile every scan forced a layout per
+  // tile: 112 ms of a 30 s scroll on a long search page (2026-10-01). A
+  // ResizeObserver reports the chip's width after layout, whenever it changes,
+  // including the first time, which is the same contract without the forced
+  // read. Each mark is observed once; a recreated mark is a new element.
+  const markTile = new WeakMap();
+  const markRO = typeof ResizeObserver === 'function'
+    ? new ResizeObserver((entries) => {
+      for (const e of entries) {
+        const t = markTile.get(e.target);
+        if (!t || !t.isConnected) continue;
+        const w = Math.round(e.borderBoxSize && e.borderBoxSize[0] ? e.borderBoxSize[0].inlineSize : e.contentRect.width);
+        if (w > 0) t.style.setProperty('--un-eye-w', w + 'px');
+      }
+    })
+    : null;
+  function trackMarkWidth(tile, mk) {
+    if (!markRO) { publishMarkWidth(tile, mk); return; }
+    if (markTile.get(mk) === tile) return;
+    markTile.set(mk, tile);
+    markRO.observe(mk, { box: 'border-box' });
+  }
   function wireTileMark(tile, vid, full, part, started, showLabels) {
     if (!vid) return;
     const host = tileThumb(tile) || tile;
@@ -1387,10 +1410,10 @@
 
     // Outside the stateKey guard on purpose. The chip sizes to its own content
     // and the head strip lays the next segment immediately after it, so the
-    // width has to be republished on every pass — not only when the watched
-    // STATE changed. Measuring inside the guard captured the bare 28px square
-    // and left the checkbox sitting on top of the timestamp label.
-    publishMarkWidth(tile, mk);
+    // width has to follow every change, not only a watched-STATE change.
+    // Measuring inside the guard captured the bare 28px square and left the
+    // checkbox sitting on top of the timestamp label. The observer follows it.
+    trackMarkWidth(tile, mk);
   }
 
   function apply() {
@@ -1406,7 +1429,7 @@
     const peek = defaultFeedOn();
     const seenHosts = new Set();
     let hiddenHere = 0;
-    forEachWatchTile((tile) => {
+    const passKind = forEachWatchTile((tile) => {
       const host = (YT && YT.outermostFeedTile) ? (YT.outermostFeedTile(tile) || tile) : tile;
       const v = tileVid(tile) || tileVid(host);
       if (!v) return;
@@ -1492,12 +1515,16 @@
         if (YT.tileIsMembersOnly(host) || (tile !== host && YT.tileIsMembersOnly(tile))) want = 'hide';
       }
 
+      const revealed = want === 'hide' && revealHidden;
       if (want === 'hide') {
         hiddenHere++;
         // "Show hidden" reveals them dimmed for this page, so they read as
         // the ones the filter was hiding rather than as ordinary results.
         if (revealHidden) want = 'dim';
       }
+      // Marks a revealed tile so a dirty pass can still count it below.
+      if (revealed) host.dataset.unwatchedRevealed = '1';
+      else if (host.dataset.unwatchedRevealed) delete host.dataset.unwatchedRevealed;
       host.classList.remove('un-watched-dim', 'un-watched-hide');
       if (want === 'dim') host.classList.add('un-watched-dim');
       else if (want === 'hide') host.classList.add('un-watched-hide');
@@ -1517,7 +1544,13 @@
         host.dataset.unwlabel = '';
       }
     });
-    hiddenCount = hiddenHere;
+    // A dirty pass saw only the tiles that changed, so count the page instead
+    // of the pass: this number is the "Show the N hidden here" pill.
+    // With "Show hidden" on they are dimmed rather than hidden, so count the
+    // revealed ones too or the pill reads "Show the 0 hidden here".
+    hiddenCount = passKind === 'dirty'
+      ? document.querySelectorAll('[data-unwatched="hide"], [data-unwatched-revealed]').length
+      : hiddenHere;
     syncFeedToggle();
   }
 

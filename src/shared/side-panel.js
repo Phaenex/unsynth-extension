@@ -1,7 +1,7 @@
 /**
  * UNSidePanel — the one place depth opens on a watch page.
  *
- * THE RULE (decided with the owner, 2026-09-21): the deck under the video is the
+ * THE RULE (decided by the maintainer, 2026-09-21): the deck under the video is the
  * at-a-glance strip — runtime hero, a one-line stats summary, fact-check
  * status, chapters and links. Anything with depth — the full stats grid,
  * compare, SEO, fact-check results, the AI assistant, Forge — opens HERE,

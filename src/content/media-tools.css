@@ -84,7 +84,11 @@
   top: 12px;
   left: 50%;
   z-index: 62;
-  width: min(560px, 86%);
+  /* Sized to its contents (2026-10-02): a fixed min(560px, 86%) was 25 px
+     narrower than the eight preset chips at every player size measured, so
+     "Off" was cut off at the edge and the slider sat at its 80 px floor. */
+  width: max-content;
+  max-width: calc(100% - 24px);
   margin: 0;
   /* Visible by default and tracks YouTube's own chrome: shown whenever the
      player controls are up (hover / paused / mouse active), hidden only while
@@ -114,7 +118,10 @@
   display: none !important;
 }
 /* Don't fight fullscreen scrubbing UI — keep it discreet there too. */
-.un-vol-inline--overlay .un-vol-inline-presets { flex-wrap: nowrap; }
+/* One line when it fits; on a small player the chips wrap inside the bar
+   rather than running past its edge. */
+.un-vol-inline--overlay .un-vol-inline-presets { flex-wrap: wrap; flex: 0 1 auto; min-width: 0; justify-content: flex-end; }
+.un-vol-inline--overlay .un-vol-inline-slider { min-width: 110px; }
 /* Overlay paints its own dark fill over video, so its controls keep dark-theme
    values rather than following YouTube's page theme. */
 .un-vol-inline--overlay .un-vol-inline-eq {

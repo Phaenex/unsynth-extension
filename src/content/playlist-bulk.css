@@ -539,7 +539,9 @@ body.un-plm-selecting .un-plm-host:not(.un-plm-on) {
   border-radius: 0 var(--un-thumb-radius, 12px) 0 7px;
   background: rgba(10, 10, 13, 0.86);
   box-shadow: none;
-  backdrop-filter: blur(3px);
+  /* No backdrop-filter (2026-10-01): it gave every tile its own compositor
+     layer (1,198 layers vs 485 without Unsynth on a 600-tile channel page)
+     for a blur that measured as 0 changed pixels behind this 86% plate. */
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.13s ease;
@@ -581,7 +583,7 @@ body.un-plm-selecting .un-plm-host:not(.un-plm-on) {
      safe minimum — without it, a badge whose width has not been published yet
      (first paint, or a caller that sets the class but not the variable) put
      the checkbox straight on top of it. */
-  left: calc(var(--un-eye-w, 28px) + var(--un-taste-w, 0px));
+  left: calc(var(--un-eye-w, 28px) + var(--un-taste-w, 0px) + var(--un-ai-w, 0px));
   top: 0;
   bottom: auto;
   z-index: 82;
@@ -624,7 +626,9 @@ body.un-plm-selecting .un-plm-host:not(.un-plm-on) {
   border-radius: 0 0 7px 0;
   background: rgba(10, 10, 13, 0.86);
   box-shadow: none;
-  backdrop-filter: blur(3px);
+  /* No backdrop-filter (2026-10-01): it gave every tile its own compositor
+     layer (1,198 layers vs 485 without Unsynth on a 600-tile channel page)
+     for a blur that measured as 0 changed pixels behind this 86% plate. */
   cursor: pointer;
   color: var(--un-on-plate); /* fixed: the plate is dark in both themes (design-tokens.css) */
 }

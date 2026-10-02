@@ -654,7 +654,51 @@
   // selectors at all). Every candidate is checked for a real rendered size;
   // the old selectors are kept as a fallback for accounts/AB-tests still on
   // the legacy markup, but only if they're actually visible.
+  // Both header buttons call this every scan until they are placed. When the
+  // page has no visible anchor it searched the whole document twice a scan for
+  // nothing: 262 ms per 30 s on a long channel page (2026-10-01). A found
+  // anchor is reused while it stays rendered; a miss is not retried for 3 s
+  // on the same URL. A miss also arms ONE retry for when that window ends:
+  // scans only run on mutations, so a header that renders after the last
+  // mutation would otherwise never get its buttons (caught by
+  // channel-header-buttons.spec on the second page of a session).
+  var subAnchor = null;
+  var subMissAt = 0;
+  var subMissHref = '';
+  var subRetryTimer = null;
+  var subRetries = 0;
   function findSubscribeAnchor() {
+    if (subAnchor && subAnchor.isConnected) {
+      var r0 = subAnchor.getBoundingClientRect();
+      if (r0.width > 0 && r0.height > 0) return subAnchor;
+    }
+    subAnchor = null;
+    if (subMissHref === location.href && Date.now() - subMissAt < 3000) return null;
+    var found = findSubscribeAnchorLive();
+    if (found) {
+      subAnchor = found;
+      // A hit closes this URL's miss streak: returning to a page that missed
+      // earlier must get its retries again (review finding 2026-10-01).
+      subRetries = 0;
+      subMissHref = '';
+    } else {
+      if (subMissHref !== location.href) subRetries = 0;
+      subMissAt = Date.now();
+      subMissHref = location.href;
+      if (!subRetryTimer && subRetries < 5) {
+        subRetries++;
+        subRetryTimer = setTimeout(function () {
+          subRetryTimer = null;
+          if (!core || !core.isModuleEnabled || core.isModuleEnabled(mod)) {
+            ensureChannelButton();
+            ensureBlockChannelButton();
+          }
+        }, 3100);
+      }
+    }
+    return found;
+  }
+  function findSubscribeAnchorLive() {
     var candidates = document.querySelectorAll(YD ? YD.SUBSCRIBE_BUTTON_SEL : '#subscribe-button');
     for (var i = 0; i < candidates.length; i++) {
       var el = candidates[i];
@@ -1019,8 +1063,9 @@
       headLeft.className = 'un-home-shelf-head-left';
 
       var ico = document.createElement('span');
-      ico.className = 'un-home-shelf-ico';
-      ico.textContent = '📁';
+      ico.className = 'un-home-shelf-ico un-ico';
+      ico.setAttribute('data-ico', 'folder');
+      ico.setAttribute('aria-hidden', 'true');
       headLeft.appendChild(ico);
 
       var label = document.createElement('span');

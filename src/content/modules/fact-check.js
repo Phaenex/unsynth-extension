@@ -989,7 +989,7 @@
     const noKey = /api key|add an api key|no_key/i.test(text || '');
     const box = el('div', 'un-fc-notice' + (noKey ? ' un-fc-notice--key' : ''));
     if (noKey) {
-      box.appendChild(el('div', 'un-fc-notice-h', '🔑 An AI key is required'));
+      box.appendChild(el('div', 'un-fc-notice-h', 'An AI key is required'));
       box.appendChild(
         el('div', '', 'Claim review runs on your own AI key. Open the Unsynth dashboard → AI tab and add an OpenRouter, OpenAI, or Anthropic key, then try again.')
       );
@@ -1017,6 +1017,7 @@
     if (!box) {
       box = document.createElement('div');
       box.className = 'un-fc-comment-result';
+      commentUiInjected = true;
       // Place the result directly under the comment TEXT, inside the main column.
       // The old anchor (#body) is a horizontal flexbox (avatar + main), so the box
       // landed beside the comment instead of below its text. Insert right after the
@@ -1066,6 +1067,7 @@
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'un-fc-comment-btn';
+        commentUiInjected = true;
         btn.textContent = 'Fact check';
         btn.title = 'AI claim review for this comment (Unsynth)';
         btn.addEventListener('click', function (e) {
@@ -1105,6 +1107,7 @@
     });
   }
 
+  let commentUiInjected = false;
   function clearUi() {
     autoRanFor = null;
     // clearUi() is used as BOTH onNavigate cleanup and teardown() (module
@@ -1118,9 +1121,15 @@
       clearTimeout(commentInjectTimer);
       commentInjectTimer = null;
     }
-    document.querySelectorAll('.un-fc-comment-btn, .un-fc-comment-result').forEach(function (n) {
-      n.remove();
-    });
+    // refresh() calls this on EVERY scan off the watch page; the sweep over a
+    // long feed cost 78 ms per 30 s of scrolling for nodes that were never
+    // there. Only sweep when comment UI was injected since the last sweep.
+    if (commentUiInjected) {
+      document.querySelectorAll('.un-fc-comment-btn, .un-fc-comment-result').forEach(function (n) {
+        n.remove();
+      });
+      commentUiInjected = false;
+    }
     const panel = document.getElementById('un-fact-check');
     if (panel) panel.remove();
   }

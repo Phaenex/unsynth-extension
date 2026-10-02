@@ -8,6 +8,9 @@
   const FL = window.UNForgeLinks;
   const UC = window.UNUpdateCheck;
   const localVersion = chrome.runtime.getManifest().version;
+  const localVersionName = chrome.runtime.getManifest().version_name || '';
+  // "1.0 · build 1.2.2" when a release has a public name, "v1.2.2" otherwise.
+  const shownVersion = (v, name) => (UC && UC.displayVersion ? UC.displayVersion(v, name) : 'v' + v);
 
   function formatUpdateCheckTime(ts) {
     if (!ts) return 'never';
@@ -30,7 +33,7 @@
     if (!available) return;
 
     const downloadUrl = data.downloadUrl || (UC && UC.RELEASE_DOWNLOAD_URL) || 'https://unsynth.vercel.app/downloads/unsynth-latest.zip';
-    if ($('update-wizard-version')) $('update-wizard-version').textContent = 'v' + data.remoteVersion;
+    if ($('update-wizard-version')) $('update-wizard-version').textContent = shownVersion(data.remoteVersion, data.remoteVersionName);
     const link = $('update-wizard-download');
     if (link) link.href = downloadUrl;
 
@@ -65,21 +68,22 @@
 
     if (data.remoteVersion) {
       if (remoteLine) remoteLine.hidden = false;
-      if ($('update-remote-version')) $('update-remote-version').textContent = 'v' + data.remoteVersion;
+      if ($('update-remote-version')) $('update-remote-version').textContent = shownVersion(data.remoteVersion, data.remoteVersionName);
     }
 
     if (data.status === 'available') {
-      msg.textContent = 'v' + data.remoteVersion + ' is published — follow the steps below, then Reload Unsynth.';
+      msg.textContent = shownVersion(data.remoteVersion, data.remoteVersionName) + ' is published — follow the steps below, then Reload Unsynth.';
       msg.classList.add('update-available');
       renderUpdateWizard(data);
     } else if (data.status === 'up_to_date') {
-      msg.textContent = 'Up to date with the published release (v' + (data.remoteVersion || localVersion) + ').';
+      msg.textContent = 'Up to date with the published release (' +
+        (data.remoteVersion ? shownVersion(data.remoteVersion, data.remoteVersionName) : shownVersion(localVersion, localVersionName)) + ').';
       msg.classList.add('update-ok');
     }
   }
 
   function refreshUpdatesCard() {
-    if ($('update-local-version')) $('update-local-version').textContent = 'v' + localVersion;
+    if ($('update-local-version')) $('update-local-version').textContent = shownVersion(localVersion, localVersionName);
     if ($('auto-reload-update')) {
       chrome.storage.sync.get({ autoReloadTabsOnUpdate: true }, (s) => {
         $('auto-reload-update').checked = !!(s && s.autoReloadTabsOnUpdate);
@@ -90,7 +94,7 @@
       const cmd = buildUpdateCommand();
       preview.textContent = 'Copy update command runs npm run update from: ' + cmd.split('\n')[0].replace('cd ', '').replace(' &&', '');
     }
-    chrome.storage.local.get({ githubPat: '', updateLastCheck: 0, updateRemoteVersion: '' }, (d) => {
+    chrome.storage.local.get({ githubPat: '', updateLastCheck: 0, updateRemoteVersion: '', updateRemoteVersionName: '' }, (d) => {
       if ($('github-pat')) {
         $('github-pat').value = '';
         $('github-pat').placeholder = d.githubPat ? '•••••• (saved)' : 'ghp_… or github_pat_…';
@@ -100,12 +104,13 @@
       }
       if (d.updateRemoteVersion) {
         if ($('update-remote-line')) $('update-remote-line').hidden = false;
-        if ($('update-remote-version')) $('update-remote-version').textContent = 'v' + d.updateRemoteVersion;
+        if ($('update-remote-version')) $('update-remote-version').textContent = shownVersion(d.updateRemoteVersion, d.updateRemoteVersionName);
         const status =
           window.UNSemver && UNSemver.isNewer(d.updateRemoteVersion, localVersion) ? 'available' : 'up_to_date';
         renderUpdateStatus({
           ok: true,
           remoteVersion: d.updateRemoteVersion,
+          remoteVersionName: d.updateRemoteVersionName,
           status
         });
       } else if (!d.githubPat) {

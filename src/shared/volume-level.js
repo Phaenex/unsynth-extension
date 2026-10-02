@@ -31,7 +31,8 @@
     return {
       muted: pct === 0,
       over: pct > 100,
-      icon: pct === 0 ? '🔇' : pct < 50 ? '🔉' : '🔊'
+      // An icon NAME for the shared line-icon set (.un-ico[data-ico]), not an emoji.
+      icon: pct === 0 ? 'vol-mute' : pct < 50 ? 'vol-low' : 'vol-high'
     };
   }
 

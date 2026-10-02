@@ -195,8 +195,8 @@ html.un-full-width .un-desc-digest {
 /* ==========================================================================
    WORTH KNOWING + EVERY LINK, BY PURPOSE (2026-09-24)
 
-   Owner request: list every link in the description, say what each one is
-   for, and pull out anything important as a summary. Links were four
+   User report: the description section "should include all links they have and what
+   they are for and any thing important as a summary". Links were four
    hostnames and a "+N". Now every link is listed under what it is for
    (Sponsors & deals, Support, Merch, Socials, Listen, More on YouTube,
    Sources, Other), named by the description's own words with the site beside
@@ -232,6 +232,13 @@ html.un-full-width .un-desc-digest {
   color: var(--un-yt-text-dim);
   min-width: 0;
 }
+.un-desc-know-row.is-verdict .un-desc-know-k {
+  color: var(--un-guide-action, #ff4e45);
+}
+.un-desc-know-row.is-verdict .un-desc-know-t {
+  color: var(--un-yt-text, inherit);
+  font-weight: 500;
+}
 .un-desc-linkgroups .un-desc-links {
   display: grid;
   gap: 0;
@@ -265,8 +272,8 @@ html.un-full-width .un-desc-digest {
 /* ==========================================================================
    QUICK DESCRIPTION WHOLE, FULL DESCRIPTION IN PLACE (2026-09-24)
 
-   Owner request: show the quick description in full, never cut off or behind
-   a toggle, and open the full description in place. Beside the video the
+   User report: the quick description "needs to be there with out needed to expande
+   or be cut off", and the full one should open "there". Beside the video the
    about text shows entire (the parser ends it at a sentence, never mid-word),
    and "Open full description" unfolds the whole text inside the guide.
    ========================================================================== */
@@ -326,3 +333,75 @@ html.un-full-width .un-desc-digest {
   text-overflow: clip;
 }
 .un-desc-linkgroups .un-desc-link-h { padding-top: 1px; }
+
+/* ==========================================================================
+   RANKED LIST (2026-09-30)
+   "Top 10 / N BIGGEST / Best X" type videos where the description carries a
+   numbered list. Rendered as a navigable table of contents: ordinal, title,
+   optional timestamp, and a one-sentence context snippet from the description.
+   ========================================================================== */
+.un-desc-ranked {
+  margin: 8px 0 0;
+}
+.un-desc-ranked-row {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  column-gap: 8px;
+  align-items: start;
+  padding: 5px 6px;
+  border-radius: 6px;
+  min-height: 34px;
+}
+.un-desc-ranked-row.is-clickable {
+  cursor: pointer;
+}
+.un-desc-ranked-row.is-clickable:hover {
+  background: var(--un-guide-hover, rgba(0,0,0,0.06));
+}
+.un-desc-ranked-row.is-clickable:focus-visible {
+  outline: 2px solid var(--un-guide-focus, #1a73e8);
+  outline-offset: 1px;
+}
+.un-desc-ranked-n {
+  font: 600 13px/1.4 Roboto, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--un-guide-action, #ff4e45);
+  text-align: right;
+  padding-top: 2px;
+  user-select: none;
+}
+.un-desc-ranked-body {
+  min-width: 0;
+}
+.un-desc-ranked-t {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.un-desc-ranked-name {
+  font: 500 13px/1.4 Roboto, Arial, sans-serif;
+  color: var(--un-guide-ink, inherit);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+.un-desc-ranked-ts {
+  flex: none;
+  font: 500 12px/1.4 Roboto, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--un-guide-muted, #606060);
+}
+.un-desc-ranked-ctx {
+  margin: 1px 0 0;
+  font: 400 12px/1.4 Roboto, Arial, sans-serif;
+  color: var(--un-guide-muted, #606060);
+  /* Two lines max — it's context, not the full paragraph */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}

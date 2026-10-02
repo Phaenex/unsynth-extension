@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Do not open a public issue with credentials, tokens, personal watch data, or a working exploit. Report it privately through GitHub: open the **Security** tab of this repository and choose **Report a vulnerability**. Include:
+Do not open a public issue with credentials, tokens, personal watch data, or a working exploit. Report it privately through GitHub's private vulnerability reporting: https://github.com/Phaenex/unsynth-extension/security/advisories/new and include:
 
 - the affected Unsynth version;
 - the browser and operating system;
@@ -25,7 +25,7 @@ Never commit or share:
 - Google Takeout data;
 - Unsynth backups or browser profiles.
 
-Public builds carry no `key` in `manifest.json`, so every install gets its own extension ID.
+The `key` value in `manifest.json` is the public half of the extension signing key. It keeps the extension ID stable and is not a credential.
 
 ## Supported versions
 

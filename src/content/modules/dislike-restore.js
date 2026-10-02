@@ -9,6 +9,7 @@
   const FMT = window.UNRyd ? UNRyd.fmt : (n) => String(n);
   const RATIO = window.UNRyd ? UNRyd.likeRatio : () => null;
   // One label for every surface, and it cannot say 100% over a dislike count.
+  const LIKES_KNOWN = window.UNRyd && UNRyd.likesKnown ? UNRyd.likesKnown : (l) => l != null;
   const RATIO_LABEL = window.UNRyd && UNRyd.ratioLabel ? UNRyd.ratioLabel : (l, d, n) => { const r = RATIO(l, d); return r == null ? null : r.toFixed(n || 0) + '%'; };
 
   const YT = window.UNYtDom || null;
@@ -62,7 +63,7 @@
     const sm = location.pathname.match(/\/shorts\/(\w[\w-]{10})/);
     if (sm) return sm[1];
     // /@channel/live has no ?v=; the id is on the watch element. Without this
-    // the Stats row never built there (found in the owner's browser, 2026-09-23).
+    // the Stats row never built there (found in a user browser, 2026-09-23).
     return (window.UNYtDom && window.UNYtDom.liveChannelVideoId ? window.UNYtDom.liveChannelVideoId() : '') || null;
   }
 
@@ -479,7 +480,7 @@
           // The arrow prefixes carry the meaning alongside colour, so the
           // numbers are still distinguishable without it.
           var v = lastVotes;
-          var r = v && v.likes != null && v.dislikes != null ? RATIO(v.likes, v.dislikes) : null;
+          var r = v && v.dislikes != null && LIKES_KNOWN(v.likes, v.dislikes, v.viewCount) ? RATIO(v.likes, v.dislikes) : null;
           var bits = [];
           // NOT a triangle. The deck draws a down-pointing triangle as its
           // disclosure caret, on the same row, a few hundred pixels right — so
@@ -723,7 +724,16 @@
   // observeTiles()'s own recycle-detection check, making that check compare
   // a stale value against itself — it could never fire, so a recycled tile
   // kept showing the OLD video's like/dislike/view stats indefinitely.
+  // Memoised for one scan only (yt-dom scanMemo): within a scan the tile
+  // cannot have been recycled, so this keeps the rule above while sharing the
+  // answer between observeTiles and applyFeedStats.
   function tileVideoId(tile) {
+    // yt-dom's per-scan answer first: aiFilter and watchHistory have usually
+    // already asked this scan, so it is free. Same "current video" guarantee.
+    if (YT && YT.scanMemo) return YT.scanMemo(tile, 'drVid', (t) => (YT.tileVideoId && YT.tileVideoId(t)) || tileVideoIdLive(t));
+    return tileVideoIdLive(tile);
+  }
+  function tileVideoIdLive(tile) {
     // Check /watch?v= links first
     const watchLinks = tile.querySelectorAll('a[href*="/watch"], a[href*="v="]');
     for (let i = 0; i < watchLinks.length; i++) {
@@ -758,13 +768,15 @@
 
     const p = prefs();
     const scrapedViews = scrapeTileViews(tile);
-    const ratio = RATIO(votes.likes, votes.dislikes);
+    // An unknown like count is left out, and so is the ratio built on it.
+    const likesOk = LIKES_KNOWN(votes.likes, votes.dislikes, votes.viewCount);
+    const ratio = likesOk ? RATIO(votes.likes, votes.dislikes) : null;
 
     const box = document.createElement('div');
     box.className = 'un-vid-stats-feed';
-    box.title = FMT(votes.likes) + ' likes · ' + FMT(votes.dislikes) + ' dislikes (Return YouTube Dislike)';
+    box.title = (likesOk ? FMT(votes.likes) + ' likes · ' : 'Likes not counted yet · ') + FMT(votes.dislikes) + ' dislikes (Return YouTube Dislike)';
     box.setAttribute('role', 'img');
-    box.setAttribute('aria-label', FMT(votes.likes) + ' likes, ' + FMT(votes.dislikes) + ' dislikes' + (ratio != null ? ', ' + RATIO_LABEL(votes.likes, votes.dislikes) + ' liked' : ''));
+    box.setAttribute('aria-label', (likesOk ? FMT(votes.likes) + ' likes, ' : '') + FMT(votes.dislikes) + ' dislikes' + (ratio != null ? ', ' + RATIO_LABEL(votes.likes, votes.dislikes) + ' liked' : ''));
 
     function stat(cls, text) {
       const s = document.createElement('span');
@@ -774,8 +786,9 @@
     }
 
     let any = false;
-    if (votes.likes != null) { stat('un-vsf-like', FMT(votes.likes)); any = true; }
-    if (votes.dislikes != null) { stat('un-vsf-dislike', FMT(votes.dislikes)); any = true; }
+    if (likesOk) { stat('un-vsf-like', FMT(votes.likes)); any = true; }
+    // With the likes unknown a lone "0" dislikes says nothing about the video.
+    if (votes.dislikes != null && (likesOk || Number(votes.dislikes) > 0)) { stat('un-vsf-dislike', FMT(votes.dislikes)); any = true; }
     // The percentage alone. A 34px bar beside an exact "%" is a second, less
     // precise encoding of the same number, and with the arrow and the sentiment
     // colour already on the row it made five encodings of one fact in 12px.
@@ -866,6 +879,10 @@
         document.querySelector(YT ? YT.RELATED_RAIL_SEL : '#related');
       if (!root) return;
       nodes = root.querySelectorAll(tileSel());
+    } else if (YT && YT.forEachFeedTile) {
+      // The scan's shared tile list, not another walk of the whole page.
+      nodes = [];
+      YT.forEachFeedTile(function (t) { nodes.push(t); }, { root: document, dirtyOk: true });
     } else {
       nodes = document.querySelectorAll(tileSel());
     }
@@ -1024,6 +1041,8 @@
       lastVotes = null;
       pageViews = null;
       pagePublished = '';
+      // The guide's Stats line still described the previous video for ~0.9 s.
+      if (window.UNWatchDeck && window.UNWatchDeck.setSummary) window.UNWatchDeck.setSummary('stats', '');
       refresh();
     },
     onSettings: function () {

@@ -745,6 +745,22 @@
       if (!filterBadge.hidden) openDash('#subs');
     });
   }
+  if ($('open-tour')) {
+    $('open-tour').addEventListener('click', (e) => {
+      e.preventDefault();
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const tab = tabs && tabs[0];
+        if (tab && tab.url && tab.url.includes('youtube.com')) {
+          chrome.tabs.sendMessage(tab.id, { type: 'UNSYNTH/TOUR/START' }, () => {
+            window.close();
+          });
+        } else {
+          chrome.tabs.create({ url: 'https://www.youtube.com' });
+          window.close();
+        }
+      });
+    });
+  }
   $('open-options') && $('open-options').addEventListener('click', (e) => {
     e.preventDefault();
     openDash('#filter');
@@ -825,11 +841,76 @@
         setPanelDisabled(false);
         updateVolumeUi(resp.gain);
         eqSelect.value = resp.preset || 'cinematic';
+        showEq();
         scrollChk.checked = !!resp.scrollToVolume;
         rememberChk.checked = !!resp.rememberLevel;
         playerCtrlChk.checked = !!resp.showPlayerControl;
       });
     });
+
+    // Live meter: polls the tab while the popup is open (it closes with it).
+    const meterEl = $('pop-audio-meter');
+    const meterFill = $('pop-audio-meter-fill');
+    const meterTxt = $('pop-audio-meter-txt');
+    const PRESET_NAMES = {
+      cinematic: 'Cinema', 'smart-enhance': 'Smart', normal: 'Off', 'bass-boost': 'Bass',
+      'vocal-boost': 'Vocal', 'treble-boost': 'Treble', compressor: 'Night', mono: 'Mono', custom: 'Custom'
+    };
+    function showMeter(st) {
+      if (!meterEl) return;
+      let text = '';
+      let pct = 0;
+      let problem = false;
+      let off = false;
+      if (!st) {
+        // vol-get answered but this did not: the tab runs Unsynth from before
+        // the last extension reload, which keeps none of these controls.
+        text = 'This tab runs an old copy of Unsynth: reload the tab';
+        problem = true;
+        off = true;
+      } else if (st.state === 'on') {
+        const db = typeof st.levelDb === 'number' ? st.levelDb : -99;
+        pct = Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
+        const what = (PRESET_NAMES[st.applied] || st.applied) + (st.gain > 100 ? ' · ' + st.gain + '%' : '');
+        text = st.paused ? 'Processing · ' + what + ' · paused'
+          : st.muted ? 'Processing · ' + what + ' · muted'
+            : 'Processing · ' + what + ' · ' + (db <= -98 ? 'silence' : db.toFixed(0) + ' dB');
+        meterEl.classList.toggle('is-hot', db > -3);
+      } else if (st.state === 'bypass') {
+        text = 'Effects off · YouTube plays the audio as is';
+        off = true;
+      } else if (st.state === 'suspended') {
+        text = 'Chrome is holding the audio: click the video once';
+        problem = true;
+        off = true;
+      } else if (st.state === 'failed') {
+        // Chrome's own wording is jargon; say what it means. The raw text stays
+        // in the tooltip for a bug report.
+        const raw = st.error || '';
+        const why = /already connected|MediaElementSource/i.test(raw)
+          ? 'another extension or YouTube already owns this video’s audio'
+          : (raw.split(':')[0] || 'could not attach to the video');
+        text = 'Effects not running: ' + why;
+        problem = true;
+        off = true;
+      } else {
+        text = 'No video on this page';
+        off = true;
+      }
+      meterFill.style.width = pct + '%';
+      meterTxt.textContent = text;
+      meterTxt.title = st && st.error ? text + ' (' + st.error + ')' : text;
+      meterEl.classList.toggle('is-problem', problem);
+      meterEl.classList.toggle('is-off', off);
+    }
+    function pollMeter() {
+      if (!activeTabId) return;
+      chrome.tabs.sendMessage(activeTabId, { type: 'unsynth-vol-status' }, (st) => {
+        if (chrome.runtime.lastError) { showMeter(null); return; }
+        showMeter(st || null);
+      });
+    }
+    setInterval(pollMeter, 200);
 
     function updateVolumeUi(gain) {
       slider.value = gain;
@@ -866,7 +947,77 @@
       });
     });
 
+    // ---- Custom EQ: ten faders, saved to volumeMaster.customEq ----
+    const EQ_LABELS = ['31', '62', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'];
+    const eqPanel = $('pop-eq');
+    const eqBands = $('pop-eq-bands');
+    let customEq = (D.volumeMaster && Array.isArray(D.volumeMaster.customEq) ? D.volumeMaster.customEq : EQ_LABELS.map(() => 0)).slice();
+    let eqSaveTimer = null;
+    function fmtDb(v) { return (v > 0 ? '+' : '') + v; }
+    function buildEqBands() {
+      if (!eqBands || eqBands.childElementCount) return;
+      EQ_LABELS.forEach((lab, i) => {
+        const band = document.createElement('div');
+        band.className = 'pop-eq-band';
+        const val = document.createElement('span');
+        val.className = 'pop-eq-val';
+        const slot = document.createElement('div');
+        slot.className = 'pop-eq-slot';
+        const r = document.createElement('input');
+        r.type = 'range'; r.min = '-12'; r.max = '12'; r.step = '1';
+        r.className = 'pop-eq-range';
+        r.setAttribute('aria-label', lab + 'Hz, decibels');
+        r.dataset.band = String(i);
+        const f = document.createElement('span');
+        f.className = 'pop-eq-freq';
+        f.textContent = lab;
+        slot.appendChild(r);
+        band.appendChild(val); band.appendChild(slot); band.appendChild(f);
+        eqBands.appendChild(band);
+        r.addEventListener('input', () => {
+          customEq[i] = Number(r.value);
+          paintEq();
+          // Dragging a fader means you want to hear it: switch to Custom.
+          if (eqSelect.value !== 'custom') { eqSelect.value = 'custom'; eqSelect.dispatchEvent(new Event('change')); }
+          scheduleEqSave();
+        });
+      });
+    }
+    function paintEq() {
+      if (!eqBands) return;
+      eqBands.querySelectorAll('.pop-eq-band').forEach((band, i) => {
+        const v = Number(customEq[i]) || 0;
+        const r = band.querySelector('.pop-eq-range');
+        if (Number(r.value) !== v) r.value = String(v);
+        const val = band.querySelector('.pop-eq-val');
+        val.textContent = fmtDb(v);
+        val.classList.toggle('is-on', v !== 0);
+      });
+    }
+    // Sync storage allows a limited number of writes a minute, so a drag saves
+    // once it settles; the tab picks the curve up from storage.
+    function scheduleEqSave() {
+      if (eqSaveTimer) clearTimeout(eqSaveTimer);
+      eqSaveTimer = setTimeout(() => {
+        chrome.storage.sync.get({ volumeMaster: D.volumeMaster }, (s) => {
+          const vm = Object.assign({}, D.volumeMaster, s.volumeMaster);
+          vm.customEq = customEq.slice();
+          chrome.storage.sync.set({ volumeMaster: vm });
+        });
+      }, 250);
+    }
+    function showEq() { if (eqPanel) eqPanel.hidden = eqSelect.value !== 'custom'; }
+    buildEqBands();
+    chrome.storage.sync.get({ volumeMaster: D.volumeMaster }, (s) => {
+      const vm = Object.assign({}, D.volumeMaster, s.volumeMaster);
+      if (Array.isArray(vm.customEq)) customEq = vm.customEq.slice(0, 10).map((v) => Math.max(-12, Math.min(12, Number(v) || 0)));
+      paintEq();
+    });
+    const flatBtn = $('pop-eq-flat');
+    if (flatBtn) flatBtn.addEventListener('click', () => { customEq = customEq.map(() => 0); paintEq(); scheduleEqSave(); });
+
     eqSelect.addEventListener('change', () => {
+      showEq();
       const preset = eqSelect.value;
       chrome.storage.sync.get({ volumeMaster: D.volumeMaster }, (s) => {
         const vm = Object.assign({}, D.volumeMaster, s.volumeMaster);

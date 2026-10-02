@@ -208,7 +208,8 @@
       iframe.allowFullscreen = true;
       frameWrap.appendChild(iframe);
       var openLink = previewBackdrop.querySelector('.un-forge-preview-open');
-      openLink.href = v.url || 'https://www.youtube.com/watch?v=' + id;
+      // https only: v.url comes from the Forge server (release audit, 2026-10-02).
+      openLink.href = /^https:\/\//.test(v.url || '') ? v.url : 'https://www.youtube.com/watch?v=' + id;
       previewBackdrop.classList.add('on');
       // This modal opens on top of the Forge panel, which is already on the
       // shared LIFO escape stack. A raw document listener here meant one
@@ -1094,6 +1095,12 @@
         lbl('Boost my channels', boost)
       );
       adv.appendChild(advInner);
+      // Disclosure (release audit, 2026-10-02): this search runs on the
+      // Playlist Forge server, and "Exclude watched" sends your watched video
+      // IDs there so it can leave them out.
+      var advNote = el('p', 'un-forge-search-privacy');
+      advNote.textContent = 'Searches run on the Playlist Forge server. "Exclude watched" sends it your watched video IDs so it can leave them out.';
+      adv.appendChild(advNote);
       root.appendChild(adv);
 
       var savedRow = el('div', 'un-forge-search-saved-row');

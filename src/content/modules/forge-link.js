@@ -396,7 +396,8 @@
     msg.appendChild(document.createElement('br'));
     msg.appendChild(document.createTextNode(bodyText));
     box.appendChild(msg);
-    if (link) {
+    // https only: the link comes from the Forge server (release audit, 2026-10-02).
+    if (link && /^https:\/\//.test(link)) {
       const a = el('a', 'un-forge-toast-link', 'Open playlist ↗');
       a.href = link;
       a.addEventListener('click', function (e) {
@@ -1413,7 +1414,7 @@
     } catch (e) {
       setStatus('Could not reach Playlist Forge: ' + e, 'err');
     }
-    btnLoading(btn, false, '✨ Suggest from my history');
+    btnLoading(btn, false, 'Suggest from my history');
   }
 
   function mountSearchPanel(secSearch) {
@@ -1585,7 +1586,7 @@
     const secSuggest = el('div', 'un-forge-section on');
     secSuggest.dataset.section = 'suggest';
     secSuggest.appendChild(el('h3', 'un-forge-h', 'From your watch history'));
-    const sugBtn = el('button', 'un-forge-btn primary', '✨ Suggest from my history');
+    const sugBtn = el('button', 'un-forge-btn primary', 'Suggest from my history');
     sugBtn.type = 'button';
     sugBtn.id = 'un-forge-suggest-btn';
     sugBtn.addEventListener('click', runSuggest);

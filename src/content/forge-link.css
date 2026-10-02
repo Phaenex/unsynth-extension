@@ -668,6 +668,13 @@ html[dark],
   color: var(--un-forge-accent-text);
   margin-bottom: 6px;
 }
+/* Where the search runs and what Exclude watched sends (release audit, 2026-10-02). */
+.un-forge-search-privacy {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--un-yt-text-dim);
+}
 .un-forge-search-saved-row {
   display: flex;
   flex-wrap: wrap;

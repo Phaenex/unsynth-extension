@@ -307,7 +307,7 @@
     const d = (core && core.settings && core.settings.dislikeRestore) || {};
     // The button only FIRES the fact-check module's own control. With that
     // module off it rendered anyway, as the one filled button in the row, and
-    // pressing it toasted "Claim review is turned off" (found on the owner's
+    // pressing it toasted "Claim review is turned off" (found on a user
     // profile 2026-09-24). The guide's More tools list offers Fact check
     // instead.
     const mods = (core && core.settings && core.settings.modules) || {};

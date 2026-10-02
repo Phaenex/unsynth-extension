@@ -28,7 +28,7 @@
 
   // Schema version for one-time data migrations. Bump when adding a migration
   // and append the migration fn to MIGRATIONS (index n runs to reach version n+1).
-  const SCHEMA_VERSION = 10;
+  const SCHEMA_VERSION = 11;
 
   // Both used to resolve unconditionally without checking chrome.runtime.lastError
   // (e.g. QUOTA_BYTES_PER_ITEM/MAX_WRITE_OPERATIONS_PER_MINUTE exceeded) — a failed
@@ -244,7 +244,7 @@
    * 0.9.17-0.9.20 (PR #2, the quieter-defaults campaign) flipped these
    * modules' defaultOn from true to false. A module the user never toggled
    * has no key in storage and follows the default, so on update they all
-   * switched off: the owner lost the sidebar hub, the thumbnail and playlist
+   * switched off: a user lost the sidebar hub, the thumbnail and playlist
    * tools, volume, pop-out, screenshot, the downloader and the AI features,
    * and was told (wrongly, at first) that he had picked a preset.
    *
@@ -277,7 +277,7 @@
    * v9 -> v10: THE REST OF THEM (2026-09-24).
    *
    * v9's list came from diffing the defaults against main just before PR #2,
-   * but the owner had been running the feature branch, and the defaults changed on
+   * but one install had been running the feature branch, and the defaults changed on
    * the BRANCH on 2026-09-06: 26 modules went from on to off in one commit.
    * He asked what happened to "our pause feature where it pause video playing
    * if i open another" (crossTabPlayback), and "i feel like you stripped away
@@ -296,7 +296,42 @@
     return restoreFormerDefaults(from, FORMER_DEFAULT_ON);
   }
 
-  const MIGRATIONS = [migrateV1, migrateV2, migrateV3, migrateV4, migrateV5, migrateV6, migrateV7, migrateV8, migrateV9, migrateV10];
+  /**
+   * v10 -> v11: AN UPDATE NEVER CHANGES WHAT AN EXISTING INSTALL IS DOING
+   * (2026-10-01).
+   *
+   * This release turns these modules on by default, for NEW installs. On an
+   * existing install a module the user never set was running OFF (the
+   * previous default), and without this the new defaults would switch it on
+   * silently at the next update. So for an existing install every key below
+   * that it never set is pinned to false, the value it was actually running.
+   * Explicit choices are untouched; a fresh install (from 0) gets the new
+   * defaults.
+   *
+   * An unreleased v11 (2026-09-29) did the opposite and switched them on.
+   * Maintainer, 2026-10-01: local and public updates are one line, and
+   * "dont mess with my settings". That covers every install, not only his.
+   */
+  const SUITE_DEFAULT_ON = [
+    'abLoop', 'aiAssistant', 'analytics', 'chapters', 'clipCapture', 'crossTabPlayback',
+    'descDigest', 'factCheck', 'forgeLink', 'liveNow', 'playlistBulk', 'playlistFolders', 'popoutPlayer',
+    'queueAdvance', 'quickSwitcher', 'screenshot', 'scrollMiniplayer', 'searchFilters', 'channelCompletion',
+    'playlistDebt', 'shortcuts', 'skipSeconds', 'speedChip', 'subManager', 'tasteRank', 'transcriptExport',
+    'volumeMaster'
+  ];
+  async function migrateV11(from) {
+    if (!(from > 0)) return;
+    const s = await syncGet({ modules: undefined });
+    const cur = s.modules && typeof s.modules === 'object' ? s.modules : {};
+    const next = Object.assign({}, cur);
+    let changed = false;
+    SUITE_DEFAULT_ON.forEach((k) => {
+      if (cur[k] === undefined) { next[k] = false; changed = true; }
+    });
+    if (changed) await syncSet({ modules: next });
+  }
+
+  const MIGRATIONS = [migrateV1, migrateV2, migrateV3, migrateV4, migrateV5, migrateV6, migrateV7, migrateV8, migrateV9, migrateV10, migrateV11];
 
   const UNStore = {
     async getLocal(key, def) {
@@ -434,6 +469,7 @@
     SCHEMA_VERSION: SCHEMA_VERSION,
     PRE_QUIET_DEFAULT_ON: PRE_QUIET_DEFAULT_ON,
     FORMER_DEFAULT_ON: FORMER_DEFAULT_ON,
+    SUITE_DEFAULT_ON: SUITE_DEFAULT_ON,
     async runMigrations() {
       const from = Number(await this.getLocal('schemaVersion', 0)) || 0;
       if (from >= SCHEMA_VERSION) return { migrated: false, version: from };

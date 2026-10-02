@@ -125,45 +125,66 @@
    *        file someone else's upload under this folder.
    * @returns [{ videoId, title, channelKey, channelName, ageMs, durationSec, isShort }]
    */
+  // A tile's scrape, kept while the tile shows the same video on the same page
+  // (2026-10-01). sidebarHub re-scraped every tile on every scan, about half
+  // its cost on a long search page, for rows it had already stored. Only a
+  // COMPLETE row is kept: a tile whose age or channel had not rendered yet is
+  // scraped again next time, which is the case scanCatchUp waits for.
+  var CANDIDATES = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+
   function scrapeCandidates(root, pageChannel) {
     var out = [];
     if (!root || !root.querySelectorAll) return out;
     var seen = Object.create(null);
     var selectors = (YD && YD.FEED_TILES) || [];
+    var pageKey = (pageChannel && pageChannel.channelKey) || '';
 
-    selectors.forEach(function (sel) {
-      root.querySelectorAll(sel).forEach(function (tile) {
-        // A lockup nested inside a rich item is the SAME tile reached twice.
-        // Confirmed live: on a channel /videos page all 30 lockups sit inside
-        // the 30 rich items, so without this the digest counts everything
-        // twice. A top-level lockup (search) has no such ancestor and is kept.
-        if (
-          tile.tagName &&
-          tile.tagName.toLowerCase() === 'yt-lockup-view-model' &&
-          tile.closest &&
-          tile.closest('ytd-rich-item-renderer')
-        ) {
-          return;
-        }
-        var videoId = YD.tileVideoId(tile);
-        if (!videoId || seen[videoId]) return;
-        seen[videoId] = true;
-        var key = YD.tileChannelKey(tile) || '';
-        var chName = YD.tileChannel(tile) || '';
-        if (!key && pageChannel && pageChannel.channelKey) {
-          key = pageChannel.channelKey;
-          if (!chName) chName = pageChannel.channelName || '';
-        }
-        out.push({
-          videoId: videoId,
-          title: YD.tileTitle(tile) || '',
-          channelKey: key,
-          channelName: chName,
-          ageMs: tileAgeMs(tile),
-          durationSec: tileDurationSec(tile),
-          isShort: tileIsShort(tile)
-        });
-      });
+    var walk = function (cb) {
+      // forEachFeedTile shares one document walk with every module in a scan.
+      // dirtyOk: candidates merge into the stored digest, so changed tiles are enough.
+      if (YD && YD.forEachFeedTile) YD.forEachFeedTile(cb, { root: root, dirtyOk: true });
+      else if (selectors.length) root.querySelectorAll(selectors.join(',')).forEach(cb);
+    };
+    walk(function (tile) {
+      // A lockup nested inside a rich item is the SAME tile reached twice.
+      // Confirmed live: on a channel /videos page all 30 lockups sit inside
+      // the 30 rich items, so without this the digest counts everything
+      // twice. A top-level lockup (search) has no such ancestor and is kept.
+      if (
+        tile.tagName &&
+        tile.tagName.toLowerCase() === 'yt-lockup-view-model' &&
+        tile.closest &&
+        tile.closest('ytd-rich-item-renderer')
+      ) {
+        return;
+      }
+      var videoId = YD.tileVideoId(tile);
+      if (!videoId || seen[videoId]) return;
+      seen[videoId] = true;
+      var kept = CANDIDATES && CANDIDATES.get(tile);
+      if (kept && kept.videoId === videoId && kept.pageKey === pageKey) {
+        out.push(kept.row);
+        return;
+      }
+      var key = YD.tileChannelKey(tile) || '';
+      var chName = YD.tileChannel(tile) || '';
+      if (!key && pageChannel && pageChannel.channelKey) {
+        key = pageChannel.channelKey;
+        if (!chName) chName = pageChannel.channelName || '';
+      }
+      var row = {
+        videoId: videoId,
+        title: YD.tileTitle(tile) || '',
+        channelKey: key,
+        channelName: chName,
+        ageMs: tileAgeMs(tile),
+        durationSec: tileDurationSec(tile),
+        isShort: tileIsShort(tile)
+      };
+      if (CANDIDATES && row.ageMs != null && row.channelKey && row.title) {
+        CANDIDATES.set(tile, { videoId: videoId, pageKey: pageKey, row: row });
+      }
+      out.push(row);
     });
     return out;
   }

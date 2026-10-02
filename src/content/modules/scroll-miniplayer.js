@@ -329,6 +329,8 @@
   function findPlayer() {
     return document.getElementById('movie_player');
   }
+  // One line-icon set (core.css .un-ico), shared by every bar button that draws one.
+  function unIco(name) { var s = document.createElement('span'); s.className = 'un-ico'; s.setAttribute('data-ico', name); s.setAttribute('aria-hidden', 'true'); return s; }
   function findVideo() {
     return (
       document.querySelector('#movie_player video.html5-main-video') ||
@@ -369,7 +371,8 @@
     }
     if (muteBtn) {
       var muted = !!(vid && vid.muted);
-      muteBtn.textContent = muted ? '🔇' : '🔊';
+      muteBtn.textContent = '';
+      muteBtn.appendChild(unIco(muted ? 'vol-mute' : 'vol-high'));
       muteBtn.title = muted ? 'Unmute' : 'Mute';
       muteBtn.setAttribute('aria-label', muteBtn.title);
     }

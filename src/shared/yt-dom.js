@@ -72,7 +72,7 @@
     }
   }
 
-  function outermostFeedTile(tile) {
+  function outermostFeedTileRaw(tile) {
     if (!tile) return null;
     var outer = tile;
     var hops = 0;
@@ -83,6 +83,156 @@
     }
     return outer;
   }
+
+  /* ==========================================================================
+     PER-SCAN TILE MEMO (2026-10-01)
+
+     On a long scrolled page every module asked every tile the same questions
+     on every scan: aiFilter, watchHistory, sidebarHub's catch-up scrape and
+     subManager each looked up the channel key, video id, ad status and resume
+     bar, all through querySelector. Measured on a search page scrolled for
+     30 s (~47k nodes): 62 scans, p95 99 ms, nearly all over core's 50 ms
+     alarm, and these helpers were the largest share of it.
+
+     While core.runScan() runs (beginScan/endScan), each answer is computed
+     once per tile and shared. Outside a scan nothing is memoised, so event
+     handlers always read the live DOM.
+
+     The channel key also survives ACROSS scans, but only bound to the tile's
+     video id: YouTube recycles tile elements for other videos, and a new
+     video id drops the entry. A video's channel cannot change, and an empty
+     key is never kept, because a tile's metadata can render after its link.
+
+     The state lives on the global, not in this closure: yt-dom is bundled
+     into both content bundles, and modules hold whichever instance existed
+     when they loaded. Every instance must see the same scan.
+     ========================================================================== */
+  var SCAN_KEY = '__unsynthTileScan';
+  var GLOBAL = typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : globalThis;
+  function scanState() {
+    return GLOBAL[SCAN_KEY] || null;
+  }
+  // dirtyList: the tiles that changed since the last scan (core.js, DIRTY-TILE
+  // SCANNING), or null for a full scan. Only callers that pass dirtyOk see it.
+  function beginScan(dirtyList) {
+    var prev = GLOBAL[SCAN_KEY];
+    GLOBAL[SCAN_KEY] = {
+      memo: new Map(),
+      tiles: null,
+      dirty: Array.isArray(dirtyList) ? dirtyList : null,
+      dirtySet: Array.isArray(dirtyList) && typeof Set !== 'undefined' ? new Set(dirtyList) : null,
+      stable: (prev && prev.stable) || (typeof WeakMap !== 'undefined' ? new WeakMap() : null)
+    };
+  }
+  function endScan() {
+    var st = GLOBAL[SCAN_KEY];
+    // Keep only the cross-scan channel keys; drop the per-scan answers.
+    if (st) GLOBAL[SCAN_KEY] = { memo: null, tiles: null, stable: st.stable };
+  }
+  function memoTile(tile, name, fn) {
+    var st = scanState();
+    if (!st || !st.memo || !tile) return fn(tile);
+    var m = st.memo.get(tile);
+    if (!m) {
+      m = {};
+      st.memo.set(tile, m);
+    }
+    if (Object.prototype.hasOwnProperty.call(m, name)) return m[name];
+    return (m[name] = fn(tile));
+  }
+  function tileVideoId(tile) { return memoTile(tile, 'vid', tileVideoIdRaw); }
+  // The tile's cross-scan entry for this video, replaced when the video changes.
+  function stableEntry(stable, tile, vid) {
+    var e = stable.get(tile);
+    if (!e || e.vid !== vid) {
+      e = { vid: vid };
+      stable.set(tile, e);
+    }
+    return e;
+  }
+  // Title and channel-name ELEMENTS are kept across scans, never their text:
+  // DeArrow and the title cleaner rewrite that text in place, so it is read
+  // fresh every time. Finding the element is the expensive part (the selector
+  // lists are long), and a kept element is only reused while it still sits in
+  // the same tile showing the same video.
+  // noneOnceTitled: also keep "there is no such element" once the title has
+  // rendered (channel /videos tiles have no channel name: 310 ms / 30 s of
+  // re-searching 600 tiles, 2026-10-01), the same rule as an empty key.
+  function elementAcrossScans(name, find, noneOnceTitled) {
+    return function (tile) {
+      var st = scanState();
+      var stable = st && st.memo && st.stable;
+      var vid = stable ? tileVideoId(tile) : null;
+      if (vid) {
+        var hit = stable.get(tile);
+        if (hit && hit.vid === vid) {
+          var el = hit[name];
+          if (el && el.isConnected !== false && (!tile.contains || tile.contains(el))) return el;
+          if (!el && hit[name + 'None']) return null;
+        }
+      }
+      var found = find(tile);
+      if (vid && found) stableEntry(stable, tile, vid)[name] = found;
+      else if (vid && noneOnceTitled && titleEl(tile)) stableEntry(stable, tile, vid)[name + 'None'] = true;
+      return found;
+    };
+  }
+  var titleEl = elementAcrossScans('titleEl', titleElRaw, false);
+  var channelEl = elementAcrossScans('channelEl', channelElRaw, true);
+  function tileTitle(tile) { return memoTile(tile, 'title', function (t) { return tileTitleFrom(t, titleEl(t)); }); }
+  function tileChannel(tile) { return memoTile(tile, 'channel', function (t) { return tileChannelFrom(channelEl(t)); }); }
+  function tileThumb(tile) { return memoTile(tile, 'thumb', tileThumbRaw); }
+  function tileNativeProgress(tile) { return memoTile(tile, 'progress', tileNativeProgressRaw); }
+  // Ad and collection status are the tile's KIND, stamped with the tile, so
+  // they follow the same video-id binding as the channel key. Unlike the key,
+  // false is kept too: it is the answer for nearly every tile, and not
+  // keeping it is what made tileIsAd the largest helper left (107 ms / 30 s).
+  function kindAcrossScans(name, raw) {
+    return function (tile) {
+      var st = scanState();
+      var stable = st && st.memo && st.stable;
+      var vid = stable ? tileVideoId(tile) : null;
+      // A tile that changed since the last scan is asked again: a sponsored
+      // badge or collection stack can render after the watch link.
+      var changed = !!(st && st.dirtySet && st.dirtySet.has(tile));
+      if (vid && !changed) {
+        var hit = stable.get(tile);
+        if (hit && hit.vid === vid && Object.prototype.hasOwnProperty.call(hit, name)) return hit[name];
+      }
+      var v = raw(tile);
+      // true is final for this video; false only once the title has rendered
+      // (the noKey rule below), since the markers render with the metadata.
+      if (vid && (v || titleEl(tile))) stableEntry(stable, tile, vid)[name] = v;
+      return v;
+    };
+  }
+  var adAcrossScans = kindAcrossScans('ad', tileIsAdRaw);
+  var collectionAcrossScans = kindAcrossScans('collection', tileIsCollectionRaw);
+  function tileIsAd(tile) { return memoTile(tile, 'ad', adAcrossScans); }
+  function tileIsCollection(tile) { return memoTile(tile, 'collection', collectionAcrossScans); }
+  function outermostFeedTile(tile) { return memoTile(tile, 'outer', outermostFeedTileRaw); }
+  function channelKeyAcrossScans(tile) {
+    var st = scanState();
+    var stable = st && st.memo && st.stable;
+    var vid = stable ? tileVideoId(tile) : null;
+    if (vid) {
+      var hit = stable.get(tile);
+      if (hit && hit.vid === vid && (hit.key || hit.noKey)) return hit.key || null;
+    }
+    var key = tileChannelKeyRaw(tile);
+    if (vid && key) {
+      stableEntry(stable, tile, vid).key = key;
+    } else if (vid && titleEl(tile)) {
+      // No channel link, but the metadata block has rendered (the title is
+      // stamped with it): a channel's own /videos tiles carry no channel link
+      // at all. Without this, 600 tiles re-ran the longest lookup in this file
+      // every scan for an answer that could not change (436 ms / 30 s,
+      // 2026-10-01). Before the title renders, an empty key is still not kept.
+      stableEntry(stable, tile, vid).noKey = true;
+    }
+    return key;
+  }
+  function tileChannelKey(tile) { return memoTile(tile, 'chKey', channelKeyAcrossScans); }
 
   function forEachFeedTile(cb, opts) {
     opts = opts || {};
@@ -96,13 +246,32 @@
     }
     if (!root && typeof document !== 'undefined') root = document;
     if (!root || !root.querySelectorAll) return;
-    var seen = new Set();
-    selectors.forEach(function (sel) {
-      root.querySelectorAll(sel).forEach(function (tile) {
-        if (seen.has(tile)) return;
-        seen.add(tile);
+    // ONE walk, not one per selector (2026-10-01). Nine renderer names meant
+    // nine full-document querySelectorAll walks per call, seven callers per
+    // scan; on a scrolled search page (~47k nodes) this line was the
+    // extension's single largest cost. A selector list returns each element
+    // once, in document order, so an outer tile still comes before a tile
+    // nested in it, which is the only ordering any caller relies on.
+    var count = 0;
+    var st = scanState();
+    var shared = st && st.memo && root === document && !opts.extraSelectors;
+    // Per-tile decoration can take just the tiles that changed. Anything that
+    // COUNTS or lists the page must not pass dirtyOk: it would see a fraction.
+    if (shared && opts.dirtyOk && st.dirty) {
+      st.dirty.forEach(function (tile) {
+        count++;
         cb(tile);
       });
+      return 'dirty';
+    }
+    var list = shared && st.tiles;
+    if (!list) {
+      list = Array.prototype.slice.call(root.querySelectorAll(selectors.join(',')));
+      if (shared) st.tiles = list;
+    }
+    list.forEach(function (tile) {
+      count++;
+      cb(tile);
     });
     // Drift canary. This is the single funnel every feed feature walks, so one
     // hook here covers most of the surface that YouTube markup changes break.
@@ -111,15 +280,16 @@
     // AND none of the renderer names matched -- a feed with genuinely zero
     // videos, or a page still loading, is not drift. Without that narrowing the
     // signal is noise, and a noisy signal gets ignored.
-    if (opts.expectTiles && seen.size === 0) {
+    if (opts.expectTiles && count === 0) {
       var core = (typeof window !== 'undefined' && window.UNSYNTH) || null;
       if (core && core.reportSelectorMiss) {
         core.reportSelectorMiss(opts.scope || 'feed', selectors.join(','));
       }
     }
+    return 'full';
   }
 
-  function tileChannelKey(tile) {
+  function tileChannelKeyRaw(tile) {
     if (!tile || !tile.querySelectorAll) return null;
     var links = tile.querySelectorAll(CHANNEL_LINK_SEL);
     for (var i = 0; i < links.length; i++) {
@@ -218,9 +388,14 @@
     return el ? (el.textContent || '').trim() : '';
   }
 
-  function tileTitle(tile) {
+  function titleElRaw(tile) {
+    return tile && tile.querySelector ? tile.querySelector(TITLE_SEL) : null;
+  }
+  function tileTitleRaw(tile) {
+    return tileTitleFrom(tile, titleElRaw(tile));
+  }
+  function tileTitleFrom(tile, el) {
     if (!tile || !tile.querySelector) return '';
-    var el = tile.querySelector(TITLE_SEL);
     if (el) {
       var t = (el.getAttribute('title') || el.textContent || '').trim();
       if (t) return t;
@@ -229,13 +404,17 @@
     return a ? (a.getAttribute('title') || a.textContent || '').trim() : '';
   }
 
-  function tileChannel(tile) {
-    if (!tile || !tile.querySelector) return '';
-    var el = tile.querySelector(CHANNEL_SEL);
+  function channelElRaw(tile) {
+    return tile && tile.querySelector ? tile.querySelector(CHANNEL_SEL) : null;
+  }
+  function tileChannelRaw(tile) {
+    return tileChannelFrom(channelElRaw(tile));
+  }
+  function tileChannelFrom(el) {
     return el ? (el.textContent || '').trim() : '';
   }
 
-  function tileVideoId(tile) {
+  function tileVideoIdRaw(tile) {
     if (!tile || !tile.querySelector) return null;
     var a = tile.querySelector('a#thumbnail[href*="/watch"], a[href*="/watch?v="], a[href*="/watch"], a[href*="/shorts/"]');
     var href = a && a.getAttribute('href');
@@ -246,7 +425,7 @@
     return sm ? sm[1] : null;
   }
 
-  function tileThumb(tile) {
+  function tileThumbRaw(tile) {
     if (!tile || !tile.querySelector) return null;
     return (
       tile.querySelector('a#thumbnail') ||
@@ -280,7 +459,7 @@
    *   anything about this video" and must never be collapsed to 0, which would
    *   read as the positive claim "watched none of it".
    */
-  function tileNativeProgress(tile) {
+  function tileNativeProgressRaw(tile) {
     if (!tile || !tile.querySelector) return null;
     var el = tile.querySelector(RESUME_BAR_SEL);
     if (!el) return null;
@@ -398,6 +577,47 @@
     var view = d.defaultView;
     if (view && view.getComputedStyle && view.getComputedStyle(b).display === 'none') return false;
     return b.getBoundingClientRect().width > 0;
+  }
+
+  var NATIVE_CHAPTER_MARKERS_SEL = 'ytd-macro-markers-list-item-renderer';
+
+  /**
+   * Extract native YouTube chapter items from the page when YouTube renders
+   * them (e.g. from engagement panel / macro markers / auto-chapters).
+   */
+  function nativeChapters(doc) {
+    var d = doc || (typeof document !== 'undefined' ? document : null);
+    if (!d || !d.querySelectorAll) return [];
+    var markers = d.querySelectorAll(NATIVE_CHAPTER_MARKERS_SEL);
+    if (!markers.length) return [];
+    // YouTube leaves the previous video's chapter markers in the page for
+    // ~1.5 s after an in-page switch (measured 2026-10-01: 18 markers for A
+    // still present when B's guide rendered, gone by +1.5 s). Each marker
+    // links to /watch?v=<its video>, so keep only the current video's.
+    var curVid = '';
+    try {
+      // URL first: it changes before ytd-watch-flexy's video-id does. The
+      // attribute covers channel /live URLs, which carry no v=.
+      var flexy = d.querySelector('ytd-watch-flexy[video-id]');
+      curVid = (d.location ? new URLSearchParams(d.location.search).get('v') : '') ||
+        (flexy && flexy.getAttribute('video-id')) || '';
+    } catch (e) { curVid = ''; }
+    var out = [];
+    for (var i = 0; i < markers.length; i++) {
+      if (curVid) {
+        var link = markers[i].querySelector('a[href*="v="]');
+        var m = link && /[?&]v=([\w-]{11})/.exec(link.getAttribute('href') || '');
+        if (m && m[1] !== curVid) continue;
+      }
+      var timeEl = markers[i].querySelector('#time');
+      var titleEl = markers[i].querySelector('#details h4, #title, #endpoint');
+      var timeText = timeEl && timeEl.textContent ? timeEl.textContent.trim() : '';
+      var titleText = titleEl && titleEl.textContent ? titleEl.textContent.trim() : '';
+      if (timeText) {
+        out.push({ label: timeText, title: titleText, el: markers[i] });
+      }
+    }
+    return out;
   }
 
   /**
@@ -721,6 +941,7 @@
 
   // --- Guide (sidebar) -----------------------------------------------------
   var GUIDE_ENTRY_SEL = 'ytd-guide-entry-renderer, ytd-mini-guide-entry-renderer';
+  var MINI_GUIDE_SEL = 'ytd-mini-guide-renderer';
   var GUIDE_ENTRY_PRIMARY = 'ytd-guide-entry-renderer';
   var GUIDE_ENTRY_CHANNEL_LINK_SEL =
     'ytd-guide-entry-renderer a[href*="/@"], ytd-guide-entry-renderer a[href*="/channel/"], ytd-guide-entry-renderer a[href*="/c/"]';
@@ -767,7 +988,7 @@
    * the watched filter must neither mark nor dim them (2026-09-23: a sponsored
    * search result got the watched eye over its own Watch button).
    */
-  function tileIsAd(tile) {
+  function tileIsAdRaw(tile) {
     if (!tile || !tile.matches) return false;
     try {
       return tile.matches(AD_TILE_SEL) || !!tile.querySelector(AD_TILE_SEL) ||
@@ -787,7 +1008,7 @@
    */
   var COLLECTION_TILE_SEL =
     'yt-collection-thumbnail-view-model, .ytCollectionThumbnailViewModelHost, ytd-playlist-thumbnail';
-  function tileIsCollection(tile) {
+  function tileIsCollectionRaw(tile) {
     if (!tile || !tile.matches) return false;
     try {
       return tile.matches('ytd-radio-renderer, ytd-playlist-renderer, ytd-grid-playlist-renderer') ||
@@ -823,7 +1044,7 @@
   // SCOPED TO ytd-watch-flexy (2026-09-24). YouTube keeps the previous page's
   // layout in the DOM: after search or home, the FIRST #primary in the document
   // is the hidden results column at 0px wide. The guide measured that one,
-  // decided there was no side column, and mounted under the player (owner report:
+  // decided there was no side column, and mounted under the player (user report:
   // "why is it under the player again?"; measured search -> watch: primaries
   // [search 0px, watch 1817px]).
   var WATCH_SIDE_COLUMN_SEL = 'ytd-watch-flexy #secondary #secondary-inner';
@@ -892,7 +1113,13 @@
   var CONTINUATION_SEL = 'ytd-continuation-item-renderer';
   var CHANNEL_PAGE_HEADER_SEL =
     '.ytPageHeaderViewModelHeadline h1, ytd-channel-name#channel-name #text, #channel-header #text, yt-formatted-string.ytd-channel-name';
-  var SUBSCRIBE_BUTTON_SEL = 'yt-subscribe-button-view-model, #subscribe-button, ytd-subscribe-button-renderer';
+  // The channel header (yt-page-header-view-model) renders Subscribe as the
+  // first action of yt-flexible-actions-view-model, a plain button-view-model
+  // with no subscribe-specific element (measured 2026-10-01 on @Fireship and
+  // @Fireship/videos). None of the older names matched it, so +Group and Block
+  // channel never appeared on channel pages.
+  var SUBSCRIBE_BUTTON_SEL = 'yt-page-header-view-model yt-flexible-actions-view-model .ytFlexibleActionsViewModelAction:first-child, ' +
+    'yt-subscribe-button-view-model, #subscribe-button, ytd-subscribe-button-renderer';
 
   // DeArrow title query — extends TITLE_SEL with per-renderer scoping.
   var DEARROW_TITLE_SEL =
@@ -1042,6 +1269,9 @@
     isNestedFeedTile: isNestedFeedTile,
     outermostFeedTile: outermostFeedTile,
     forEachFeedTile: forEachFeedTile,
+    beginScan: beginScan,
+    endScan: endScan,
+    scanMemo: memoTile,
     tileChannelKey: tileChannelKey,
     tileTitle: tileTitle,
     tileChannel: tileChannel,
@@ -1070,6 +1300,8 @@
     playerChapterTitle: playerChapterTitle,
     playerIsLive: playerIsLive,
     PLAYER_CHAPTER_SEL: PLAYER_CHAPTER_SEL,
+    NATIVE_CHAPTER_MARKERS_SEL: NATIVE_CHAPTER_MARKERS_SEL,
+    nativeChapters: nativeChapters,
     AD_STATE_SELECTORS: AD_STATE_SELECTORS,
     isLibraryPage: isLibraryPage,
     isLibrarySurface: isLibrarySurface,
@@ -1153,6 +1385,7 @@
     CONTINUATION_SEL: CONTINUATION_SEL,
     CHANNEL_PAGE_HEADER_SEL: CHANNEL_PAGE_HEADER_SEL,
     SUBSCRIBE_BUTTON_SEL: SUBSCRIBE_BUTTON_SEL,
+    MINI_GUIDE_SEL: MINI_GUIDE_SEL,
     DEARROW_TITLE_SEL: DEARROW_TITLE_SEL,
     COMMENT_THREAD_SEL: COMMENT_THREAD_SEL,
     COMMENT_TEXT_SEL: COMMENT_TEXT_SEL,

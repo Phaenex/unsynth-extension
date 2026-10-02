@@ -226,6 +226,32 @@
   ];
   const HUMAN_PENALTY = 30;
 
+  // TALKING ABOUT AI VOICE TOOLS IS NOT BEING AI-VOICED (2026-10-01).
+  //
+  // "Best AI Voice Generators", "Free Text To Speech Generator AI" and "Top 7
+  // FREE AI Voice Generators" scored 70-100 from their titles alone, and Kevin
+  // Stratvert, a presenter on camera, was hidden by default. The strong terms
+  // ("ai voice", "text to speech") were naming a PRODUCT CATEGORY there, not
+  // describing how the video was made. Two shapes mark that:
+  //   1. the term is followed by a tool noun: "ai voice generator(s)",
+  //      "text to speech app", "voice changer", "tts software"...
+  //   2. a named tool plus a how-to / best / top-N / review framing:
+  //      "How to get the viral AI voice | Elevenlabs".
+  // Such a title can reach at most TOOL_TALK_CAP from keywords, below the 45
+  // default. It never touches the disclosure (returns before this) or the
+  // community AiSList (checked by the caller before any scoring), and a
+  // CHANNEL that names itself after AI voice still counts in full.
+  // "AI voiceover review of the new iPhone" names no tool category, so it is
+  // still an AI-voiced video, as before.
+  const TOOL_NOUN_RE = /\b(?:ai[\s-]?voice(?:\s?over)?s?|text[\s-]to[\s-]speech|tts|ai[\s-]narrat(?:or|ion)|synthetic[\s-]voices?|neural[\s-]voices?|voice)\s+(?:generators?|changers?|tools?|apps?|software|websites?|makers?|clon(?:e|es|ing)|platforms?|models?)\b/i;
+  const TOOL_TALK_FRAMING_RE = /\b(?:best|top\s*\d+|how\s+to|tutorial|review|reviewed|vs\.?|versus|comparison|compared|alternatives?|free|guide|explained)\b/i;
+  const TOOL_TALK_CAP = 30;
+  function isToolTalk(title) {
+    if (!title) return false;
+    if (TOOL_NOUN_RE.test(title)) return true;
+    return !!anyHit(title, TOOL_TERMS) && TOOL_TALK_FRAMING_RE.test(title);
+  }
+
   function anyHit(text, terms) {
     if (!text) return null;
     for (let i = 0; i < terms.length; i++) {
@@ -328,6 +354,14 @@
       }
     }
     if (score < 0) score = 0;
+
+    // Tool-talk: keywords alone may not cross the default threshold. Skipped
+    // when the channel name itself carries a strong term: that is the uploader
+    // describing the channel, not a title naming a product category.
+    if (score > TOOL_TALK_CAP && isToolTalk(title) && !anyHit(channel, STRONG_TERMS)) {
+      score = TOOL_TALK_CAP;
+      reasons.push('About AI voice tools, not made with them (capped at ' + TOOL_TALK_CAP + ')');
+    }
 
     // Halving produces fractions; the score is a user-facing percentage.
     score = Math.min(100, Math.round(score));

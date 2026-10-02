@@ -50,8 +50,8 @@
    * what made the panel look boxed in.
    */
   /**
-   * BESIDE THE VIDEO FIRST (2026-09-22). Owner request: move the guide
-   * beside the video so nobody needs to scroll to reach it. Under the player the
+   * BESIDE THE VIDEO FIRST (2026-09-22). User report: "make the underbar thing a side
+   * thing so it prevents people from needing to scroll". Under the player the
    * guide started at y≈650 on a 900px window — below the fold on arrival. At
    * the top of the related column it sits next to the player at y≈68.
    *
@@ -75,7 +75,7 @@
   }
 
   /**
-   * THEATER (2026-09-23, decided by the expert panel The owner asked for).
+   * THEATER (2026-09-23, decided by an expert review panel).
    *
    * YouTube's theater player fills the window and drops the related column
    * BELOW it (measured: guide at y=991 on 1920x1080). A right-edge drawer
@@ -192,6 +192,22 @@
     } catch (e) { return 'side'; }
   }
 
+  /** Shown unless the user turned it off (dashboard, Watch guide; or the tour). */
+  function tourButtonPref() {
+    try {
+      var core = typeof window !== 'undefined' ? window.UNSYNTH : null;
+      var wg = core && core.settings && core.settings.watchGuide;
+      return !(wg && wg.showTourButton === false);
+    } catch (e) { return true; }
+  }
+
+  function syncTourButton(nowEl) {
+    var b = nowEl && nowEl.querySelector ? nowEl.querySelector('.un-deck-tour-btn') : null;
+    if (!b) return;
+    var hide = !tourButtonPref();
+    if (b.hidden !== hide) b.hidden = hide;
+  }
+
   function findMount(doc, yt) {
     if (!doc || !doc.querySelector) return null;
     var side = placementPref() === 'below' ? null : sideMount(doc, yt);
@@ -236,12 +252,123 @@
    * `.is-side`), and the side panel docks INSIDE the side guide so the doors
    * are its tabs. Tell the panel to re-home whenever the deck moves.
    */
+  /**
+   * ROOT FLAGS INSTEAD OF html:has() (2026-10-01). Five rules styled the
+   * page from the guide's state with `html:has(#un-watch-deck...)`. A :has()
+   * anchored on <html> searches the whole document, and Chrome re-ran it on
+   * every style recalc: the player's progress bar recalcs about once a
+   * frame, so a playing video paid it ~120 times a second. Measured on a
+   * watch page with Chrome's selector stats: the worst of the five cost
+   * ~1.9ms per recalc on its own, and style recalc ran 4.5x the no-extension
+   * cost while playing, 40x while paused. The deck now mirrors its state
+   * onto <html> as two classes and the rules read those. Only flips when the
+   * state changes, so it adds no recalcs of its own.
+   */
+  var ROOT_GUIDE = 'un-has-guide';
+  var ROOT_SIDE_GUIDE = 'un-has-side-guide';
+  function syncRootFlags(doc) {
+    var root = doc && doc.documentElement;
+    if (!root || !root.classList || !doc.getElementById) return;
+    var deck = doc.getElementById(DECK_ID);
+    var shown = !!(deck && deck.classList && !deck.classList.contains('is-empty'));
+    var side = shown && deck.classList.contains('is-side');
+    if (root.classList.contains(ROOT_GUIDE) !== shown) root.classList.toggle(ROOT_GUIDE, shown);
+    if (root.classList.contains(ROOT_SIDE_GUIDE) !== side) root.classList.toggle(ROOT_SIDE_GUIDE, side);
+  }
+
   function markSide(deck, side) {
+    var wasSide = deck.classList && deck.classList.contains('is-side');
     if (deck.classList) deck.classList.toggle('is-side', side);
+    syncRootFlags(deck.ownerDocument);
+    // NOTIFY MODULES THAT THE LAYOUT CHANGED (2026-09-30). desc-digest builds
+    // the chapter/link chip list with a cap that depends on isSide() — if the
+    // deck starts under the video then moves beside it, modules need to
+    // re-render with the uncapped list. A custom event keeps the coupling
+    // one-directional: watch-deck fires, modules subscribe, no module import.
+    if (wasSide !== !!side && deck.dispatchEvent && typeof CustomEvent !== 'undefined') {
+      try { deck.dispatchEvent(new CustomEvent('un-placement-change', { bubbles: true, detail: { side: !!side } })); } catch (_e) { /* isolated context — ignore */ }
+    }
     try {
       var g = typeof window !== 'undefined' ? window : null;
       if (g && g.UNSidePanel && g.UNSidePanel.sync) g.UNSidePanel.sync();
     } catch (e) { /* no panel host on this page */ }
+  }
+
+  /* ==========================================================================
+     LOADING WITHOUT JUMPS OR STALE CONTENT (2026-10-01)
+
+     Measured on three entry paths (direct load, search click, related click):
+     the guide appeared at ~194px, then grew to ~675px a second later when the
+     description arrived, pushing YouTube's related list down two or three
+     times (379px in one step). Worse, on a related click the guide kept the
+     PREVIOUS video's stats for ~0.9s and its chapters for ~1.4s: clickable
+     rows that would seek the new video to the old one's times (DESIGN-STANDARD
+     section 8, "no stale flash under the next video").
+
+     First load: the guide stays out of the layout until its description is
+     ready (contentReady) or PENDING_MS has passed, so it appears once, whole.
+     Video to video: on yt-navigate-start the guide keeps its height and hides
+     everything tied to the old video behind a loading line, until the new
+     description is ready or SWITCH_MS has passed. Same-sized guides then do
+     not move anything at all.
+     ========================================================================== */
+  var PENDING_MS = 1200;
+  var SWITCH_MS = 2500;
+  var pendingTimer = null;
+  var switchTimer = null;
+  // The video the guide described when the switch began. Until the URL moves
+  // off it, a "content ready" is the OLD video's late refresh and must not
+  // reveal the guide.
+  var switchOrigin = null;
+  function urlVid() {
+    try { return new URLSearchParams(location.search).get('v') || ''; } catch (e) { return ''; }
+  }
+  function descDigestOn() {
+    try {
+      var core = typeof window !== 'undefined' ? window.UNSYNTH : null;
+      var mods = core && core.settings && core.settings.modules;
+      return !(mods && mods.descDigest === false);
+    } catch (e) { return true; }
+  }
+  function beginPending(deck) {
+    if (!deck || !deck.classList || !descDigestOn()) return;
+    deck.classList.add('is-pending');
+    if (pendingTimer) clearTimeout(pendingTimer);
+    pendingTimer = setTimeout(function () { endPending(deck.ownerDocument); }, PENDING_MS);
+  }
+  function endPending(doc) {
+    if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
+    var deck = doc && doc.getElementById ? doc.getElementById(DECK_ID) : null;
+    if (deck && deck.classList.contains('is-pending')) {
+      deck.classList.remove('is-pending');
+      fitView(doc);
+    }
+  }
+  function beginSwitch(doc) {
+    var deck = doc && doc.getElementById ? doc.getElementById(DECK_ID) : null;
+    if (!deck || deck.classList.contains('is-pending')) return;
+    var h = deck.getBoundingClientRect ? Math.round(deck.getBoundingClientRect().height) : 0;
+    if (h > 0) deck.style.minHeight = h + 'px';
+    deck.classList.add('is-switching');
+    switchOrigin = urlVid();
+    if (switchTimer) clearTimeout(switchTimer);
+    switchTimer = setTimeout(function () { endSwitch(doc); }, SWITCH_MS);
+  }
+  function endSwitch(doc) {
+    if (switchTimer) { clearTimeout(switchTimer); switchTimer = null; }
+    switchOrigin = null;
+    var deck = doc && doc.getElementById ? doc.getElementById(DECK_ID) : null;
+    if (!deck) return;
+    deck.classList.remove('is-switching');
+    deck.style.minHeight = '';
+    fitView(doc);
+  }
+  /** The description for the current video has rendered (or there is none): show the guide. */
+  function contentReady(doc) {
+    doc = doc || (typeof document !== 'undefined' ? document : null);
+    endPending(doc);
+    if (switchOrigin !== null && switchOrigin && urlVid() === switchOrigin) return;
+    endSwitch(doc);
   }
 
   /**
@@ -281,6 +408,7 @@
     deck = doc.createElement('div');
     deck.id = DECK_ID;
     deck.className = 'un-watch-deck';
+    beginPending(deck);
     markSide(deck, !!mount.side);
     deck.setAttribute('role', 'region');
     deck.setAttribute('aria-label', 'Unsynth video details');
@@ -301,7 +429,7 @@
    *
    * Every module was trusted to call syncEmpty() after filling its slot, and
    * dislike-restore called it BEFORE appending the stats. On a full profile a
-   * later module's sync repaired that by accident; on The owner's profile nothing
+   * later module's sync repaired that by accident; on a reduced-module profile nothing
    * came later, so the Stats slot held its content under display:none and the
    * whole guide showed as an empty strip (found in his browser, reproduced by
    * e2e/deck-empty-sync.spec.js). Watching the bodies means no module has to
@@ -312,7 +440,7 @@
     if (!deck || deck.__unBodiesObs || typeof MutationObserver === 'undefined') return;
     // Synced directly in the callback, NOT deferred to requestAnimationFrame.
     // The first version used rAF, and rAF does not run in a hidden tab:
-    // measured in the owner's browser, a background tab kept the guide empty
+    // measured in a user browser, a background tab kept the guide empty
     // ("raf did NOT run within 2s", visibilityState hidden) until it was
     // shown. The observer already batches a burst of mutations into one call.
     // Targets are the slot (modules may append straight into it before
@@ -472,6 +600,7 @@
         if (area !== 'local' || !changes[COLLAPSE_KEY]) return;
         _collapsed = Object.assign({}, DEFAULT_COLLAPSED, changes[COLLAPSE_KEY].newValue || {});
         applyCollapsed(typeof document !== 'undefined' ? document : null, _collapsed);
+        applyGroupFolds(typeof document !== 'undefined' ? document : null, _collapsed);
       });
       _watchingStorage = true;
     } catch (e) { /* no extension context */ }
@@ -546,6 +675,22 @@
       slotEl.appendChild(body);
     }
     return body;
+  }
+
+  // Folded chapter / link groups share the slots' store, keyed "pv:<group>",
+  // so they sync across tabs the same way. Missing means open.
+  function groupFoldKey(name) { return 'pv:' + name; }
+  function applyGroupFolds(doc, state) {
+    doc = doc || (typeof document !== 'undefined' ? document : null);
+    var deck = doc && doc.getElementById ? doc.getElementById(DECK_ID) : null;
+    if (!deck) return;
+    var rows = deck.querySelectorAll('.un-deck-pv-row[data-group]');
+    for (var i = 0; i < rows.length; i++) {
+      var head = rows[i].querySelector(':scope > .un-deck-pv-heading.is-toggle');
+      var fold = !!(head && state && state[groupFoldKey(rows[i].dataset.group)]);
+      rows[i].classList.toggle('is-folded', fold);
+      if (head) head.setAttribute('aria-expanded', fold ? 'false' : 'true');
+    }
   }
 
   function applyCollapsed(doc, state) {
@@ -721,21 +866,94 @@
       byName[g].items.push(it);
     });
     groups.forEach(function (grp) {
+      if (grp.name === 'Chapters') {
+        grp.items = grp.items
+          .map(function (item, index) { return { item: item, index: index }; })
+          .sort(function (a, b) {
+            var as = typeof a.item.sec === 'number' ? a.item.sec : Infinity;
+            var bs = typeof b.item.sec === 'number' ? b.item.sec : Infinity;
+            return as === bs ? a.index - b.index : as - bs;
+          })
+          .filter(function (entry, index, sorted) {
+            return index === 0 || typeof entry.item.sec !== 'number' || entry.item.sec !== sorted[index - 1].item.sec;
+          })
+          .map(function (entry) { return entry.item; });
+      }
       var row = doc.createElement('div');
       row.className = 'un-deck-pv-row';
+      if (grp.name) row.dataset.group = grp.name;
       if (grp.name) {
+        // FOLDABLE GROUPS BESIDE THE VIDEO (2026-10-01). User report: "THE CHAPTERS
+        // IN THE SIDE BAR SHOULD BE COLLAPSABLE AS WELL", like the rows above
+        // them. Beside the video the heading is a toggle; under the video the
+        // groups are one line of chips each and stay a plain label.
+        var foldable = deck.classList.contains('is-side') && !deck.classList.contains('is-compact');
+        var heading = doc.createElement(foldable ? 'button' : 'div');
+        heading.className = 'un-deck-pv-heading';
+        if (foldable) {
+          heading.type = 'button';
+          heading.classList.add('is-toggle');
+          heading.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            readCollapsed(function (state) {
+              var next = Object.assign({}, state);
+              next[groupFoldKey(grp.name)] = !row.classList.contains('is-folded');
+              writeCollapsed(next);
+              applyGroupFolds(doc, next);
+              fitView(doc);
+            });
+          });
+        }
         var lab = doc.createElement('span');
         lab.className = 'un-deck-pv-lab';
         lab.textContent = grp.name;
-        row.appendChild(lab);
+        heading.appendChild(lab);
+        if (grp.name === 'Chapters') {
+          var count = doc.createElement('span');
+          count.className = 'un-deck-pv-count';
+          count.textContent = String(grp.items.length);
+          count.setAttribute('aria-label', grp.items.length + (grp.items.length === 1 ? ' chapter' : ' chapters'));
+          heading.appendChild(count);
+        }
+        if (foldable) {
+          var caret = doc.createElement('span');
+          caret.className = 'un-deck-caret';
+          caret.setAttribute('aria-hidden', 'true');
+          heading.appendChild(caret);
+        }
+        row.appendChild(heading);
       }
       var list = doc.createElement('div');
       list.className = 'un-deck-pv-list';
       if (grp.name) list.setAttribute('aria-label', grp.name);
+      // The toggle names the region it folds, as the rows' headers do.
+      if (grp.name && heading && heading.tagName === 'BUTTON') {
+        list.id = 'un-deck-pv-' + grp.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        heading.setAttribute('aria-controls', list.id);
+      }
       row.appendChild(list);
       host.appendChild(row);
       fillGroup(list, grp.items, grp.name ? (opts.caps && opts.caps[grp.name]) || opts.cap : opts.cap);
+      if (grp.name === 'Chapters') wireChapterKeys(list);
     });
+    if (_collapsed) applyGroupFolds(doc, _collapsed);
+    else readCollapsed(function (state) { applyGroupFolds(doc, state); });
+
+    function wireChapterKeys(list) {
+      list.addEventListener('keydown', function (ev) {
+        if (!/^(ArrowUp|ArrowDown|Home|End)$/.test(ev.key || '')) return;
+        var chapters = list.querySelectorAll('.un-deck-chip:not(.un-deck-chip-more)');
+        if (!chapters.length) return;
+        var active = doc.activeElement;
+        var index = Array.prototype.indexOf.call(chapters, active);
+        var next = ev.key === 'Home' ? 0 : ev.key === 'End' ? chapters.length - 1 : index + (ev.key === 'ArrowUp' ? -1 : 1);
+        next = Math.max(0, Math.min(chapters.length - 1, next));
+        if (chapters[next] && chapters[next].focus) {
+          ev.preventDefault();
+          chapters[next].focus();
+        }
+      });
+    }
 
     function fillGroup(list, groupItems, capN) {
       var cap = typeof capN === 'number' && capN > 0 ? capN : groupItems.length;
@@ -780,6 +998,7 @@
         node = doc.createElement('span');
       }
       node.className = 'un-deck-chip' + (item.sub ? ' has-sub' : '');
+      if (typeof item.sec === 'number' && isFinite(item.sec)) node.dataset.start = String(item.sec);
       if (item.sub) {
         var t = doc.createElement('span');
         t.className = 'un-deck-chip-t';
@@ -789,6 +1008,12 @@
         s.textContent = item.sub;
         node.appendChild(t);
         node.appendChild(s);
+        if (typeof item.duration === 'string' && item.duration) {
+          var d = doc.createElement('span');
+          d.className = 'un-deck-chip-d';
+          d.textContent = item.duration;
+          node.appendChild(d);
+        }
       } else {
         node.textContent = item.label;
       }
@@ -844,6 +1069,7 @@
     if (renderMore(doc) > 0) filled++;
     if (renderNow(doc)) filled++;
     deck.classList.toggle('is-empty', filled === 0);
+    syncRootFlags(doc);
     fitView(doc);
   }
 
@@ -851,14 +1077,15 @@
     doc = doc || (typeof document !== 'undefined' ? document : null);
     var deck = doc && doc.getElementById ? doc.getElementById(DECK_ID) : null;
     if (deck && deck.parentNode) deck.parentNode.removeChild(deck);
+    syncRootFlags(doc);
   }
 
   /* ==========================================================================
      MORE TOOLS AND NOW (2026-09-24)
 
-     Owner report, on a profile with most watch-page modules off: the guide
-     showed only a time and stats; asked for it to show more at a glance and
-     say what the features are. Every row was owned by a module,
+     A user, on their own profile (most watch-page modules off): "i just see a
+     time and stats right now", and asked for the menu to "show more at a
+     glance" and say what the features are. Every row was owned by a module,
      so a switched-off module left no trace: the guide could not show what it
      does not have, and nothing said Fact check, Ask AI, Forge or Chapters
      existed. The guide now names every watch-page feature that is off, says
@@ -1062,7 +1289,11 @@
    */
   function nowText(v, opts) {
     opts = opts || {};
-    if (!v || opts.ad) return null;
+    if (!v) return null;
+    // During an ad the player's numbers are the ad's, so say so instead of
+    // timing it. The row stays (with Tour): hiding it shrank the guide ~40 px
+    // for the ad and grew it back after (measured 2026-10-01: 605 vs 649 px).
+    if (opts.ad) return { live: false, ad: true, chapter: '', text: 'Ad playing', pct: 0 };
     if (opts.live) return { live: true, text: 'Live', chapter: '' };
     var dur = v.duration;
     if (!isFinite(dur) || dur <= 0) return null;
@@ -1105,12 +1336,44 @@
       el.setAttribute('role', 'status');
       el.setAttribute('aria-live', 'off');
       el.innerHTML = '<span class="un-deck-now-dot" aria-hidden="true"></span>' +
-        '<span class="un-deck-now-ch"></span><span class="un-deck-now-t"></span>' +
+        '<span class="un-deck-now-ch"></span>' +
+        '<span class="un-deck-now-nav" hidden>' +
+          '<button class="un-deck-now-step is-prev" type="button" aria-label="Previous chapter" title="Previous chapter">◀</button>' +
+          '<button class="un-deck-now-step is-next" type="button" aria-label="Next chapter" title="Next chapter">▶</button>' +
+        '</span>' +
+        '<span class="un-deck-now-t"></span>' +
+        '<button class="un-deck-tour-btn" type="button" title="Interactive Feature Tour & Help" aria-label="Feature tour">Tour</button>' +
         '<span class="un-deck-now-bar" aria-hidden="true"><span class="un-deck-now-fill"></span></span>';
+      var tourBtn = el.querySelector('.un-deck-tour-btn');
+      if (tourBtn) {
+        tourBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          try {
+            var gt = typeof window !== 'undefined' ? window.UNGuidedTour : null;
+            if (gt && typeof gt.startTour === 'function') gt.startTour(true);
+          } catch (err) {}
+        });
+      }
+      var prevBtn = el.querySelector('.un-deck-now-step.is-prev');
+      var nextBtn = el.querySelector('.un-deck-now-step.is-next');
+      if (prevBtn) {
+        prevBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          stepChapter(deck, -1);
+        });
+      }
+      if (nextBtn) {
+        nextBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          stepChapter(deck, 1);
+        });
+      }
       deck.insertBefore(el, deck.firstChild);
     }
+    syncTourButton(el);
     el.hidden = false;
     el.classList.toggle('is-live', !!info.live);
+    el.classList.toggle('is-ad', !!info.ad);
     var ch = el.querySelector('.un-deck-now-ch');
     var t = el.querySelector('.un-deck-now-t');
     var fill = el.querySelector('.un-deck-now-fill');
@@ -1119,14 +1382,46 @@
     // while the list (from the chapter starts) marked "Battery Life". The
     // list's current row names the chapter when there is a list; YouTube's
     // label is the fallback when there is none.
-    var cur = markCurrentChapter(deck, v && !info.live ? v.currentTime : null);
+    var cur = info.ad ? null : markCurrentChapter(deck, v && !info.live ? v.currentTime : null);
     var curName = cur ? ((cur.querySelector('.un-deck-chip-s') || {}).textContent || '') : '';
-    var chapter = curName || info.chapter;
+    var chapter = info.ad ? '' : (curName || info.chapter);
     if (ch.textContent !== chapter) ch.textContent = chapter;
     ch.hidden = !chapter;
+    var nav = el.querySelector('.un-deck-now-nav');
+    if (nav) {
+      var chips = deck.querySelectorAll('.un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip:not(.un-deck-chip-more)');
+      if (chips.length > 1 && !info.live && !info.ad) {
+        nav.hidden = false;
+        var curIdx = -1;
+        for (var ci = 0; ci < chips.length; ci++) {
+          if (chips[ci] === cur) { curIdx = ci; break; }
+        }
+        var pBtn = nav.querySelector('.is-prev');
+        var nBtn = nav.querySelector('.is-next');
+        if (pBtn) pBtn.disabled = curIdx <= 0;
+        if (nBtn) nBtn.disabled = curIdx >= chips.length - 1;
+      } else {
+        nav.hidden = true;
+      }
+    }
     if (t.textContent !== info.text) t.textContent = info.text;
     if (fill) fill.style.width = info.live ? '100%' : info.pct.toFixed(1) + '%';
     return true;
+  }
+
+  function stepChapter(deck, dir) {
+    if (!deck) return;
+    var chips = deck.querySelectorAll('.un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip:not(.un-deck-chip-more)');
+    if (!chips.length) return;
+    var cur = deck.querySelector('.un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip.is-current');
+    var idx = -1;
+    for (var i = 0; i < chips.length; i++) {
+      if (chips[i] === cur) { idx = i; break; }
+    }
+    var targetIdx = idx === -1 ? (dir > 0 ? 0 : chips.length - 1) : idx + dir;
+    if (targetIdx >= 0 && targetIdx < chips.length) {
+      chips[targetIdx].click();
+    }
   }
 
   /**
@@ -1142,6 +1437,23 @@
     if (parts.length < 2 || parts.some(function (n) { return isNaN(n); })) return null;
     return parts.reduce(function (acc, n) { return acc * 60 + n; }, 0);
   }
+  // Scrolls the chip's own scrolling view (the side guide's .un-deck-desc) so
+  // the chip is visible, and nothing else: never the page.
+  function scrollChipIntoView(chip) {
+    try {
+      var view = chip.closest ? chip.closest('.un-deck-desc') : null;
+      if (!view || view.scrollHeight <= view.clientHeight + 1) return;
+      var vr = view.getBoundingClientRect();
+      var cr = chip.getBoundingClientRect();
+      var target = null;
+      if (cr.top < vr.top) target = view.scrollTop + (cr.top - vr.top) - 8;
+      else if (cr.bottom > vr.bottom) target = view.scrollTop + (cr.bottom - vr.bottom) + 8;
+      if (target === null) return;
+      if (view.scrollTo) view.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+      else view.scrollTop = Math.max(0, target);
+    } catch (_e) { /* detached node — ignore */ }
+  }
+
   function markCurrentChapter(deck, t) {
     var chips = deck.querySelectorAll('.un-deck-pv-list[aria-label="Chapters"] > .un-deck-chip:not(.un-deck-chip-more)');
     if (!chips.length) return null;
@@ -1149,17 +1461,56 @@
     if (typeof t === 'number' && isFinite(t)) {
       for (var i = 0; i < chips.length; i++) {
         var lab = chips[i].querySelector('.un-deck-chip-t');
-        var s = chipSeconds(lab ? lab.textContent : chips[i].textContent);
+        var dataStart = chips[i].dataset ? Number(chips[i].dataset.start) : NaN;
+        var s = isFinite(dataStart) ? dataStart : chipSeconds(lab ? lab.textContent : chips[i].textContent);
         if (s != null && s <= t + 0.25) current = chips[i];
       }
     }
     for (var j = 0; j < chips.length; j++) {
       var on = chips[j] === current;
-      if (chips[j].classList.contains('is-current') !== on) chips[j].classList.toggle('is-current', on);
+      var wasOn = chips[j].classList.contains('is-current');
+      if (wasOn !== on) chips[j].classList.toggle('is-current', on);
       if (on) chips[j].setAttribute('aria-current', 'true');
       else if (chips[j].hasAttribute('aria-current')) chips[j].removeAttribute('aria-current');
+      // SCROLL THE ACTIVE CHAPTER INTO VIEW (2026-09-30). In side mode the
+      // chapter list scrolls inside .un-deck-desc; without this the active
+      // chapter could be above or below the visible window while the Now bar
+      // showed a different name. Only scroll when the chapter changes (wasOn
+      // false, on true) to avoid fighting a user who has manually scrolled.
+      //
+      // Inside the view ONLY (2026-10-02). scrollIntoView scrolls every
+      // scrollable ancestor, the page included: a chapter change while you
+      // read the comments smooth-scrolled the page back up to the guide
+      // (measured 1200 -> 480 px), which also undocked the mini player
+      // (scroll-dock-and-queue.spec, 3 of 3 runs).
+      if (on && !wasOn) scrollChipIntoView(chips[j]);
+      if (on && chips[j].style && chips[j].style.setProperty) {
+        var start = chips[j].dataset ? Number(chips[j].dataset.start) : NaN;
+        var nextStart = j + 1 < chips.length && chips[j + 1].dataset ? Number(chips[j + 1].dataset.start) : NaN;
+        var video = deck.ownerDocument && deck.ownerDocument.querySelector ? deck.ownerDocument.querySelector('#movie_player video') : null;
+        var end = isFinite(nextStart) ? nextStart : (video && isFinite(video.duration) ? video.duration : NaN);
+        var pct = isFinite(start) && isFinite(end) && end > start ? Math.max(0, Math.min(100, ((t - start) / (end - start)) * 100)) : 0;
+        chips[j].style.setProperty('--un-chapter-progress', pct.toFixed(1) + '%');
+      } else if (!on && chips[j].style && chips[j].style.removeProperty) {
+        chips[j].style.removeProperty('--un-chapter-progress');
+      }
     }
     return current;
+  }
+
+  /**
+   * TRUE WHEN THE DECK IS SIDE-MOUNTED AND NOT COMPACT (2026-09-30).
+   *
+   * Exposes the layout state to modules that render INTO the deck (desc-digest)
+   * so they can adapt without querying the DOM themselves. The canonical answer
+   * is the deck's own class list: is-side without is-compact means the desc
+   * slot is a scrollable full-height column, not a wrapping chip row.
+   */
+  function isSide(doc) {
+    doc = doc || (typeof document !== 'undefined' ? document : null);
+    var deck = doc && doc.getElementById ? doc.getElementById(DECK_ID) : null;
+    if (!deck) return false;
+    return deck.classList.contains('is-side') && !deck.classList.contains('is-compact');
   }
 
   /**
@@ -1198,7 +1549,7 @@
   /**
    * RE-DECIDE THE POSITION WHEN THE LAYOUT CHANGES (2026-09-24).
    *
-   * Owner report: the guide was under the player again. Reproduced: homepage, click a
+   * User report: "why is it under the player again?" Reproduced: homepage, click a
    * video. The guide was built while the watch layout was still hidden, so
    * the side column measured too narrow, it took the under-player fallback,
    * and nothing asked again: it stayed in #above-the-fold with the related
@@ -1248,6 +1599,10 @@
     var pb = player.getBoundingClientRect().bottom;
     var vt = view.getBoundingClientRect().top;
     if (!(pb > 0) || !(vt > 0)) return;
+    // 240, not 360 (2026-10-02): a 360 px floor, raised without a recorded
+    // reason in 1.2.13, pushed the guide 47-80 px below the player whenever the
+    // runtime strip carries segments (734 px at 1680x1050 against a 700 px
+    // budget, runtime-strip-ad-guard.spec). The chapter list can fold now.
     var avail = Math.max(240, Math.floor(pb - vt - 12));
     var next = avail + 'px';
     if (view.style.maxHeight !== next) view.style.maxHeight = next;
@@ -1350,6 +1705,32 @@
       timer = setTimeout(attempt, 300);
     };
     document.addEventListener('yt-navigate-finish', kick);
+    // Fires on the click, before the URL or the player change: the earliest
+    // moment the guide's content stops describing the video on screen.
+    // A navigation to the video already playing (a ?t= link, a playlist
+    // re-click) never refreshes the guide, so it would sit on the loading line
+    // for the whole SWITCH_MS. Skip it when the target is known, and end it at
+    // navigate-finish when the video turned out not to change.
+    var curVid = urlVid;
+    var switchFromVid = null;
+    document.addEventListener('yt-navigate-start', function (e) {
+      var d = e && e.detail;
+      var target = d && d.endpoint && d.endpoint.watchEndpoint ? d.endpoint.watchEndpoint.videoId : '';
+      var from = curVid();
+      if (target && from && target === from) return;
+      switchFromVid = from;
+      beginSwitch(document);
+    });
+    // Without the description module nothing calls contentReady(), so the
+    // switch would sit on its 2.5 s cap and keep the new video's stats hidden
+    // (found 2026-10-01 in review of this code). Then the new page itself is
+    // the signal: YouTube has finished navigating, and every module has
+    // already dropped the previous video's values in its onNavigate.
+    document.addEventListener('yt-navigate-finish', function () {
+      var same = switchFromVid !== null && curVid() === switchFromVid;
+      switchFromVid = null;
+      if (same || !descDigestOn()) setTimeout(function () { endSwitch(document); }, same ? 0 : 300);
+    });
     watchPlacement();
     try {
       if (chrome && chrome.storage && chrome.storage.onChanged) {
@@ -1359,8 +1740,20 @@
             // core reloads settings on the same event; move after it has.
             setTimeout(replace, 250);
             setTimeout(replace, 1200);
+            // A paused video fires no media events, so Now would not re-render
+            // on its own to show or hide the Tour button.
+            setTimeout(function () { renderNow(document); }, 250);
+            setTimeout(function () { renderNow(document); }, 1200);
           }
           if (!changes.modules) return;
+          // A feature switched OFF starts over as a plain "Turn on" row. The
+          // renderMore cleanup only ran if a render happened while it was on,
+          // and when a fast load let "off" arrive first the row came back stuck
+          // on a disabled "Turning on..." (guide-more-tools e2e, 2026-10-01).
+          var nextMods = changes.modules.newValue || {};
+          Object.keys(_enabling).forEach(function (k) {
+            if (nextMods[k] === false) { delete _enabling[k]; delete _moreErr[k]; }
+          });
           // core reloads settings on the same event; render after it has.
           setTimeout(function () { syncEmpty(document); }, 250);
           setTimeout(function () { syncEmpty(document); }, 1200);
@@ -1381,6 +1774,7 @@
     syncCollapse: syncCollapse,
     setSummary: setSummary,
     setPreview: setPreview,
+    contentReady: contentReady,
     setAction: setAction,
     setLauncher: setLauncher,
     toggleSlot: toggleSlot,
@@ -1393,6 +1787,7 @@
     renderNow: renderNow,
     placementPref: placementPref,
     fitView: fitView,
+    isSide: isSide,
     remove: remove
   };
 

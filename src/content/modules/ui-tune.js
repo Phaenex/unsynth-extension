@@ -72,9 +72,13 @@
   // ---- JS-DOM behavior ----
   function applyLogoRedirect() {
     if (!ui.logoToSubscriptions) return;
-    document.querySelectorAll(YT ? YT.TOPBAR_LOGO_SEL : 'a#logo').forEach((a) => {
+    // The masthead and the guide drawer (it carries its own logo), not the
+    // whole page. Same fallback as guideRoots.
+    const found = [document.getElementById('masthead'), document.getElementById('guide')].filter(Boolean);
+    const roots = found.length ? found : [document];
+    roots.forEach((root) => root.querySelectorAll(YT ? YT.TOPBAR_LOGO_SEL : 'a#logo').forEach((a) => {
       if (a.getAttribute('href') !== '/feed/subscriptions') a.setAttribute('href', '/feed/subscriptions');
-    });
+    }));
   }
   function blockStillWatching() {
     if (!ui.blockStillWatching) return;
@@ -359,7 +363,7 @@
       osd.setAttribute('role', 'status');
       osd.setAttribute('aria-live', 'polite');
       osd.innerHTML =
-        '<span class="un-vol-osd-ico" aria-hidden="true">🔊</span>' +
+        '<span class="un-vol-osd-ico un-ico" data-ico="vol-high" aria-hidden="true"></span>' +
         '<span class="un-vol-osd-bar"><span class="un-vol-osd-fill"></span></span>' +
         '<span class="un-vol-osd-pct"></span>';
       document.body.appendChild(osd);
@@ -371,10 +375,10 @@
     // keeps the HUD working even if volume-level.js failed to load first.
     const VL = typeof UNVolumeLevel !== 'undefined' ? UNVolumeLevel : null;
     const fillPct = VL ? VL.osdFillPercent(pct) : Math.max(0, Math.min(100, pct));
-    const st = VL ? VL.osdState(pct) : { muted: pct === 0, over: pct > 100, icon: pct === 0 ? '🔇' : pct < 50 ? '🔉' : '🔊' };
+    const st = VL ? VL.osdState(pct) : { muted: pct === 0, over: pct > 100, icon: pct === 0 ? 'vol-mute' : pct < 50 ? 'vol-low' : 'vol-high' };
     if (fill) fill.style.width = fillPct + '%';
     if (pctEl) pctEl.textContent = pct + '%';
-    if (ico) ico.textContent = st.icon;
+    if (ico) ico.setAttribute('data-ico', st.icon);
     osd.classList.toggle('muted', st.muted);
     osd.classList.toggle('over', st.over);
     // Anchor it beside the cursor (offset down-right), clamped to the viewport.
@@ -409,11 +413,20 @@
     scrollVolAttached = false;
   }
 
+  // Both guides, not the whole page: run every scan, the document-wide walk
+  // cost ~55 ms per 30 s on a long feed (2026-10-01). Falls back to the
+  // document if neither container is found, so drifted markup still works.
+  function guideRoots() {
+    var roots = [document.getElementById('guide'), (YT && YT.MINI_GUIDE_SEL ? document.querySelector(YT.MINI_GUIDE_SEL) : null)].filter(Boolean);
+    return roots.length ? roots : [document];
+  }
   function tagShortsGuideEntries() {
     if (!ui.hideShorts) return;
-    document.querySelectorAll(YT ? YT.GUIDE_SHORTS_LINK_SEL : 'none').forEach(function (a) {
-      var entry = a.closest(YT ? YT.GUIDE_ENTRY_SEL : 'none');
-      if (entry) entry.classList.add('un-shorts-nav');
+    guideRoots().forEach(function (root) {
+      root.querySelectorAll(YT ? YT.GUIDE_SHORTS_LINK_SEL : 'none').forEach(function (a) {
+        var entry = a.closest(YT ? YT.GUIDE_ENTRY_SEL : 'none');
+        if (entry) entry.classList.add('un-shorts-nav');
+      });
     });
   }
 

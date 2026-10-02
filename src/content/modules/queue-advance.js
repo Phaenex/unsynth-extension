@@ -1449,7 +1449,7 @@
     shuffleBtn.type = 'button';
     shuffleBtn.title = 'Shuffle queue';
     shuffleBtn.setAttribute('aria-label', shuffleBtn.title);
-    shuffleBtn.textContent = '🔀 Shuffle';
+    shuffleBtn.append(unIco('shuffle'), labelSpan('Shuffle'));
     shuffleBtn.addEventListener('click', function (e) {
       e.stopPropagation();
       var rankFn = (window.UNTasteRank && window.UNTasteRank.scoreItem) || null;
@@ -1464,7 +1464,7 @@
     savePlBtn.type = 'button';
     savePlBtn.title = 'Save entire queue as a YouTube playlist';
     savePlBtn.setAttribute('aria-label', savePlBtn.title);
-    savePlBtn.textContent = '📁 Save as playlist';
+    savePlBtn.append(unIco('folder'), labelSpan('Save as playlist'));
     savePlBtn.addEventListener('click', function (e) {
       e.stopPropagation();
       var defaultTitle = 'Queue ' + new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -1906,6 +1906,8 @@
   // onto a second line (via CSS line-clamp) instead of hard-truncating —
   // the old version was plain textContent with white-space:nowrap, which
   // is why playlist names with more than ~20 characters read as cut off.
+  function unIco(name) { var s = document.createElement('span'); s.className = 'un-ico'; s.setAttribute('data-ico', name); s.setAttribute('aria-hidden', 'true'); return s; }
+  function labelSpan(text) { var s = document.createElement('span'); s.className = 'un-ico-label'; s.textContent = text; return s; }
   function plMenuItemRow(cls, icon, name, onClick) {
     var opt = document.createElement('button');
     opt.className = 'un-qf-pl-item' + (cls ? ' ' + cls : '');
@@ -1914,7 +1916,10 @@
     opt.setAttribute('aria-label', opt.title);
     var iconEl = document.createElement('span');
     iconEl.className = 'un-qf-pl-item-icon';
-    iconEl.textContent = icon;
+    // A line icon by name ('clock', 'folder', 'check'), or a plain text glyph
+    // (the busy ellipsis). One icon set: no emoji (DESIGN-STANDARD 11).
+    if (/^[a-z-]+$/.test(icon || '')) iconEl.appendChild(unIco(icon));
+    else iconEl.textContent = icon;
     var labelEl = document.createElement('span');
     labelEl.className = 'un-qf-pl-item-label';
     labelEl.textContent = name;
@@ -2068,7 +2073,7 @@
         menu.appendChild(headTitle);
 
         // 1. Watch Later Option
-        menu.appendChild(plMenuItemRow('wl', '🕒', 'Watch Later', function () {
+        menu.appendChild(plMenuItemRow('wl', 'clock', 'Watch Later', function () {
           menu.remove();
           chrome.runtime.sendMessage({ type: 'UNSYNTH/YT/WATCH_LATER_ADD', videoIds: [item.id] }, function (r) {
             // Both branches used to say "Added", so a failed write was
@@ -2124,7 +2129,7 @@
           plMap.forEach(function (name, plId) {
             var isIn = !!memberIds[plId];
             var busy = !!busyIds[plId];
-            var icon = busy ? '⋯' : isIn ? '✓' : '📁';
+            var icon = busy ? '⋯' : isIn ? 'check' : 'folder';
             var label = busy ? name : isIn ? name + ' — remove' : name;
             var row = plMenuItemRow('', icon, label, function () {
               if (busyIds[plId]) return;
