@@ -293,6 +293,7 @@
   // extension's own origin. Checking e.source === window, as the content-script
   // listeners do, would reject the real sender and silently break the refresh.
   window.addEventListener('message', (e) => {
+    // Only the dashboard that embeds this page (same extension origin) may ask for a refresh.
     if (e.source !== window.parent || e.origin !== location.origin) return;
     if (e.data && e.data.unsynthStatsRefresh) loadAndRender();
   });

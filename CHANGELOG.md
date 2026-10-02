@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.0] - 2026-10-02 (build 1.2.20)
+
+A patch to the 1.0 download. Still called 1.0.
+
+- **The leftover video-stream helper is removed.** Unsynth stopped downloading
+  videos in 1.2.0, and 1.2.1 deleted a small helper in the page bridge that could
+  look up YouTube's raw video-stream addresses. Nothing in Unsynth called it, but a
+  script on a YouTube page could have asked it. The first 1.0 download (build
+  1.2.19) still carried it by mistake. This build does not.
+
+Update the usual way: extract the new ZIP over your Unsynth folder, reload
+Unsynth on the extensions page, then reload your YouTube tabs. Settings are kept.
+
 ## [1.0] - 2026-10-02 (build 1.2.19)
 
 Unsynth 1.0. The version number shown is 1.0; the build number underneath
