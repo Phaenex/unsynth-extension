@@ -1,0 +1,50 @@
+name: Broken after a YouTube change
+description: A feature that worked has stopped, or Unsynth says a page changed and paused something.
+title: "[YouTube changed] "
+labels: ["youtube-drift"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        YouTube changes its page markup without notice and that is the most common way a feature breaks. Unsynth checks for this itself: when the elements a feature needs are gone it pauses that feature and shows a small note on the page. Those notes, and the report block, are what fixes this fastest.
+  - type: input
+    id: feature
+    attributes:
+      label: Which feature
+      placeholder: "SponsorBlock skips / the watch guide / watched marks on the home feed / …"
+    validations:
+      required: true
+  - type: input
+    id: since
+    attributes:
+      label: Since when
+      description: Roughly. "Today", "about a week", "after the 1.4.9 update".
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Page address
+      placeholder: https://www.youtube.com/…
+    validations:
+      required: true
+  - type: textarea
+    id: note
+    attributes:
+      label: Any note Unsynth showed
+      description: 'The exact text, if a note like "YouTube changed this page, so … is paused" appeared. Say "none" otherwise.'
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Unsynth report
+      description: "Dashboard › Account › Local diagnostics › **Copy report for an issue**, then paste (on a version without that button, **Copy diagnostics**). It lists the elements the extension could not find on the page you had open, which is usually the answer."
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: shots
+    attributes:
+      label: Screenshot of the page
+      description: The whole YouTube page, so the new layout is visible.
