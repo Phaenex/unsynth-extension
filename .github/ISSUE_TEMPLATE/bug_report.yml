@@ -1,0 +1,67 @@
+name: Bug
+description: Something does the wrong thing, or nothing.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks. The report block below is what makes most bugs fixable in one go: in Unsynth's dashboard, **Account › Local diagnostics › Copy report for an issue**, then paste it here. It holds the version, your browser, which features are on, and what the extension itself noticed. It never includes keys, tokens or your history.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: One or two sentences. What you did, what you expected, what you saw instead.
+      placeholder: "Pressed +Q on a search result; the toast said Added, but the queue did not change."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to see it
+      description: Numbered, from a fresh YouTube tab if you can.
+      placeholder: |
+        1. Open https://www.youtube.com/results?search_query=…
+        2. Hover the first video, press +Q
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Page address
+      description: The YouTube page it happens on (a video, a search, a channel, a playlist).
+      placeholder: https://www.youtube.com/watch?v=…
+    validations:
+      required: true
+  - type: dropdown
+    id: survives
+    attributes:
+      label: Does it survive a reload?
+      description: Reload Unsynth at chrome://extensions, then reload the YouTube tab, then try again.
+      options:
+        - "Yes, still happens after both reloads"
+        - "No, a reload fixes it"
+        - "Not tried"
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Unsynth report
+      description: "Dashboard › Account › Local diagnostics › **Copy report for an issue**, then paste. On a version without that button, **Copy diagnostics** will do."
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: shots
+    attributes:
+      label: Screenshot
+      description: Drag an image here when layout matters. Both themes if it is a colour problem.
+  - type: checkboxes
+    id: nosecrets
+    attributes:
+      label: Nothing secret attached
+      options:
+        - label: I have not pasted API keys, OAuth secrets or tokens, exported history, or a browser profile.
+          required: true
