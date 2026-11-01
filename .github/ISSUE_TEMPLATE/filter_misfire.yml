@@ -1,0 +1,59 @@
+name: AI filter miss or false catch
+description: The AI filter hid a real person, or let an AI channel through.
+title: "[AI filter] "
+labels: ["ai-filter"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The filter reads what YouTube shows (the community AiSList, AI-voice wording in titles, YouTube's own "altered or synthetic" label); it cannot see inside a video, so it will be wrong sometimes. You can fix a single channel yourself at once: right-click any of its videos and pick **Mark this channel as AI** or **Not AI**. This form is for the pattern behind the mistake, so the next person is spared it.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What went wrong
+      options:
+        - "It hid, blurred or labelled a real person"
+        - "It let an AI-narrated or AI-voice channel through"
+    validations:
+      required: true
+  - type: input
+    id: channel
+    attributes:
+      label: Channel link
+      placeholder: https://www.youtube.com/@…
+    validations:
+      required: true
+  - type: input
+    id: video
+    attributes:
+      label: One video that shows it
+      placeholder: https://www.youtube.com/watch?v=…
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why you are sure
+      description: For a real person, what makes it obvious (a face on camera, a known name). For a miss, what gives the AI voice away.
+    validations:
+      required: true
+  - type: dropdown
+    id: reason
+    attributes:
+      label: What the badge or hidden-list said, if you saw it
+      description: In label mode the badge names the reason; in hide mode the AI chip at the top lists hidden channels with the reason.
+      options:
+        - "On the community list"
+        - "Title read as AI-generated"
+        - "Thumbnail looked AI-generated"
+        - "Channel name matched a keyword"
+        - "YouTube's own synthetic label"
+        - "Did not see a reason"
+  - type: textarea
+    id: report
+    attributes:
+      label: Unsynth report
+      description: "Dashboard › Account › Local diagnostics › **Copy report for an issue**, then paste (on a version without that button, **Copy diagnostics**). It shows the filter mode and which checks are on."
+      render: markdown
+    validations:
+      required: true
