@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security problem (private)
+    url: https://github.com/Phaenex/unsynth-extension/security/advisories/new
+    about: Keys, tokens, data leaving the browser, anything a stranger could abuse. Reported privately, never as a public issue.
+  - name: Support guide
+    url: https://github.com/Phaenex/unsynth-extension/blob/main/SUPPORT.md
+    about: Fast checks, what the audio meter's messages mean, what needs your own keys.
+  - name: Setup guide
+    url: https://unsynth.vercel.app
+    about: Install, the optional Google connection, AI keys, importing your history.
